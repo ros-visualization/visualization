@@ -291,7 +291,7 @@ DisplayTypeInfoPtr Plugin::getDisplayTypeInfo(const std::string& class_name) con
 const std::string& Plugin::mapDisplayName(const std::string& name) const
 {
   M_string::const_iterator it = display_name_mappings_.find(name);
-  if (it == display_class_mappings_.end())
+  if (it == display_name_mappings_.end())
   {
     return name;
   }
