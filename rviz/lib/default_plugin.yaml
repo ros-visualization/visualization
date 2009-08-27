@@ -32,8 +32,8 @@ displays:
     description: |
       Displays visualization markers sent over the visualization_marker and visualization_marker_array topics.  <a href="http://pr.willowgarage.com/wiki/rviz/UsingVisualizationMarkers">Click here for information on how to send visualization markers from your node</a>.
   -
-    class_name: rviz::ParticleCloud2DDisplay
-    display_name: ParticleCloud
+    class_name: rviz::PoseArrayDisplay
+    display_name: Pose Array
     description: |
       Displays the poses from a geometry_msgs::PoseArray message as a cloud of arrows on the ground plane.
   -
@@ -57,8 +57,8 @@ displays:
     description: |
       Displays data from a nav_msgs::GridCells message as billboards.  <a href="http://pr.willowgarage.com/wiki/rviz/DisplayTypes/GridCells">More Information</a>.
   -
-    class_name: rviz::RobotBase2DPoseDisplay
-    display_name: RobotBase2DPose
+    class_name: rviz::OdometryDisplay
+    display_name: Odometry
     description: |
       Accumulates and displays poses from a nav_msgs::Odometry message.
   -
@@ -71,3 +71,9 @@ displays:
     display_name: TF
     description: |
       Displays the TF transform hierarchy.  <a href="http://pr.willowgarage.com/wiki/rviz/DisplayTypes/TF">More Information</a>.
+
+class_mapping:
+  - old_class: "rviz::RobotBase2DPoseDisplay"
+    new_class: "rviz::OdometryDisplay"
+  - old_class: "rviz::ParticleCloud2DDisplay"
+    new_class: "rviz::PoseArrayDisplay"

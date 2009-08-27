@@ -123,6 +123,23 @@ void Plugin::loadDescription(const std::string& description_path)
 
       display_info_.push_back(info);
     }
+
+    // find old class name mappings
+    try
+    {
+      const YAML::Node& n = doc["class_mapping"];
+      for (uint32_t i = 0; i < n.size(); ++i)
+      {
+        const YAML::Node& mapping = n[i];
+        std::string old_class, new_class;
+        mapping["old_class"] >> old_class;
+        mapping["new_class"] >> new_class;
+        display_class_mappings_[old_class] = new_class;
+      }
+    }
+    catch (YAML::RepresentationException& e)
+    {
+    }
   }
   catch (YAML::ParserException& e)
   {
@@ -175,7 +192,6 @@ void Plugin::load()
       ROS_ERROR("Display with class name [%s] did not exist in the plugin yaml file.", ent.class_name.c_str());
       info.reset(new DisplayTypeInfo);
       info->class_name = ent.class_name;
-      info->display_name = ent.class_name;
     }
 
     if (info->display_name.empty())
@@ -227,14 +243,26 @@ void Plugin::setAutoLoad(bool autoload)
   auto_load_ = autoload;
 }
 
+const std::string& Plugin::mapDisplayClassName(const std::string& class_name) const
+{
+  M_string::const_iterator it = display_class_mappings_.find(class_name);
+  if (it == display_class_mappings_.end())
+  {
+    return class_name;
+  }
+
+  return it->second;
+}
+
 DisplayTypeInfoPtr Plugin::getDisplayTypeInfo(const std::string& class_name) const
 {
+  std::string mapped_name = mapDisplayClassName(class_name);
   L_DisplayTypeInfo::const_iterator it = display_info_.begin();
   L_DisplayTypeInfo::const_iterator end = display_info_.end();
   for (; it != end; ++it)
   {
     const DisplayTypeInfoPtr& info = *it;
-    if (info->class_name == class_name)
+    if (info->class_name == mapped_name)
     {
       return info;
     }

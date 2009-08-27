@@ -35,12 +35,12 @@
 #include "laser_scan_display.h"
 #include "map_display.h"
 #include "marker_display.h"
-#include "particle_cloud_2d_display.h"
+#include "pose_array_display.h"
 #include "point_cloud_display.h"
 #include "path_display.h"
 #include "polygon_display.h"
 #include "grid_cells_display.h"
-#include "robot_base2d_pose_display.h"
+#include "odometry_display.h"
 #include "robot_model_display.h"
 #include "tf_display.h"
 
@@ -54,12 +54,12 @@ extern "C" void rvizPluginInit(rviz::TypeRegistry* reg)
   reg->registerDisplay<LaserScanDisplay>("rviz::LaserScanDisplay");
   reg->registerDisplay<MapDisplay>("rviz::MapDisplay");
   reg->registerDisplay<MarkerDisplay>("rviz::MarkerDisplay");
-  reg->registerDisplay<ParticleCloud2DDisplay>("rviz::ParticleCloud2DDisplay");
+  reg->registerDisplay<PoseArrayDisplay>("rviz::PoseArrayDisplay");
   reg->registerDisplay<PointCloudDisplay>("rviz::PointCloudDisplay");
   reg->registerDisplay<PathDisplay>("rviz::PathDisplay");
   reg->registerDisplay<PolygonDisplay>("rviz::PolygonDisplay");
   reg->registerDisplay<GridCellsDisplay>("rviz::GridCellsDisplay");
-  reg->registerDisplay<RobotBase2DPoseDisplay>("rviz::RobotBase2DPoseDisplay");
+  reg->registerDisplay<OdometryDisplay>("rviz::OdometryDisplay");
   reg->registerDisplay<RobotModelDisplay>("rviz::RobotModelDisplay");
   reg->registerDisplay<TFDisplay>("rviz::TFDisplay");
 }
