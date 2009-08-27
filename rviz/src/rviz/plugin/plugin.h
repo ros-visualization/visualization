@@ -111,6 +111,7 @@ public:
   const std::string& getName() { return name_; }
 
   const std::string& mapDisplayClassName(const std::string& class_name) const;
+  const std::string& mapDisplayName(const std::string& name) const;
 
   PluginStatusSignal& getLoadingSignal() { return loading_signal_; }
   PluginStatusSignal& getLoadedSignal() { return loaded_signal_; }
@@ -125,6 +126,7 @@ private:
 
   L_DisplayTypeInfo display_info_;
   M_string display_class_mappings_;
+  M_string display_name_mappings_;
 
   wxDynamicLibrary library_;
 

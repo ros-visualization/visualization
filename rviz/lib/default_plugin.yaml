@@ -72,8 +72,14 @@ displays:
     description: |
       Displays the TF transform hierarchy.  <a href="http://pr.willowgarage.com/wiki/rviz/DisplayTypes/TF">More Information</a>.
 
-class_mapping:
+display_class_mapping:
   - old_class: "rviz::RobotBase2DPoseDisplay"
     new_class: "rviz::OdometryDisplay"
   - old_class: "rviz::ParticleCloud2DDisplay"
     new_class: "rviz::PoseArrayDisplay"
+    
+display_name_mapping:
+  - old_name: "RobotBase2DPose"
+    new_name: "Odometry"
+  - old_name: "ParticleCloud"
+    new_name: "Pose Array"

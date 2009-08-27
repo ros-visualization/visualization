@@ -124,10 +124,10 @@ void Plugin::loadDescription(const std::string& description_path)
       display_info_.push_back(info);
     }
 
-    // find old class name mappings
+    // find old display class name mappings
     try
     {
-      const YAML::Node& n = doc["class_mapping"];
+      const YAML::Node& n = doc["display_class_mapping"];
       for (uint32_t i = 0; i < n.size(); ++i)
       {
         const YAML::Node& mapping = n[i];
@@ -135,6 +135,23 @@ void Plugin::loadDescription(const std::string& description_path)
         mapping["old_class"] >> old_class;
         mapping["new_class"] >> new_class;
         display_class_mappings_[old_class] = new_class;
+      }
+    }
+    catch (YAML::RepresentationException& e)
+    {
+    }
+
+    // find old display name mappings
+    try
+    {
+      const YAML::Node& n = doc["display_name_mapping"];
+      for (uint32_t i = 0; i < n.size(); ++i)
+      {
+        const YAML::Node& mapping = n[i];
+        std::string old_class, new_class;
+        mapping["old_name"] >> old_class;
+        mapping["new_name"] >> new_class;
+        display_name_mappings_[old_class] = new_class;
       }
     }
     catch (YAML::RepresentationException& e)
@@ -271,14 +288,26 @@ DisplayTypeInfoPtr Plugin::getDisplayTypeInfo(const std::string& class_name) con
   return DisplayTypeInfoPtr();
 }
 
+const std::string& Plugin::mapDisplayName(const std::string& name) const
+{
+  M_string::const_iterator it = display_name_mappings_.find(name);
+  if (it == display_class_mappings_.end())
+  {
+    return name;
+  }
+
+  return it->second;
+}
+
 DisplayTypeInfoPtr Plugin::getDisplayTypeInfoByDisplayName(const std::string& display_name) const
 {
+  std::string mapped_name = mapDisplayName(display_name);
   L_DisplayTypeInfo::const_iterator it = display_info_.begin();
   L_DisplayTypeInfo::const_iterator end = display_info_.end();
   for (; it != end; ++it)
   {
     const DisplayTypeInfoPtr& info = *it;
-    if (info->display_name == display_name)
+    if (info->display_name == mapped_name)
     {
       return info;
     }
