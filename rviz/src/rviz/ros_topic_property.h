@@ -84,12 +84,8 @@ public:
     message_type_ = message_type;
   }
 
-  virtual void OnSetValue();
-
 protected:
   ROSTopicProperty();
-
-  void checkForEmptyValue();
 
   std::string message_type_;
 };

@@ -16,4 +16,6 @@ set(ROSPACK_MAKEDIST true)
 # variables.
 #list(APPEND CPACK_SOURCE_IGNORE_FILES /core/experimental)
 
-rosbuild_make_distribution(0.2.0)
+rosbuild(visualization 0.1.0)
+# After next ROS release, change to new macro
+#rosbuild_make_distribution(0.1.0)

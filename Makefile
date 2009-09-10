@@ -1,1 +1,5 @@
-include $(shell rospack find mk)/cmake_stack.mk
+all:
+	cd rviz && make
+
+clean:
+	cd rviz && make clean
