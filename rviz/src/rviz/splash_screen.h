@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Willow Garage, Inc.
+ * Copyright (c) 2009, Willow Garage, Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,49 +27,32 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef RVIZ_PROPERTY_FORWARDS_H
-#define RVIZ_PROPERTY_FORWARDS_H
+#ifndef RVIZ_SPLASH_SCREEN_H
+#define RVIZ_SPLASH_SCREEN_H
 
-#include <boost/shared_ptr.hpp>
-#include <boost/weak_ptr.hpp>
-#include <boost/function.hpp>
+#include <wx/frame.h>
+#include <wx/bitmap.h>
+
+#include <string>
 
 namespace rviz
 {
 
-typedef boost::function<void(const std::string&)> StatusCallback;
-
-class PropertyManager;
-
-#define PROPERTY_FORWARD(name) \
-  class name; \
-  typedef boost::shared_ptr<name> name##Ptr; \
-  typedef boost::weak_ptr<name> name##WPtr;
-
-PROPERTY_FORWARD(PropertyBase);
-PROPERTY_FORWARD(BoolProperty);
-PROPERTY_FORWARD(IntProperty);
-PROPERTY_FORWARD(FloatProperty);
-PROPERTY_FORWARD(DoubleProperty);
-PROPERTY_FORWARD(StringProperty);
-PROPERTY_FORWARD(ColorProperty);
-PROPERTY_FORWARD(EnumProperty);
-PROPERTY_FORWARD(EditEnumProperty);
-PROPERTY_FORWARD(CategoryProperty);
-PROPERTY_FORWARD(Vector3Property);
-PROPERTY_FORWARD(QuaternionProperty);
-PROPERTY_FORWARD(ROSTopicStringProperty);
-
-template<class T>
-void propertyChanged(boost::weak_ptr<T>& wprop)
+class SplashScreen : public wxFrame
 {
-  if (boost::shared_ptr<T> prop = wprop.lock())
-  {
-    prop->changed();
-  }
+public:
+  SplashScreen(wxWindow* parent, const wxBitmap& background);
+  ~SplashScreen();
+
+  void setState(const std::string& state);
+
+protected:
+  void onPaint(wxPaintEvent& evt);
+
+  std::string state_;
+  wxBitmap background_;
+};
+
 }
 
-} // namespace rviz
-
-#endif
-
+#endif // RVIZ_SPLASH_SCREEN_H

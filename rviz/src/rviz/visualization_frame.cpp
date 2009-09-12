@@ -36,6 +36,9 @@
 #include "visualization_manager.h"
 #include "tools/tool.h"
 #include "plugin_manager_dialog.h"
+#include "splash_screen.h"
+#include "loading_dialog.h"
+#include "common.h"
 
 #include <ros/package.h>
 #include <ros/console.h>
@@ -89,39 +92,6 @@ VisualizationFrame::VisualizationFrame(wxWindow* parent)
 , global_configs_menu_(NULL)
 , aui_manager_(NULL)
 {
-  if (!ros::isInitialized())
-  {
-    int argc = 0;
-    ros::init(argc, 0, "rviz", ros::init_options::AnonymousName);
-  }
-
-  render_panel_ = new RenderPanel( this );
-  displays_panel_ = new DisplaysPanel( this );
-  views_panel_ = new ViewsPanel( this );
-  time_panel_ = new TimePanel( this );
-  selection_panel_ = new SelectionPanel( this );
-
-  ogre_tools::V_string paths;
-  ogre_tools::initializeResources( paths );
-
-  std::string package_path = ros::package::getPath("rviz");
-  global_config_dir_ = (fs::path(package_path) / "configs").file_string();
-
-#if !defined(__WXMAC__)
-  toolbar_ = new wxToolBar(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTB_TEXT|wxTB_NOICONS|wxNO_BORDER|wxTB_HORIZONTAL);
-  toolbar_->Connect( wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( VisualizationFrame::onToolClicked ), NULL, this );
-#endif
-
-  aui_manager_ = new wxAuiManager(this);
-  aui_manager_->AddPane(render_panel_, wxAuiPaneInfo().CenterPane().Name(wxT("Render")));
-  aui_manager_->AddPane(displays_panel_, wxAuiPaneInfo().Left().MinSize(270, -1).Name(wxT("Displays")).Caption(wxT("Displays")));
-  aui_manager_->AddPane(selection_panel_, wxAuiPaneInfo().Right().MinSize(270, -1).Name(wxT("Selection")).Caption(wxT("Selection")));
-  aui_manager_->AddPane(views_panel_, wxAuiPaneInfo().BestSize(230, 200).Right().Name(wxT("Views")).Caption(wxT("Views")));
-  aui_manager_->AddPane(time_panel_, wxAuiPaneInfo().RightDockable(false).LeftDockable(false).Bottom().Name(wxT("Time")).Caption(wxT("Time")));
-#if !defined(__WXMAC__)
-  aui_manager_->AddPane(toolbar_, wxAuiPaneInfo().ToolbarPane().RightDockable(false).LeftDockable(false)/*.MinSize(-1, 40)*/.Top().Name(wxT("Tools")).Caption(wxT("Tools")));
-#endif
-  aui_manager_->Update();
 }
 
 VisualizationFrame::~VisualizationFrame()
@@ -142,11 +112,14 @@ VisualizationFrame::~VisualizationFrame()
   delete manager_;
 }
 
+void VisualizationFrame::onSplashLoadStatus(const std::string& status, SplashScreen* splash)
+{
+  splash->setState(status);
+}
+
 void VisualizationFrame::initialize(const std::string& display_config_file, const std::string& fixed_frame, const std::string& target_frame)
 {
   initConfigs();
-
-  Connect(wxEVT_AUI_PANE_CLOSE, wxAuiManagerEventHandler(VisualizationFrame::onPaneClosed), NULL, this);
 
   wxPoint pos = GetPosition();
   wxSize size = GetSize();
@@ -160,6 +133,50 @@ void VisualizationFrame::initialize(const std::string& display_config_file, cons
   SetPosition(pos);
   SetSize(wxSize(width, height));
 
+  std::string splash_path = (fs::path(package_path_) / "images/splash.png").file_string();
+  wxBitmap splash;
+  splash.LoadFile(wxString::FromAscii(splash_path.c_str()));
+  splash_ = new SplashScreen(this, splash);
+  splash_->Show();
+  splash_->setState("Initializing");
+
+  if (!ros::isInitialized())
+  {
+    int argc = 0;
+    ros::init(argc, 0, "rviz", ros::init_options::AnonymousName);
+  }
+
+  render_panel_ = new RenderPanel( this );
+  displays_panel_ = new DisplaysPanel( this );
+  views_panel_ = new ViewsPanel( this );
+  time_panel_ = new TimePanel( this );
+  selection_panel_ = new SelectionPanel( this );
+
+  splash_->setState("Initializing OGRE resources");
+  ogre_tools::V_string paths;
+  ogre_tools::initializeResources( paths );
+
+  package_path_ = ros::package::getPath("rviz");
+  global_config_dir_ = (fs::path(package_path_) / "configs").file_string();
+
+#if !defined(__WXMAC__)
+  toolbar_ = new wxToolBar(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTB_TEXT|wxTB_NOICONS|wxNO_BORDER|wxTB_HORIZONTAL);
+  toolbar_->Connect( wxEVT_COMMAND_TOOL_CLICKED, wxCommandEventHandler( VisualizationFrame::onToolClicked ), NULL, this );
+#endif
+
+  aui_manager_ = new wxAuiManager(this);
+  aui_manager_->AddPane(render_panel_, wxAuiPaneInfo().CenterPane().Name(wxT("Render")));
+  aui_manager_->AddPane(displays_panel_, wxAuiPaneInfo().Left().MinSize(270, -1).Name(wxT("Displays")).Caption(wxT("Displays")));
+  aui_manager_->AddPane(selection_panel_, wxAuiPaneInfo().Right().MinSize(270, -1).Name(wxT("Selection")).Caption(wxT("Selection")));
+  aui_manager_->AddPane(views_panel_, wxAuiPaneInfo().BestSize(230, 200).Right().Name(wxT("Views")).Caption(wxT("Views")));
+  aui_manager_->AddPane(time_panel_, wxAuiPaneInfo().RightDockable(false).LeftDockable(false).Bottom().Name(wxT("Time")).Caption(wxT("Time")));
+#if !defined(__WXMAC__)
+  aui_manager_->AddPane(toolbar_, wxAuiPaneInfo().ToolbarPane().RightDockable(false).LeftDockable(false)/*.MinSize(-1, 40)*/.Top().Name(wxT("Tools")).Caption(wxT("Tools")));
+#endif
+  aui_manager_->Update();
+
+  Connect(wxEVT_AUI_PANE_CLOSE, wxAuiManagerEventHandler(VisualizationFrame::onPaneClosed), NULL, this);
+
   manager_ = new VisualizationManager(render_panel_, this);
   render_panel_->initialize(manager_);
   displays_panel_->initialize(manager_);
@@ -171,7 +188,7 @@ void VisualizationFrame::initialize(const std::string& display_config_file, cons
   manager_->getToolChangedSignal().connect( boost::bind( &VisualizationFrame::onToolChanged, this, _1 ) );
 
   manager_->initialize();
-  manager_->loadGeneralConfig(general_config_);
+  manager_->loadGeneralConfig(general_config_, boost::bind(&VisualizationFrame::onSplashLoadStatus, this, _1, splash_));
 
   bool display_config_valid = !display_config_file.empty();
   if (display_config_valid && !fs::exists(display_config_file))
@@ -182,12 +199,12 @@ void VisualizationFrame::initialize(const std::string& display_config_file, cons
 
   if (!display_config_valid)
   {
-    manager_->loadDisplayConfig(display_config_);
+    manager_->loadDisplayConfig(display_config_, boost::bind(&VisualizationFrame::onSplashLoadStatus, this, _1, splash_));
   }
   else
   {
     boost::shared_ptr<wxFileConfig> config(new wxFileConfig(wxT("standalone_visualizer"), wxEmptyString, wxEmptyString, wxString::FromAscii(display_config_file.c_str()), wxCONFIG_USE_GLOBAL_FILE));
-    manager_->loadDisplayConfig(config);
+    manager_->loadDisplayConfig(config, boost::bind(&VisualizationFrame::onSplashLoadStatus, this, _1, splash_));
   }
 
   if (!fixed_frame.empty())
@@ -199,6 +216,8 @@ void VisualizationFrame::initialize(const std::string& display_config_file, cons
   {
     manager_->setTargetFrame(target_frame);
   }
+
+  splash_->setState("Loading perspective");
 
   wxString auimanager_perspective;
   long version = 0;
@@ -219,6 +238,9 @@ void VisualizationFrame::initialize(const std::string& display_config_file, cons
   }
 
   initMenus();
+
+  splash_->Destroy();
+  splash_ = 0;
 }
 
 void VisualizationFrame::initConfigs()
@@ -317,8 +339,11 @@ void VisualizationFrame::loadDisplayConfig(const std::string& path)
 {
   manager_->removeAllDisplays();
 
+  LoadingDialog dialog(this);
+  dialog.Show();
+
   boost::shared_ptr<wxFileConfig> config(new wxFileConfig(wxT("standalone_visualizer"), wxEmptyString, wxEmptyString, wxString::FromAscii(path.c_str()), wxCONFIG_USE_GLOBAL_FILE));
-  manager_->loadDisplayConfig(config);
+  manager_->loadDisplayConfig(config, boost::bind(&LoadingDialog::setState, &dialog, _1));
 }
 
 void VisualizationFrame::loadConfigMenus()

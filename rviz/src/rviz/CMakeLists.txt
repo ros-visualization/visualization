@@ -48,6 +48,8 @@ rospack_add_library(${PROJECT_NAME} plugin/plugin.cpp
                                     tools/move_tool.cpp
                                     tools/pose_tool.cpp
                                     tools/selection_tool.cpp
+                                    splash_screen.cpp
+                                    loading_dialog.cpp
                                     render_panel.cpp
                                     displays_panel.cpp
                                     views_panel.cpp

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Willow Garage, Inc.
+ * Copyright (c) 2009, Willow Garage, Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,49 +27,47 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef RVIZ_PROPERTY_FORWARDS_H
-#define RVIZ_PROPERTY_FORWARDS_H
+#include "loading_dialog.h"
 
-#include <boost/shared_ptr.hpp>
-#include <boost/weak_ptr.hpp>
-#include <boost/function.hpp>
+#include <wx/dcclient.h>
 
 namespace rviz
 {
 
-typedef boost::function<void(const std::string&)> StatusCallback;
-
-class PropertyManager;
-
-#define PROPERTY_FORWARD(name) \
-  class name; \
-  typedef boost::shared_ptr<name> name##Ptr; \
-  typedef boost::weak_ptr<name> name##WPtr;
-
-PROPERTY_FORWARD(PropertyBase);
-PROPERTY_FORWARD(BoolProperty);
-PROPERTY_FORWARD(IntProperty);
-PROPERTY_FORWARD(FloatProperty);
-PROPERTY_FORWARD(DoubleProperty);
-PROPERTY_FORWARD(StringProperty);
-PROPERTY_FORWARD(ColorProperty);
-PROPERTY_FORWARD(EnumProperty);
-PROPERTY_FORWARD(EditEnumProperty);
-PROPERTY_FORWARD(CategoryProperty);
-PROPERTY_FORWARD(Vector3Property);
-PROPERTY_FORWARD(QuaternionProperty);
-PROPERTY_FORWARD(ROSTopicStringProperty);
-
-template<class T>
-void propertyChanged(boost::weak_ptr<T>& wprop)
+LoadingDialog::LoadingDialog(wxWindow* parent)
+: wxDialog(0, wxID_ANY, wxT(""), wxDefaultPosition, wxSize(200, 32), 0)
 {
-  if (boost::shared_ptr<T> prop = wprop.lock())
-  {
-    prop->changed();
-  }
+  Connect(wxEVT_PAINT, wxPaintEventHandler(LoadingDialog::onPaint), 0, this);
+
+  wxSize size = GetSize();
+  wxSize parent_size = parent->GetSize();
+  wxPoint parent_pos = parent->GetPosition();
+  SetPosition(wxPoint(parent_pos.x + parent_size.GetWidth()/2 - size.GetWidth()/2, parent_pos.y + parent_size.GetHeight()/2 - size.GetHeight()/2));
 }
 
-} // namespace rviz
+LoadingDialog::~LoadingDialog()
+{
 
-#endif
+}
 
+void LoadingDialog::setState(const std::string& state)
+{
+  state_ = state;
+  Refresh();
+
+  wxSafeYield(this, true);
+}
+
+void LoadingDialog::onPaint(wxPaintEvent& evt)
+{
+  wxPaintDC dc(this);
+
+  wxSize text_size = dc.GetTextExtent(wxString::FromAscii(state_.c_str()));
+  wxSize size = GetSize();
+
+  dc.SetBrush(*wxWHITE_BRUSH);
+  dc.DrawRectangle(0, 0, size.GetWidth(), size.GetHeight());
+  dc.DrawText(wxString::FromAscii(("Loading... " + state_).c_str()), 4, (size.GetHeight()/2) - (text_size.GetHeight()/2));
+}
+
+}

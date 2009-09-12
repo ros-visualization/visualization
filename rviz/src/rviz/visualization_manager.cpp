@@ -114,19 +114,18 @@ VisualizationManager::VisualizationManager( RenderPanel* render_panel, WindowMan
 , skip_render_(0)
 , window_manager_(wm)
 {
+  tf_ = 0;
+  threaded_tf_ = 0;
   initializeCommon();
 
   render_panel->setAutoRender(false);
 
   update_nh_.setCallbackQueue(&update_queue_);
   threaded_nh_.setCallbackQueue(&threaded_queue_);
-  tf_ = new tf::TransformListener(update_nh_, ros::Duration(10 * 60), false);
-  threaded_tf_ = new tf::TransformListener(threaded_nh_, ros::Duration(10 * 60), false);
 
   scene_manager_ = ogre_root_->createSceneManager( Ogre::ST_GENERIC );
 
   target_relative_node_ = scene_manager_->getRootSceneNode()->createChildSceneNode();
-  updateRelativeNode();
 
   Ogre::Light* directional_light = scene_manager_->createLight( "MainDirectional" );
   directional_light->setType( Ogre::Light::LT_DIRECTIONAL );
@@ -149,8 +148,6 @@ VisualizationManager::VisualizationManager( RenderPanel* render_panel, WindowMan
   CategoryPropertyPtr cat_prop = options_category.lock();
   cat_prop->collapse();
 
-  setTargetFrame( "base_link" );
-  setFixedFrame( "/map" );
   setBackgroundColor(Color(0.0f, 0.0f, 0.0f));
 
   createColorMaterials();
@@ -208,8 +205,21 @@ VisualizationManager::~VisualizationManager()
   ogre_root_->destroySceneManager( scene_manager_ );
 }
 
-void VisualizationManager::initialize()
+void VisualizationManager::initialize(const StatusCallback& cb)
 {
+  if (cb)
+  {
+    cb("Initializing TF");
+  }
+
+  tf_ = new tf::TransformListener(update_nh_, ros::Duration(10 * 60), false);
+  threaded_tf_ = new tf::TransformListener(threaded_nh_, ros::Duration(10 * 60), false);
+
+  updateRelativeNode();
+
+  setTargetFrame( "base_link" );
+  setFixedFrame( "/map" );
+
   orbit_camera_ = new ogre_tools::OrbitCamera( scene_manager_ );
   orbit_camera_->getOgreCamera()->setNearClipDistance( 0.01f );
   orbit_camera_->setPosition( 0, 0, 15 );
@@ -618,7 +628,7 @@ DisplayWrapper* VisualizationManager::getDisplayWrapper( Display* display )
 #define CAMERA_TYPE wxT("Camera Type")
 #define CAMERA_CONFIG wxT("Camera Config")
 
-void VisualizationManager::loadGeneralConfig( const boost::shared_ptr<wxConfigBase>& config )
+void VisualizationManager::loadGeneralConfig( const boost::shared_ptr<wxConfigBase>& config, const StatusCallback& cb )
 {
   // Legacy... read camera config from the general config (camera config is now saved in the display config).
   /// \todo Remove this once some time has passed
@@ -635,6 +645,11 @@ void VisualizationManager::loadGeneralConfig( const boost::shared_ptr<wxConfigBa
     }
   }
 
+  if (cb)
+  {
+    cb("Loading plugins");
+  }
+
   plugin_manager_->loadConfig(config);
 
   general_config_loaded_(config);
@@ -646,8 +661,13 @@ void VisualizationManager::saveGeneralConfig( const boost::shared_ptr<wxConfigBa
   general_config_saving_(config);
 }
 
-void VisualizationManager::loadDisplayConfig( const boost::shared_ptr<wxConfigBase>& config )
+void VisualizationManager::loadDisplayConfig( const boost::shared_ptr<wxConfigBase>& config, const StatusCallback& cb )
 {
+  if (cb)
+  {
+    cb("Creating displays");
+  }
+
   int i = 0;
   while (1)
   {
@@ -695,7 +715,7 @@ void VisualizationManager::loadDisplayConfig( const boost::shared_ptr<wxConfigBa
     ++i;
   }
 
-  property_manager_->load( config );
+  property_manager_->load( config, cb );
 
   wxString camera_type;
   if (config->Read(CAMERA_TYPE, &camera_type))

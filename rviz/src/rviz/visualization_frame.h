@@ -54,6 +54,7 @@ class TimePanel;
 class SelectionPanel;
 class VisualizationManager;
 class Tool;
+class SplashScreen;
 
 class VisualizationFrame : public wxFrame, public WindowManagerInterface
 {
@@ -95,6 +96,8 @@ protected:
   void onToolAdded(Tool* tool);
   void onToolChanged(Tool* tool);
 
+  void onSplashLoadStatus(const std::string& status, SplashScreen* splash);
+
   RenderPanel* render_panel_;
   DisplaysPanel* displays_panel_;
   ViewsPanel* views_panel_;
@@ -121,6 +124,10 @@ protected:
   wxAuiManager* aui_manager_;
 
   VisualizationManager* manager_;
+
+  std::string package_path_;
+
+  SplashScreen* splash_;
 };
 
 }
