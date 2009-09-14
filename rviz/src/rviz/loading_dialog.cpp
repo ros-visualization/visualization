@@ -35,7 +35,7 @@ namespace rviz
 {
 
 LoadingDialog::LoadingDialog(wxWindow* parent)
-: wxDialog(0, wxID_ANY, wxT(""), wxDefaultPosition, wxSize(200, 32), 0)
+: wxDialog(0, wxID_ANY, wxT(""), wxDefaultPosition, wxSize(400, 32), 0)
 {
   Connect(wxEVT_PAINT, wxPaintEventHandler(LoadingDialog::onPaint), 0, this);
 
