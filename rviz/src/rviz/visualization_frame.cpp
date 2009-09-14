@@ -133,6 +133,7 @@ void VisualizationFrame::initialize(const std::string& display_config_file, cons
   SetPosition(pos);
   SetSize(wxSize(width, height));
 
+  package_path_ = ros::package::getPath("rviz");
   std::string splash_path = (fs::path(package_path_) / "images/splash.png").file_string();
   wxBitmap splash;
   splash.LoadFile(wxString::FromAscii(splash_path.c_str()));
@@ -156,7 +157,6 @@ void VisualizationFrame::initialize(const std::string& display_config_file, cons
   ogre_tools::V_string paths;
   ogre_tools::initializeResources( paths );
 
-  package_path_ = ros::package::getPath("rviz");
   global_config_dir_ = (fs::path(package_path_) / "configs").file_string();
 
 #if !defined(__WXMAC__)
