@@ -207,6 +207,7 @@ public:
   DisplayWrapper* getDisplayWrapper( Display* display );
 
   PropertyManager* getPropertyManager() { return property_manager_; }
+  PropertyManager* getToolPropertyManager() { return tool_property_manager_; }
 
   bool isValidDisplay( const DisplayWrapper* display );
 
@@ -314,6 +315,7 @@ protected:
   std::string fixed_frame_;                               ///< Frame to transform fixed data to
 
   PropertyManager* property_manager_;
+  PropertyManager* tool_property_manager_;
   EditEnumPropertyWPtr target_frame_property_;
   EditEnumPropertyWPtr fixed_frame_property_;
 

@@ -44,7 +44,8 @@
 
 #include "tools/tool.h"
 #include "tools/move_tool.h"
-#include "tools/pose_tool.h"
+#include "tools/goal_tool.h"
+#include "tools/initial_pose_tool.h"
 #include "tools/selection_tool.h"
 
 #include <ogre_tools/wx_ogre_render_window.h>
@@ -137,6 +138,7 @@ VisualizationManager::VisualizationManager( RenderPanel* render_panel, WindowMan
   Connect( update_timer_->GetId(), wxEVT_TIMER, wxTimerEventHandler( VisualizationManager::onUpdate ), NULL, this );
 
   property_manager_ = new PropertyManager();
+  tool_property_manager_ = new PropertyManager();
 
   CategoryPropertyWPtr options_category = property_manager_->createCategory( ".Global Options", "" );
   target_frame_property_ = property_manager_->createProperty<EditEnumProperty>( "Target Frame", "", boost::bind( &VisualizationManager::getTargetFrame, this ),
@@ -194,6 +196,7 @@ VisualizationManager::~VisualizationManager()
   delete threaded_tf_;
 
   delete property_manager_;
+  delete tool_property_manager_;
 
   delete fps_camera_;
   delete orbit_camera_;
@@ -248,11 +251,8 @@ void VisualizationManager::initialize(const StatusCallback& cb)
   setDefaultTool( move_tool );
 
   createTool< SelectionTool >( "Select", 's' );
-
-  PoseTool* goal_tool = createTool< PoseTool >( "Set Goal", 'g' );
-  goal_tool->setIsGoal( true );
-
-  createTool< PoseTool >( "Set Pose", 'p' );
+  createTool< GoalTool >( "2D Nav Goal", 'g' );
+  createTool< InitialPoseTool >( "2D Pose Estimate", 'p' );
 
   selection_manager_->initialize();
 
@@ -346,6 +346,7 @@ void VisualizationManager::onUpdate( wxTimerEvent& event )
 
   selection_manager_->update();
   property_manager_->update();
+  tool_property_manager_->update();
 
   current_tool_->update(wall_dt, ros_dt);
 
@@ -716,6 +717,7 @@ void VisualizationManager::loadDisplayConfig( const boost::shared_ptr<wxConfigBa
   }
 
   property_manager_->load( config, cb );
+  tool_property_manager_->load( config, cb );
 
   wxString camera_type;
   if (config->Read(CAMERA_TYPE, &camera_type))
@@ -752,6 +754,7 @@ void VisualizationManager::saveDisplayConfig( const boost::shared_ptr<wxConfigBa
   }
 
   property_manager_->save( config );
+  tool_property_manager_->save( config );
 
   if (getCurrentCamera())
   {

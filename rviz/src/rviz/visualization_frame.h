@@ -52,6 +52,7 @@ class DisplaysPanel;
 class ViewsPanel;
 class TimePanel;
 class SelectionPanel;
+class ToolPropertiesPanel;
 class VisualizationManager;
 class Tool;
 class SplashScreen;
@@ -103,6 +104,7 @@ protected:
   ViewsPanel* views_panel_;
   TimePanel* time_panel_;
   SelectionPanel* selection_panel_;
+  ToolPropertiesPanel* tool_properties_panel_;
 
   boost::shared_ptr<wxConfigBase> general_config_;
   boost::shared_ptr<wxConfigBase> display_config_;

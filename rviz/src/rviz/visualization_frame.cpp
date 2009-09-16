@@ -33,6 +33,7 @@
 #include "views_panel.h"
 #include "time_panel.h"
 #include "selection_panel.h"
+#include "tool_properties_panel.h"
 #include "visualization_manager.h"
 #include "tools/tool.h"
 #include "plugin_manager_dialog.h"
@@ -70,7 +71,7 @@ namespace fs = boost::filesystem;
 
 #define CONFIG_EXTENSION "vcg"
 #define CONFIG_EXTENSION_WILDCARD "*."CONFIG_EXTENSION
-#define PERSPECTIVE_VERSION 1
+#define PERSPECTIVE_VERSION 2
 
 namespace rviz
 {
@@ -152,6 +153,7 @@ void VisualizationFrame::initialize(const std::string& display_config_file, cons
   views_panel_ = new ViewsPanel( this );
   time_panel_ = new TimePanel( this );
   selection_panel_ = new SelectionPanel( this );
+  tool_properties_panel_ = new ToolPropertiesPanel(this);
 
   splash_->setState("Initializing OGRE resources");
   ogre_tools::V_string paths;
@@ -169,6 +171,7 @@ void VisualizationFrame::initialize(const std::string& display_config_file, cons
   aui_manager_->AddPane(displays_panel_, wxAuiPaneInfo().Left().MinSize(270, -1).Name(wxT("Displays")).Caption(wxT("Displays")));
   aui_manager_->AddPane(selection_panel_, wxAuiPaneInfo().Right().MinSize(270, -1).Name(wxT("Selection")).Caption(wxT("Selection")));
   aui_manager_->AddPane(views_panel_, wxAuiPaneInfo().BestSize(230, 200).Right().Name(wxT("Views")).Caption(wxT("Views")));
+  aui_manager_->AddPane(tool_properties_panel_, wxAuiPaneInfo().BestSize(230, 200).Right().Name(wxT("Tool Properties")).Caption(wxT("Tool Properties")));
   aui_manager_->AddPane(time_panel_, wxAuiPaneInfo().RightDockable(false).LeftDockable(false).Bottom().Name(wxT("Time")).Caption(wxT("Time")));
 #if !defined(__WXMAC__)
   aui_manager_->AddPane(toolbar_, wxAuiPaneInfo().ToolbarPane().RightDockable(false).LeftDockable(false)/*.MinSize(-1, 40)*/.Top().Name(wxT("Tools")).Caption(wxT("Tools")));
@@ -183,6 +186,7 @@ void VisualizationFrame::initialize(const std::string& display_config_file, cons
   views_panel_->initialize(manager_);
   time_panel_->initialize(manager_);
   selection_panel_->initialize(manager_);
+  tool_properties_panel_->initialize(manager_);
 
   manager_->getToolAddedSignal().connect( boost::bind( &VisualizationFrame::onToolAdded, this, _1 ) );
   manager_->getToolChangedSignal().connect( boost::bind( &VisualizationFrame::onToolChanged, this, _1 ) );
