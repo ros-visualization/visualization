@@ -332,6 +332,11 @@ void VisualizationFrame::initMenus()
   Connect(item->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler(VisualizationFrame::onManagePlugins), NULL, this);
   menubar_->Append(plugins_menu_, wxT("&Plugins"));
 
+  help_menu_ = new wxMenu(wxT(""));
+  item = help_menu_->Append(wxID_ANY, wxT("&Wiki"));
+  Connect(item->GetId(), wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler(VisualizationFrame::onHelpWiki), NULL, this);
+  menubar_->Append(help_menu_, wxT("&Help"));
+
   SetMenuBar(menubar_);
 
   loadConfigMenus();
@@ -570,6 +575,11 @@ void VisualizationFrame::onManagePlugins(wxCommandEvent& event)
 {
   PluginManagerDialog dialog(this, manager_->getPluginManager());
   dialog.ShowModal();
+}
+
+void VisualizationFrame::onHelpWiki(wxCommandEvent& event)
+{
+  wxLaunchDefaultBrowser(wxT("http://www.ros.org/wiki/rviz"));
 }
 
 wxWindow* VisualizationFrame::getParentWindow()

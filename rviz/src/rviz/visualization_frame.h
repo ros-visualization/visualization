@@ -92,6 +92,7 @@ protected:
   void onPaneClosed(wxAuiManagerEvent& event);
   void onViewMenuItemSelected(wxCommandEvent& event);
   void onManagePlugins(wxCommandEvent& event);
+  void onHelpWiki(wxCommandEvent& event);
 
   // other Callbacks
   void onToolAdded(Tool* tool);
@@ -120,6 +121,7 @@ protected:
   wxMenu* global_configs_menu_;
   wxMenu* view_menu_;
   wxMenu* plugins_menu_;
+  wxMenu* help_menu_;
 
   wxToolBar* toolbar_;
 
