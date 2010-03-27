@@ -27,32 +27,29 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "move_tool.h"
-#include "visualization_manager.h"
-#include "render_panel.h"
-#include "viewport_mouse_event.h"
-#include "view_controller.h"
-
-#include <wx/event.h>
+#include "convert.h"
 
 namespace rviz
 {
 
-MoveTool::MoveTool( const std::string& name, char shortcut_key, VisualizationManager* manager )
-: Tool( name, shortcut_key, manager )
+static Ogre::Matrix3 fromEulersYXZ(float y, float x, float z)
 {
-
+  Ogre::Matrix3 m;
+  m.FromEulerAnglesYXZ(Ogre::Degree(y), Ogre::Degree(x), Ogre::Degree(z));
+  return m;
 }
 
-int MoveTool::processMouseEvent( ViewportMouseEvent& event )
+static Ogre::Quaternion matToQuat(const Ogre::Matrix3& mat)
 {
-  if (event.panel->getViewController())
-  {
-    event.panel->getViewController()->handleMouseEvent(event);
-  }
-
-  return 0;
+  Ogre::Quaternion q;
+  q.FromRotationMatrix(mat);
+  return q;
 }
 
-}
+Ogre::Matrix3 g_ogre_to_robot_matrix(fromEulersYXZ(-90, 0, -90));
+Ogre::Matrix3 g_robot_to_ogre_matrix(g_ogre_to_robot_matrix.Inverse());
 
+Ogre::Quaternion g_ogre_to_robot_quat(matToQuat(g_ogre_to_robot_matrix));
+Ogre::Quaternion g_robot_to_ogre_quat(matToQuat(g_robot_to_ogre_matrix));
+
+}

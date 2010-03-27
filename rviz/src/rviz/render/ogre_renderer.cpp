@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Willow Garage, Inc.
+ * Copyright (c) 2010, Willow Garage, Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,44 +27,11 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef RVIZ_PLUGIN_MANAGER_H
-#define RVIZ_PLUGIN_MANAGER_H
-
-#include <list>
-
-#include <boost/shared_ptr.hpp>
-
-class wxConfigBase;
-
 namespace rviz
 {
-
-class Plugin;
-typedef boost::shared_ptr<Plugin> PluginPtr;
-typedef std::list<PluginPtr> L_Plugin;
-
-class PluginManager
+namespace render
 {
-public:
-  PluginManager();
-  ~PluginManager();
 
-  void loadDescriptions();
-  PluginPtr loadPlugin(const std::string& description_file);
-  PluginPtr loadDescription(const std::string& description_file);
 
-  void loadConfig(const boost::shared_ptr<wxConfigBase>& config);
-  void saveConfig(const boost::shared_ptr<wxConfigBase>& config);
-
-  PluginPtr getPlugin(const std::string& description_file);
-  PluginPtr getPluginByPackage(const std::string& package);
-  PluginPtr getPluginByDisplayName(const std::string& display_name);
-  const L_Plugin& getPlugins() const { return plugins_; };
-
-private:
-  L_Plugin plugins_;
-};
-
-}
-
-#endif // RVIZ_PLUGIN_MANAGER_H
+} // namespace render
+} // namespace rviz

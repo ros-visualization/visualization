@@ -27,8 +27,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef RVIZ_COMMON_H
-#define RVIZ_COMMON_H
+#ifndef RVIZ_RENDER_CONVERT_H
+#define RVIZ_RENDER_CONVERT_H
 
 #include <OGRE/OgreVector3.h>
 #include <OGRE/OgreQuaternion.h>
@@ -42,17 +42,14 @@
 
 namespace rviz
 {
+namespace render
+{
 
 extern Ogre::Matrix3 g_ogre_to_robot_matrix;
 extern Ogre::Matrix3 g_robot_to_ogre_matrix;
 
 extern Ogre::Quaternion g_ogre_to_robot_quat;
 extern Ogre::Quaternion g_robot_to_ogre_quat;
-
-/**
- * \brief Initialize the ogre-to-robot and robot-to-ogre matrices/quaternions
- */
-void initializeCommon();
 
 /**
  * \brief Convert a point from robot space to ogre space
@@ -151,5 +148,6 @@ inline Ogre::Matrix3 ogreMatrixFromRobotEulers( float yaw, float pitch, float ro
   return mat;
 }
 
-}
+} // namespace render
+} // namespace rviz
 #endif
