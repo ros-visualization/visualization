@@ -1,0 +1,51 @@
+material ogre_tools/PointCloudPoint
+{
+  technique
+  {
+    pass
+    {
+      point_size_attenuation off
+      point_size 3
+      
+      vertex_program_ref ogre_tools/PointCloudPointVP
+      {
+      }
+
+      fragment_program_ref ogre_tools/PassThroughFP
+      {
+      }
+    }
+  }
+  
+  technique selection_first_pass
+  {
+    scheme Pick
+    
+    pass
+    {
+      vertex_program_ref ogre_tools/PointCloudPointVP_Selection
+      {
+      }
+
+      fragment_program_ref ogre_tools/PassThroughFP
+      {
+      }
+    }
+  }
+  
+  technique selection_second_pass
+  {
+    scheme Pick1
+    
+    pass
+    {
+      vertex_program_ref ogre_tools/PointCloudPointVP
+      {
+      }
+
+      fragment_program_ref ogre_tools/PassThroughFP
+      {
+      }
+    }
+  }
+}

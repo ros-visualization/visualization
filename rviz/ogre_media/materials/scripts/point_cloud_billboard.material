@@ -1,0 +1,313 @@
+material ogre_tools/PointCloudBillboardBase
+{ 
+  technique gp
+  {
+  	gpu_device_rule exclude *ati*
+    pass
+    {
+      alpha_rejection greater_equal 1
+      
+      vertex_program_ref ogre_tools/pointCloudBillboardWithGP_VP
+      {
+      }
+    }
+  }
+  
+  technique nogp
+  {
+    pass
+    {
+      alpha_rejection greater_equal 1
+      
+      vertex_program_ref ogre_tools/PointCloudBillboardVP
+      {
+      }
+    }
+  }
+  
+  technique gp_selection_first_pass
+  {
+  	gpu_device_rule exclude *ati*
+    scheme Pick
+    
+    pass
+    {
+      alpha_rejection greater_equal 1
+      
+      vertex_program_ref ogre_tools/pointCloudBillboardWithGP_VP
+      {
+      }
+    }
+  }
+  
+  technique gp_selection_second_pass
+  {
+  	gpu_device_rule exclude *ati*
+    scheme Pick1
+    
+    pass
+    {
+      alpha_rejection greater_equal 1
+      
+      vertex_program_ref ogre_tools/pointCloudBillboardWithGP_VP
+      {
+      }
+    }
+  }
+  
+  technique nogp_selection_first_pass
+  {
+    scheme Pick
+    
+    pass
+    {
+      alpha_rejection greater_equal 1
+      
+      vertex_program_ref ogre_tools/PointCloudBillboardVP_Selection
+      {
+      }
+    }
+  }
+  
+  technique nogp_selection_second_pass
+  {
+    scheme Pick1
+    
+    pass
+    {
+      alpha_rejection greater_equal 1
+      
+      vertex_program_ref ogre_tools/PointCloudBillboardVP
+      {
+      }
+    }
+  }
+}
+
+material ogre_tools/PointCloudBillboard : ogre_tools/PointCloudBillboardBase
+{
+  technique gp
+  {
+    pass
+    { 
+      geometry_program_ref ogre_tools/PointCloudBillboardGP
+      {
+      }
+      
+      fragment_program_ref ogre_tools/PointCloudBillboardFP
+      {
+      }
+    }
+  }
+  
+  technique gp_selection_first_pass
+  { 
+    pass
+    { 
+      geometry_program_ref ogre_tools/PointCloudBillboardGP_Selection
+      {
+      }
+      
+      fragment_program_ref ogre_tools/PointCloudBillboardFP
+      {
+      }
+    }
+  }
+  
+  technique gp_selection_second_pass
+  {
+    pass
+    { 
+      geometry_program_ref ogre_tools/PointCloudBillboardGP
+      {
+      }
+      
+      fragment_program_ref ogre_tools/PointCloudBillboardFP
+      {
+      }
+    }
+  }
+
+  technique nogp
+  {
+    pass
+    {
+      fragment_program_ref ogre_tools/PointCloudBillboardFP
+      {
+      }
+    }
+  }
+  
+  technique nogp_selection_first_pass
+  {
+    scheme Pick
+    
+    pass
+    {
+      fragment_program_ref ogre_tools/PointCloudBillboardFP
+      {
+      }
+    }
+  }
+  
+  technique nogp_selection_second_pass
+  {
+    scheme Pick1
+    
+    pass
+    {
+      fragment_program_ref ogre_tools/PointCloudBillboardFP
+      {
+      }
+    }
+  }
+}
+
+material ogre_tools/PointCloudBillboardSphere : ogre_tools/PointCloudBillboardBase
+{
+  technique gp
+  {
+    pass
+    { 
+      geometry_program_ref ogre_tools/PointCloudBillboardSphereGP
+      {
+      }
+      
+      fragment_program_ref ogre_tools/PointCloudBillboardSphereFP
+      {
+      }
+    }
+  }
+  
+  technique gp_selection_first_pass
+  {
+    pass
+    { 
+      geometry_program_ref ogre_tools/PointCloudBillboardSphereGP_Selection
+      {
+      }
+      
+      fragment_program_ref ogre_tools/PointCloudBillboardSphereFP_Selection
+      {
+      }
+    }
+  }
+  
+  technique gp_selection_second_pass
+  {
+    pass
+    { 
+      geometry_program_ref ogre_tools/PointCloudBillboardSphereGP
+      {
+      }
+      
+      fragment_program_ref ogre_tools/PointCloudBillboardSphereFP_Selection
+      {
+      }
+    }
+  }
+
+  technique nogp
+  {
+    pass
+    {
+      fragment_program_ref ogre_tools/PointCloudBillboardSphereFP
+      {
+      }
+    }
+  }
+  
+  technique nogp_selection_first_pass
+  {
+    scheme Pick
+    
+    pass
+    {
+      fragment_program_ref ogre_tools/PointCloudBillboardSphereFP_Selection
+      {
+      }
+    }
+  }
+  
+  technique nogp_selection_second_pass
+  {
+    scheme Pick1
+    
+    pass
+    {
+      fragment_program_ref ogre_tools/PointCloudBillboardSphereFP_Selection
+      {
+      }
+    }
+  }
+}
+
+material ogre_tools/PointCloudBillboardCommonFacing : ogre_tools/PointCloudBillboardBase
+{
+  technique gp
+  {
+    gpu_device_rule exclude *
+  }
+  
+  technique gp_selection_first_pass
+  {
+    gpu_device_rule exclude *
+  }
+  
+  technique gp_selection_second_pass
+  {
+    gpu_device_rule exclude *
+  }
+
+  technique nogp
+  {
+    pass
+    {
+      cull_hardware none
+      cull_software none
+      vertex_program_ref ogre_tools/PointCloudBillboardCommonFacingVP
+      {
+      }
+      
+      fragment_program_ref ogre_tools/PointCloudBillboardFP
+      {
+      }
+    }
+  }
+  
+  technique nogp_selection_first_pass
+  {
+    scheme Pick
+    
+    pass
+    {
+      cull_hardware none
+      cull_software none
+      vertex_program_ref ogre_tools/PointCloudBillboardCommonFacingVP_Selection
+      {
+      }
+      
+      fragment_program_ref ogre_tools/PointCloudBillboardFP
+      {
+      }
+    }
+  }
+  
+  technique nogp_selection_second_pass
+  {
+    scheme Pick1
+    
+    pass
+    {
+      cull_hardware none
+      cull_software none
+      vertex_program_ref ogre_tools/PointCloudBillboardCommonFacingVP
+      {
+      }
+      
+      fragment_program_ref ogre_tools/PointCloudBillboardFP
+      {
+      }
+    }
+  }
+}

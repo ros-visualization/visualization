@@ -1,0 +1,44 @@
+struct Output
+{
+  float4 color : COLOR;
+};
+
+Output pointCloudBillboardFP_main(float4 color : COLOR,
+                                  float3 tex : TEXCOORD0)
+{
+  float ax = 0.5 - tex.x;
+  float ay = 0.5 - tex.y;
+  float blend = smoothstep(0.02, 0.05, ay) * (1 - smoothstep(0.95, 0.98, ay)) *
+                smoothstep(0.02, 0.05, ax) * (1 - smoothstep(0.95, 0.98, ax));
+  float inv_blend = 1.0 - blend;
+  float3 col = blend * color.xyz + (sign(0.5 - length(float3(color.xyz))) * float3(0.2, 0.2, 0.2) + color.xyz) * inv_blend;
+  
+  Output OUT;
+  OUT.color = float4(col.rgb, color.a);
+  return OUT;
+}
+
+Output pointCloudBillboardSphereFP_main(float4 color : COLOR,
+                                  float3 tex : TEXCOORD0)
+{
+  half rsquared = tex.x*tex.x + tex.y*tex.y;
+  half a = (0.25 - rsquared) * 4.0;
+
+  float3 col = lerp(half3(0.8, 0.8, 0.8) * color.xyz, color.xyz, a);
+
+  Output OUT;
+  OUT.color = float4(col, color.a * ceil(a));
+  return OUT;
+}
+
+Output pointCloudBillboardSphereFP_Selection_main(float4 color : COLOR,
+                                            float3 tex : TEXCOORD0)
+{
+  float rsquared = tex.x*tex.x + tex.y*tex.y;
+  float a = (0.25 - rsquared) * 4.0;
+
+  Output OUT;
+  OUT.color = float4(color.xyz, color.a * ceil(a));
+  return OUT;
+}
+

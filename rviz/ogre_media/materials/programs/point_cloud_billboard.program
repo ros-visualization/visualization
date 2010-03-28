@@ -1,0 +1,154 @@
+vertex_program ogre_tools/PointCloudBillboardVP cg
+{
+  source point_cloud_billboard_vp.cg
+  entry_point pointCloudBillboardVP_main
+  profiles vp20 vs_2_0 arbvp1 vs_1_1
+  
+  default_params
+  {
+    param_named_auto worldviewproj worldviewproj_matrix
+    param_named_auto camera_pos camera_position_object_space
+    param_named_auto size custom 0
+    param_named_auto alpha custom 1
+  }
+}
+
+vertex_program ogre_tools/PointCloudBillboardCommonFacingVP cg
+{
+  source point_cloud_billboard_vp.cg
+  entry_point pointCloudBillboardCommonFacingVP_main
+  profiles vp20 vs_2_0 arbvp1 vs_1_1
+  
+  default_params
+  {
+    param_named_auto worldviewproj worldviewproj_matrix
+    param_named_auto size custom 0
+    param_named_auto alpha custom 1
+    param_named_auto normal custom 3
+    param_named_auto up custom 4
+  }
+}
+
+vertex_program ogre_tools/PointCloudBillboardCommonFacingVP_Selection cg
+{
+  source point_cloud_billboard_vp.cg
+  entry_point pointCloudBillboardCommonFacingVP_Selection_main
+  profiles vp20 vs_2_0 arbvp1 vs_1_1
+  
+  default_params
+  {
+    param_named_auto worldviewproj worldviewproj_matrix
+    param_named_auto size custom 0
+    param_named_auto pick_color custom 2
+    param_named_auto normal custom 3
+    param_named_auto up custom 4
+  }
+}
+
+vertex_program ogre_tools/PointCloudBillboardVP_Selection cg
+{
+  source point_cloud_billboard_vp.cg
+  entry_point pointCloudBillboardVP_Selection_main
+  profiles vp20 vs_2_0 arbvp1 vs_1_1
+  
+  default_params
+  {
+    param_named_auto worldviewproj worldviewproj_matrix
+    param_named_auto camera_pos camera_position_object_space
+    param_named_auto size custom 0
+    param_named_auto pick_color custom 2
+  }
+}
+
+vertex_program ogre_tools/pointCloudBillboardWithGP_VP cg
+{
+  source point_cloud_billboard_vp.cg
+  entry_point pointCloudBillboardWithGP_VP_main
+  profiles vp20 vs_2_0 arbvp1 vs_1_1
+  
+  default_params
+  {
+    param_named_auto alpha custom 1
+  }
+}
+
+
+
+geometry_program ogre_tools/PointCloudBillboardGP cg
+{
+  source point_cloud_billboard_gp.cg
+  entry_point pointCloudBillboardGP_main
+  profiles gpu_gp gp4_gp
+  
+  default_params
+  {
+    param_named_auto worldviewproj worldviewproj_matrix
+    param_named_auto camera_pos camera_position_object_space
+    param_named_auto size custom 0
+  }
+}
+
+geometry_program ogre_tools/PointCloudBillboardGP_Selection cg
+{
+  source point_cloud_billboard_gp.cg
+  entry_point pointCloudBillboardGP_Selection_main
+  profiles gpu_gp gp4_gp
+  
+  default_params
+  {
+    param_named_auto worldviewproj worldviewproj_matrix
+    param_named_auto camera_pos camera_position_object_space
+    param_named_auto size custom 0
+    param_named_auto pick_color custom 2
+  }
+}
+
+geometry_program ogre_tools/PointCloudBillboardSphereGP cg
+{
+  source point_cloud_billboard_gp.cg
+  entry_point pointCloudBillboardSphereGP_main
+  profiles gpu_gp gp4_gp
+  
+  default_params
+  {
+    param_named_auto worldviewproj worldviewproj_matrix
+    param_named_auto camera_pos camera_position_object_space
+    param_named_auto size custom 0
+  }
+}
+
+geometry_program ogre_tools/PointCloudBillboardSphereGP_Selection cg
+{
+  source point_cloud_billboard_gp.cg
+  entry_point pointCloudBillboardSphereGP_Selection_main
+  profiles gpu_gp gp4_gp
+  
+  default_params
+  {
+    param_named_auto worldviewproj worldviewproj_matrix
+    param_named_auto camera_pos camera_position_object_space
+    param_named_auto size custom 0
+    param_named_auto pick_color custom 2
+  }
+}
+
+fragment_program ogre_tools/PointCloudBillboardFP cg
+{
+  source point_cloud_billboard_fp.cg
+  entry_point pointCloudBillboardFP_main
+  profiles arbfp1 ps_2_0
+}
+
+fragment_program ogre_tools/PointCloudBillboardSphereFP cg
+{
+  source point_cloud_billboard_fp.cg
+  entry_point pointCloudBillboardSphereFP_main
+  profiles arbfp1 ps_2_0
+}
+
+fragment_program ogre_tools/PointCloudBillboardSphereFP_Selection cg
+{
+  source point_cloud_billboard_fp.cg
+  entry_point pointCloudBillboardSphereFP_Selection_main
+  profiles arbfp1 ps_2_0
+}

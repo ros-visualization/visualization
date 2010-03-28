@@ -1,0 +1,110 @@
+material ogre_tools/PointCloudBox
+{ 
+  technique gp
+  {
+    gpu_device_rule exclude *ati*
+  
+    pass
+    {
+      vertex_program_ref ogre_tools/pointCloudBoxWithGP_VP
+      {
+      }
+      
+      geometry_program_ref ogre_tools/PointCloudBoxGP
+      {
+      }
+      
+      fragment_program_ref ogre_tools/PointCloudBoxFP
+      {
+      }
+    }
+  }
+  
+  technique gp_selection_first_pass
+  {
+    gpu_device_rule exclude *ati*
+    scheme Pick
+    
+    pass
+    {
+      vertex_program_ref ogre_tools/pointCloudBoxWithGP_VP
+      {
+      }
+      
+      geometry_program_ref ogre_tools/PointCloudBoxGP_Selection
+      {
+      }
+      
+      fragment_program_ref ogre_tools/PointCloudBoxFP_Selection
+      {
+      }
+    }
+  }
+  
+  technique gp_selection_second_pass
+  {
+    gpu_device_rule exclude *ati*
+    scheme Pick1
+    
+    pass
+    {
+      vertex_program_ref ogre_tools/pointCloudBoxWithGP_VP
+      {
+      }
+      
+      geometry_program_ref ogre_tools/PointCloudBoxGP
+      {
+      }
+      
+      fragment_program_ref ogre_tools/PointCloudBoxFP_Selection
+      {
+      }
+    }
+  }
+   
+  technique nogp
+  {
+    pass
+    {
+      vertex_program_ref ogre_tools/PointCloudBoxVP
+      {
+      }
+      
+      fragment_program_ref ogre_tools/PointCloudBoxFP
+      {
+      }
+    }
+  } 
+  
+  technique nogp_selection_first_pass
+  {
+    scheme Pick
+    
+    pass
+    {
+      vertex_program_ref ogre_tools/PointCloudBoxVP_Selection
+      {
+      }
+      
+      fragment_program_ref ogre_tools/PointCloudBoxFP_Selection
+      {
+      }
+    }
+  }
+  
+  technique nogp_selection_second_pass
+  {
+    scheme Pick1
+    
+    pass
+    {
+      vertex_program_ref ogre_tools/PointCloudBoxVP
+      {
+      }
+      
+      fragment_program_ref ogre_tools/PointCloudBoxFP_Selection
+      {
+      }
+    }
+  }
+}

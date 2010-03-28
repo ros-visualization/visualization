@@ -24,6 +24,26 @@ pkg_check_modules(OGRE OGRE)
 include_directories( ${OGRE_INCLUDE_DIRS} )
 link_directories( ${OGRE_LIBRARY_DIRS} )
 
+# We need GTK2 and OpenGL for the wx render window
+pkg_check_modules(GTK2 gtk+-2.0)
+
+include_directories( ${GTK2_INCLUDE_DIRS} )
+add_definitions( ${GTK2_DEFINITIONS} )
+link_directories( ${GTK2_LIBRARY_DIRS} )
+
+find_package(OpenGL REQUIRED)
+include_directories( ${OPENGL_INCLUDE_DIR} )
+
+set(X11_LIBS "")
+if (UNIX AND NOT APPLE)
+  include(FindX11)
+  if (NOT X11_FOUND)
+    message(send_error "X11 not found")
+  endif(NOT X11_FOUND)
+  
+  set(X11_LIBS ${X11_LIBRARIES})
+endif(UNIX AND NOT APPLE)
+
 include_directories(src)
 
 add_subdirectory(src)

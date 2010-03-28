@@ -1,0 +1,82 @@
+vertex_program ogre_tools/PointCloudBoxVP cg
+{
+  source point_cloud_box_vp.cg
+  entry_point pointCloudBoxVP_main
+  profiles vp20 vs_2_0 arbvp1 vs_1_1
+  
+  default_params
+  {
+    param_named_auto worldviewproj worldviewproj_matrix
+    param_named_auto size custom 0
+    param_named_auto alpha custom 1
+  }
+}
+
+vertex_program ogre_tools/PointCloudBoxVP_Selection cg
+{
+  source point_cloud_box_vp.cg
+  entry_point pointCloudBoxVP_Selection_main
+  profiles vp20 vs_2_0 arbvp1 vs_1_1
+  
+  default_params
+  {
+    param_named_auto worldviewproj worldviewproj_matrix
+    param_named_auto size custom 0
+    param_named_auto pick_color custom 2
+  }
+}
+
+vertex_program ogre_tools/pointCloudBoxWithGP_VP cg
+{
+  source point_cloud_box_vp.cg
+  entry_point pointCloudBoxWithGP_VP_main
+  profiles vp20 vs_2_0 arbvp1 vs_1_1
+  
+  default_params
+  {
+    param_named_auto alpha custom 1
+  }
+}
+
+
+
+geometry_program ogre_tools/PointCloudBoxGP cg
+{
+  source point_cloud_box_gp.cg
+  entry_point pointCloudBoxGP_main
+  profiles gpu_gp gp4_gp
+  
+  default_params
+  {
+    param_named_auto worldviewproj worldviewproj_matrix
+    param_named_auto size custom 0
+  }
+}
+
+geometry_program ogre_tools/PointCloudBoxGP_Selection cg
+{
+  source point_cloud_box_gp.cg
+  entry_point pointCloudBoxGP_Selection_main
+  profiles gpu_gp gp4_gp
+  
+  default_params
+  {
+    param_named_auto worldviewproj worldviewproj_matrix
+    param_named_auto size custom 0
+    param_named_auto pick_color custom 2
+  }
+}
+
+fragment_program ogre_tools/PointCloudBoxFP cg
+{
+  source point_cloud_box_fp.cg
+  entry_point pointCloudBoxFP_main
+  profiles arbfp1 ps_2_0
+}
+
+fragment_program ogre_tools/PointCloudBoxFP_Selection cg
+{
+  source point_cloud_box_fp.cg
+  entry_point pointCloudBoxFP_Selection_main
+  profiles arbfp1 ps_2_0
+}
