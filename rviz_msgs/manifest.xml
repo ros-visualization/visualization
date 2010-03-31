@@ -1,0 +1,14 @@
+<package>
+  <description brief="rviz_msgs">
+
+     rviz_msgs
+
+  </description>
+  <author>Josh Faust</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/rviz_msgs</url>
+
+</package>
+
+

@@ -27,18 +27,16 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef RVIZ_OGRE_RENDERER_H
-#define RVIZ_OGRE_RENDERER_H
+#ifndef RVIZ_RENDER_OGRE_SCENE_H
+#define RVIZ_RENDER_OGRE_SCENE_H
 
-#include <string>
-#include <vector>
-#include <map>
-
-#include <boost/thread/thread.hpp>
-#include <boost/thread/mutex.hpp>
-
-#include <rviz/render/irenderer.h>
+#include <rviz/render/iscene.h>
 #include <rviz/uuid.h>
+
+namespace Ogre
+{
+class SceneManager;
+}
 
 namespace rviz
 {
@@ -46,59 +44,27 @@ namespace render
 {
 namespace ogre
 {
-class RenderWindow;
-class Scene;
-} // namespace ogre
 
-class IRenderLoopListener;
-
-class OgreRenderer : public IRenderer
+class Camera;
+class Scene : public IScene
 {
 public:
-  OgreRenderer(const std::string& root_path, bool enable_ogre_log);
-  ~OgreRenderer();
+  Scene(const UUID& id, Ogre::SceneManager* scene_manager);
+  ~Scene();
 
-  void start();
-  void stop();
+  virtual ICamera* createCamera(const UUID& id);
+  virtual void destroyCamera(const UUID& id);
 
-  virtual IRenderWindow* createRenderWindow(const std::string& name, const std::string& parent_window, uint32_t width, uint32_t height);
-  virtual void destroyRenderWindow(const std::string& name);
-
-  virtual void addRenderLoopListener(IRenderLoopListener* listener);
-  virtual void removeRenderLoopListener(IRenderLoopListener* listener);
-
-  virtual IScene* createScene(const UUID& id);
-  virtual void destroyScene(const UUID& id);
-  virtual IScene* getScene(const UUID& id);
-
-  virtual IRenderWindow* getRenderWindow(const std::string& name);
-
+  Ogre::SceneManager* getSceneManager() { return scene_manager_; }
+  const UUID& getID() { return id_; }
 
 private:
-  void init();
-  void renderThread();
-
-  void oneTimeInit();
-
-  boost::thread render_thread_;
-  bool running_;
-  bool first_window_created_;
-  std::string root_path_;
-  bool enable_ogre_log_;
-
-  typedef std::vector<IRenderLoopListener*> V_RenderLoopListener;
-  V_RenderLoopListener render_loop_listeners_;
-
-  typedef boost::shared_ptr<ogre::RenderWindow> RenderWindowPtr;
-  typedef std::map<std::string, RenderWindowPtr> M_RenderWindow;
-  M_RenderWindow render_windows_;
-
-  typedef boost::shared_ptr<ogre::Scene> ScenePtr;
-  typedef std::map<UUID, ScenePtr> M_Scene;
-  M_Scene scenes_;
+  UUID id_;
+  Ogre::SceneManager* scene_manager_;
 };
 
+} // namespace ogre
 } // namespace render
 } // namespace rviz
 
-#endif // RVIZ_OGRE_RENDERER_H
+#endif // RVIZ_RENDER_OGRE_SCENE_H

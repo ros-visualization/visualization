@@ -1,3 +1,4 @@
+
 /*
  * Copyright (c) 2010, Willow Garage, Inc.
  * All rights reserved.
@@ -27,78 +28,26 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef RVIZ_OGRE_RENDERER_H
-#define RVIZ_OGRE_RENDERER_H
-
-#include <string>
-#include <vector>
-#include <map>
-
-#include <boost/thread/thread.hpp>
-#include <boost/thread/mutex.hpp>
-
-#include <rviz/render/irenderer.h>
-#include <rviz/uuid.h>
+#ifndef RVIZ_RENDER_ISCENE_H
+#define RVIZ_RENDER_ISCENE_H
 
 namespace rviz
 {
+class UUID;
+
 namespace render
 {
-namespace ogre
-{
-class RenderWindow;
-class Scene;
-} // namespace ogre
 
-class IRenderLoopListener;
+class ICamera;
 
-class OgreRenderer : public IRenderer
+class IScene
 {
 public:
-  OgreRenderer(const std::string& root_path, bool enable_ogre_log);
-  ~OgreRenderer();
-
-  void start();
-  void stop();
-
-  virtual IRenderWindow* createRenderWindow(const std::string& name, const std::string& parent_window, uint32_t width, uint32_t height);
-  virtual void destroyRenderWindow(const std::string& name);
-
-  virtual void addRenderLoopListener(IRenderLoopListener* listener);
-  virtual void removeRenderLoopListener(IRenderLoopListener* listener);
-
-  virtual IScene* createScene(const UUID& id);
-  virtual void destroyScene(const UUID& id);
-  virtual IScene* getScene(const UUID& id);
-
-  virtual IRenderWindow* getRenderWindow(const std::string& name);
-
-
-private:
-  void init();
-  void renderThread();
-
-  void oneTimeInit();
-
-  boost::thread render_thread_;
-  bool running_;
-  bool first_window_created_;
-  std::string root_path_;
-  bool enable_ogre_log_;
-
-  typedef std::vector<IRenderLoopListener*> V_RenderLoopListener;
-  V_RenderLoopListener render_loop_listeners_;
-
-  typedef boost::shared_ptr<ogre::RenderWindow> RenderWindowPtr;
-  typedef std::map<std::string, RenderWindowPtr> M_RenderWindow;
-  M_RenderWindow render_windows_;
-
-  typedef boost::shared_ptr<ogre::Scene> ScenePtr;
-  typedef std::map<UUID, ScenePtr> M_Scene;
-  M_Scene scenes_;
+  virtual ICamera* createCamera(const UUID&) = 0;
+  virtual void destroyCamera(const UUID&) = 0;
 };
 
 } // namespace render
 } // namespace rviz
 
-#endif // RVIZ_OGRE_RENDERER_H
+#endif // RVIZ_RENDER_ISCENE_H

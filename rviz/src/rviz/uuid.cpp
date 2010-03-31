@@ -27,43 +27,87 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef RVIZ_OGRE_RENDER_WINDOW_H
-#define RVIZ_OGRE_RENDER_WINDOW_H
+#include "uuid.h"
 
-#include <rviz/render/irender_window.h>
+#include <rviz_msgs/UUID.h>
 
-namespace Ogre
-{
-class RenderWindow;
-class Camera;
-}
+#include <uuid/uuid.h>
+
+#include <ros/assert.h>
 
 namespace rviz
 {
-namespace render
+
+ROS_STATIC_ASSERT(sizeof(uuid_t) == 16);
+ROS_STATIC_ASSERT(sizeof(UUID) == sizeof(uuid_t));
+
+UUID UUID::Generate()
 {
-namespace ogre
+  uuid_t native;
+  uuid_generate(native);
+
+  UUID uuid;
+  memcpy(&uuid, native, sizeof(uuid));
+
+  return uuid;
+}
+
+UUID::UUID()
 {
+  data_.assign(0);
+}
 
-class RenderWindow : public IRenderWindow
+UUID::UUID(const rviz_msgs::UUID& rhs)
 {
-public:
-  RenderWindow(const std::string& name, Ogre::RenderWindow* wnd);
+  *this = rhs;
+}
 
-  virtual const std::string& getName();
-  virtual void resized(uint32_t width, uint32_t height);
+bool UUID::operator<(const UUID& rhs) const
+{
+  return memcmp(this, &rhs, sizeof(rhs)) < 0;
+}
 
-  Ogre::RenderWindow* getOgreRenderWindow() { return render_window_; }
+bool UUID::operator==(const UUID& rhs) const
+{
+  return memcmp(this, &rhs, sizeof(rhs)) == 0;
+}
 
-private:
-  std::string name_;
-  Ogre::RenderWindow* render_window_;
+UUID& UUID::operator=(const rviz_msgs::UUID& rhs)
+{
+  std::copy(rhs.data.begin(), rhs.data.end(), data_.begin());
 
-  Ogre::Camera* cam_; // TEMP: camera should really get attached separately
-};
+  return *this;
+}
 
-} // namespace ogre
-} // namespace render
+UUID::operator rviz_msgs::UUID() const
+{
+  rviz_msgs::UUID msg;
+  std::copy(data_.begin(), data_.end(), msg.data.begin());
+  return msg;
+}
+
+std::ostream& operator<<(std::ostream& o, const UUID& u)
+{
+  uuid_t native;
+  memcpy(native, &u, sizeof(native));
+  char buf[37]; // UUID is 36 bytes + NULL terminator
+  uuid_unparse(native, buf);
+  o << buf;
+
+  return o;
+}
+
+std::istream& operator>>(std::istream& i, UUID& u)
+{
+  char buf[37];
+  i.get(buf, 36);
+  buf[36] = 0;
+
+  uuid_t native;
+  uuid_parse(buf, native);
+  memcpy(&u, native, sizeof(u));
+
+  return i;
+}
+
 } // namespace rviz
-
-#endif // RVIZ_OGRE_RENDER_WINDOW_H

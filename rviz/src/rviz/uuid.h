@@ -27,43 +27,43 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef RVIZ_OGRE_RENDER_WINDOW_H
-#define RVIZ_OGRE_RENDER_WINDOW_H
+#ifndef RVIZ_UUID_H
+#define RVIZ_UUID_H
 
-#include <rviz/render/irender_window.h>
+#include <boost/array.hpp>
+#include <ros/types.h>
+#include <ros/message_traits.h>
+#include <iostream>
 
-namespace Ogre
+namespace rviz_msgs
 {
-class RenderWindow;
-class Camera;
+ROS_DECLARE_MESSAGE(UUID);
 }
 
 namespace rviz
 {
-namespace render
-{
-namespace ogre
-{
 
-class RenderWindow : public IRenderWindow
+class UUID
 {
 public:
-  RenderWindow(const std::string& name, Ogre::RenderWindow* wnd);
+  static UUID Generate();
 
-  virtual const std::string& getName();
-  virtual void resized(uint32_t width, uint32_t height);
+  UUID();
+  UUID(const rviz_msgs::UUID&);
 
-  Ogre::RenderWindow* getOgreRenderWindow() { return render_window_; }
+  UUID& operator=(const rviz_msgs::UUID&);
+  operator rviz_msgs::UUID() const;
+
+  bool operator<(const UUID& rhs) const;
+  bool operator==(const UUID& rhs) const;
 
 private:
-  std::string name_;
-  Ogre::RenderWindow* render_window_;
-
-  Ogre::Camera* cam_; // TEMP: camera should really get attached separately
+  boost::array<uint8_t, 16> data_;
 };
 
-} // namespace ogre
-} // namespace render
+std::ostream& operator<<(std::ostream& o, const UUID& u);
+std::istream& operator>>(std::istream& i, UUID& u);
+
 } // namespace rviz
 
-#endif // RVIZ_OGRE_RENDER_WINDOW_H
+#endif // RVIZ_UUID_H

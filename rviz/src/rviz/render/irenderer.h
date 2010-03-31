@@ -32,11 +32,14 @@
 
 namespace rviz
 {
+class UUID;
+
 namespace render
 {
 
 class IRenderLoopListener;
 class IRenderWindow;
+class IScene;
 
 class IRenderer
 {
@@ -44,6 +47,10 @@ public:
   virtual IRenderWindow* createRenderWindow(const std::string& name, const std::string& parent_window, uint32_t width, uint32_t height) = 0;
   virtual void destroyRenderWindow(const std::string& name) = 0;
   virtual IRenderWindow* getRenderWindow(const std::string& name) = 0;
+
+  virtual IScene* createScene(const UUID& id) = 0;
+  virtual void destroyScene(const UUID& id) = 0;
+  virtual IScene* getScene(const UUID& id) = 0;
 
   virtual void addRenderLoopListener(IRenderLoopListener* listener) = 0;
   virtual void removeRenderLoopListener(IRenderLoopListener* listener) = 0;

@@ -29,6 +29,7 @@
 
 #include "ogre_renderer.h"
 #include "render_window.h"
+#include "scene.h"
 #include <rviz/render/irender_loop_listener.h>
 
 #include <OGRE/OgreRoot.h>
@@ -37,6 +38,8 @@
 #include <OGRE/OgreEntity.h>
 #include <OGRE/OgreCamera.h>
 #include <OGRE/OgreSceneManager.h>
+
+#include <ros/console.h>
 
 namespace rviz
 {
@@ -203,6 +206,50 @@ void OgreRenderer::removeRenderLoopListener(IRenderLoopListener* listener)
   {
     render_loop_listeners_.erase(it);
   }
+}
+
+IScene* OgreRenderer::createScene(const UUID& id)
+{
+  if (scenes_.count(id) > 0)
+  {
+    ROS_WARN_STREAM("UUID " << id << " collided when creating a scene!");
+    return 0;
+  }
+
+  Ogre::Root* root = Ogre::Root::getSingletonPtr();
+  Ogre::SceneManager* scene_manager = root->createSceneManager(Ogre::ST_GENERIC);
+  ScenePtr scene(new ogre:: Scene(id, scene_manager));
+  scenes_[id] = scene;
+
+  return scene.get();
+}
+
+void OgreRenderer::destroyScene(const UUID& id)
+{
+  M_Scene::iterator it = scenes_.find(id);
+  if (it == scenes_.end())
+  {
+    std::stringstream ss;
+    ss << "Scene " << id << " does not exist!";
+    throw std::runtime_error(ss.str());
+  }
+
+  const ScenePtr& scene = it->second;
+  Ogre::Root* root = Ogre::Root::getSingletonPtr();
+  root->destroySceneManager(scene->getSceneManager());
+}
+
+IScene* OgreRenderer::getScene(const UUID& id)
+{
+  M_Scene::iterator it = scenes_.find(id);
+  if (it == scenes_.end())
+  {
+    std::stringstream ss;
+    ss << "Scene " << id << " does not exist!";
+    throw std::runtime_error(ss.str());
+  }
+
+  return it->second.get();
 }
 
 void OgreRenderer::renderThread()
