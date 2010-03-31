@@ -28,6 +28,8 @@
  */
 
 #include "ogre_renderer.h"
+#include "render_window.h"
+#include <rviz/render/irender_loop_listener.h>
 
 #include <OGRE/OgreRoot.h>
 #include <OGRE/OgreRenderSystem.h>
@@ -45,20 +47,32 @@ OgreRenderer::OgreRenderer(const std::string& root_path, bool enable_ogre_log)
 : running_(true)
 , first_window_created_(false)
 , root_path_(root_path)
+, enable_ogre_log_(enable_ogre_log)
 {
-  render_thread_ = boost::thread(&OgreRenderer::renderThread, this, enable_ogre_log);
 }
 
 OgreRenderer::~OgreRenderer()
 {
-  running_ = false;
-  render_thread_.join();
+  stop();
 }
 
-void OgreRenderer::init(bool enable_ogre_log)
+void OgreRenderer::start()
+{
+  render_thread_ = boost::thread(&OgreRenderer::renderThread, this);
+}
+
+void OgreRenderer::stop()
+{
+  running_ = false;
+  render_thread_.join();
+
+  delete Ogre::Root::getSingletonPtr();
+}
+
+void OgreRenderer::init()
 {
   Ogre::LogManager* log_manager = new Ogre::LogManager();
-  log_manager->createLog( "Ogre.log", false, false, !enable_ogre_log );
+  log_manager->createLog( "Ogre.log", false, false, !enable_ogre_log_ );
 
   std::string plugin_cfg = "/etc/OGRE/plugins.cfg";
   bool has_plugin_cfg = false;
@@ -121,12 +135,18 @@ void OgreRenderer::oneTimeInit()
   Ogre::ResourceGroupManager::getSingleton().initialiseAllResourceGroups();
 }
 
-void OgreRenderer::createRenderWindow(const std::string& name, const std::string& parent_window)
+IRenderWindow* OgreRenderer::createRenderWindow(const std::string& name, const std::string& parent_window, uint32_t width, uint32_t height)
 {
+  if (render_windows_.count(name) > 0)
+  {
+    throw std::runtime_error("Render window of name [" + name + "] already exists");
+  }
+
   Ogre::Root* root = Ogre::Root::getSingletonPtr();
   Ogre::NameValuePairList params;
   params["parentWindowHandle"] = parent_window;
-  Ogre::RenderWindow* win2 = root->createRenderWindow(name, 1024, 768, false, &params);
+
+  Ogre::RenderWindow* win = root->createRenderWindow(name, width, height, false, &params);
 
   if (!first_window_created_)
   {
@@ -134,41 +154,68 @@ void OgreRenderer::createRenderWindow(const std::string& name, const std::string
     first_window_created_ = true;
   }
 
-  Ogre::SceneManager* man = root->createSceneManager(Ogre::ST_GENERIC, "primary");
-  Ogre::Camera* cam = man->createCamera("cam1");
-  Ogre::Entity* ent = man->createEntity("sphere", "sphere.mesh");
-  ent->setMaterialName("BaseWhiteNoLighting");
-  Ogre::SceneNode* node = man->getRootSceneNode()->createChildSceneNode();
-  node->attachObject(ent);
-  node->setVisible(true);
-  node->setPosition(0, 0, 0);
+  win->setActive(true);
+  win->setVisible(true);
+  win->setAutoUpdated(true);
 
-  win2->addViewport(cam);
-  win2->setActive(true);
-  win2->setVisible(true);
-  win2->setAutoUpdated(true);
+  RenderWindowPtr ptr(new ogre::RenderWindow(name, win));
+  render_windows_[name] = ptr;
 
-  cam->setPosition(0, 15, 15);
-  cam->lookAt(0, 0, 0);
-  cam->setNearClipDistance(0.01);
+  return ptr.get();
 }
 
-void OgreRenderer::renderThread(bool enable_ogre_log)
+void OgreRenderer::destroyRenderWindow(const std::string& name)
 {
-  init(enable_ogre_log);
+  M_RenderWindow::iterator it = render_windows_.find(name);
+  if (it == render_windows_.end())
+  {
+    throw std::runtime_error("Tried to destroy render window [" + name + "] which does not exist");
+  }
+
+  const RenderWindowPtr& win = it->second;
+
+  Ogre::Root* root = Ogre::Root::getSingletonPtr();
+  Ogre::RenderWindow* ogre_win = win->getOgreRenderWindow();
+  ogre_win->destroy();
+  root->getRenderSystem()->destroyRenderWindow(ogre_win->getName());
+}
+
+IRenderWindow* OgreRenderer::getRenderWindow(const std::string& name)
+{
+  M_RenderWindow::iterator it = render_windows_.find(name);
+  if (it == render_windows_.end())
+  {
+    throw std::runtime_error("Render window [" + name + "] does not exist");
+  }
+
+  return it->second.get();
+}
+
+void OgreRenderer::addRenderLoopListener(IRenderLoopListener* listener)
+{
+  render_loop_listeners_.push_back(listener);
+}
+
+void OgreRenderer::removeRenderLoopListener(IRenderLoopListener* listener)
+{
+  V_RenderLoopListener::iterator it = std::find(render_loop_listeners_.begin(), render_loop_listeners_.end(), listener);
+  if (it != render_loop_listeners_.end())
+  {
+    render_loop_listeners_.erase(it);
+  }
+}
+
+void OgreRenderer::renderThread()
+{
+  init();
 
   while (running_)
   {
-    {
-      boost::mutex::scoped_lock lock(test_mutex);
-      if (!test.empty())
-      {
-        createRenderWindow(test, test);
-        test.clear();
-      }
-    }
+    std::for_each(render_loop_listeners_.begin(), render_loop_listeners_.end(), boost::bind(&IRenderLoopListener::preRender, _1, this));
 
     Ogre::Root::getSingleton().renderOneFrame();
+
+    std::for_each(render_loop_listeners_.begin(), render_loop_listeners_.end(), boost::bind(&IRenderLoopListener::postRender, _1, this));
   }
 
   delete Ogre::Root::getSingletonPtr();

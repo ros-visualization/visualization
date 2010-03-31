@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Willow Garage, Inc.
+ * Copyright (c) 2010, Willow Garage, Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,29 +27,21 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "convert.h"
+#ifndef RVIZ_ROS_CLIENT_INIT_H
+#define RVIZ_ROS_CLIENT_INIT_H
+
+#include "../forwards.h"
 
 namespace rviz
 {
-
-static Ogre::Matrix3 fromEulersYXZ(float y, float x, float z)
+namespace ros_client
 {
-  Ogre::Matrix3 m;
-  m.FromEulerAnglesYXZ(Ogre::Degree(y), Ogre::Degree(x), Ogre::Degree(z));
-  return m;
-}
 
-static Ogre::Quaternion matToQuat(const Ogre::Matrix3& mat)
-{
-  Ogre::Quaternion q;
-  q.FromRotationMatrix(mat);
-  return q;
-}
+void initClient(const std::string& server_namespace);
+ros::NodeHandle& getNodeHandle();
 
-Ogre::Matrix3 g_ogre_to_robot_matrix(fromEulersYXZ(-90, 0, -90));
-Ogre::Matrix3 g_robot_to_ogre_matrix(g_ogre_to_robot_matrix.Inverse());
+} // namespace ros
+} // namespace rviz
 
-Ogre::Quaternion g_ogre_to_robot_quat(matToQuat(g_ogre_to_robot_matrix));
-Ogre::Quaternion g_robot_to_ogre_quat(matToQuat(g_robot_to_ogre_matrix));
+#endif // RVIZ_ROS_CLIENT_INIT_H
 
-}

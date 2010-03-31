@@ -44,6 +44,8 @@ namespace rviz
 {
 namespace render
 {
+namespace ogre
+{
 
 extern Ogre::Matrix3 g_ogre_to_robot_matrix;
 extern Ogre::Matrix3 g_robot_to_ogre_matrix;
@@ -55,7 +57,7 @@ extern Ogre::Quaternion g_robot_to_ogre_quat;
  * \brief Convert a point from robot space to ogre space
  * @param point Converts this point in-place
  */
-inline void robotToOgre( Ogre::Vector3& point )
+inline void fromRobot( Ogre::Vector3& point )
 {
   point = g_robot_to_ogre_matrix * point;
 }
@@ -64,7 +66,7 @@ inline void robotToOgre( Ogre::Vector3& point )
  * \brief Convert a scale xyz from robot space to ogre space
  * @param scale Converts this scale xyz in-place
  */
-inline void scaleRobotToOgre( Ogre::Vector3& scale )
+inline void scaleFromRobot( Ogre::Vector3& scale )
 {
   scale = g_robot_to_ogre_matrix * scale;
 
@@ -77,7 +79,7 @@ inline void scaleRobotToOgre( Ogre::Vector3& scale )
  * \brief Convert a quaternion from robot space to ogre space
  * @param quat Converts this quaternion in-place
  */
-inline void robotToOgre( Ogre::Quaternion& quat )
+inline void fromRobot( Ogre::Quaternion& quat )
 {
   quat = g_robot_to_ogre_quat * quat;
 }
@@ -86,7 +88,7 @@ inline void robotToOgre( Ogre::Quaternion& quat )
  * \brief Convert a matrix3 from robot space to ogre space
  * @param mat Converts this matrix in-place
  */
-inline void robotToOgre( Ogre::Matrix3& mat )
+inline void fromRobot( Ogre::Matrix3& mat )
 {
   mat = g_robot_to_ogre_matrix * mat;
 }
@@ -96,7 +98,7 @@ inline void robotToOgre( Ogre::Matrix3& mat )
  * \brief Convert a point from ogre space to robot space
  * @param point Converts this point in-place
  */
-inline void ogreToRobot( Ogre::Vector3& point )
+inline void toRobot( Ogre::Vector3& point )
 {
   point = g_ogre_to_robot_matrix * point;
 }
@@ -105,7 +107,7 @@ inline void ogreToRobot( Ogre::Vector3& point )
  * \brief Convert a scale xyz from ogre space to robot space
  * @param scale Converts this scale xyz in-place
  */
-inline void scaleOgreToRobot( Ogre::Vector3& scale )
+inline void scaleToRobot( Ogre::Vector3& scale )
 {
   scale = g_ogre_to_robot_matrix * scale;
 
@@ -118,7 +120,7 @@ inline void scaleOgreToRobot( Ogre::Vector3& scale )
  * \brief Convert a quaternion from ogre space to robot space
  * @param quat Converts this quaternion in-place
  */
-inline void ogreToRobot( Ogre::Quaternion& quat )
+inline void toRobot( Ogre::Quaternion& quat )
 {
   quat = g_ogre_to_robot_quat * quat;
 }
@@ -127,7 +129,7 @@ inline void ogreToRobot( Ogre::Quaternion& quat )
  * \brief Convert a matrix3 from ogre space to robot space
  * @param mat Converts this matrix in-place
  */
-inline void ogreToRobot( Ogre::Matrix3& mat )
+inline void toRobot( Ogre::Matrix3& mat )
 {
   mat = g_ogre_to_robot_matrix * mat;
 }
@@ -139,15 +141,16 @@ inline void ogreToRobot( Ogre::Matrix3& mat )
  * @param roll Robot-space roll value
  * @return Ogre-space rotation matrix
  */
-inline Ogre::Matrix3 ogreMatrixFromRobotEulers( float yaw, float pitch, float roll )
+inline Ogre::Matrix3 matrixFromRobotEulers( float yaw, float pitch, float roll )
 {
   Ogre::Matrix3 mat;
   mat.FromEulerAnglesZYX( Ogre::Radian( yaw ), Ogre::Radian( pitch ), Ogre::Radian( roll ) );
-  robotToOgre( mat );
+  fromRobot( mat );
 
   return mat;
 }
 
+} // namespace ogre
 } // namespace render
 } // namespace rviz
 #endif

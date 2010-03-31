@@ -27,42 +27,38 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef RVIZ_OGRE_RENDERER_H
-#define RVIZ_OGRE_RENDERER_H
+#include "render_window.h"
 
-#include <string>
-
-#include <boost/thread/thread.hpp>
-#include <boost/thread/mutex.hpp>
+#include <OGRE/OgreRenderWindow.h>
 
 namespace rviz
 {
 namespace render
 {
-class OgreRenderer
+namespace ogre
 {
-public:
-  OgreRenderer(const std::string& root_path, bool enable_ogre_log);
-  ~OgreRenderer();
 
-  boost::mutex test_mutex;
-  std::string test;
+RenderWindow::RenderWindow(const std::string& name, Ogre::RenderWindow* wnd)
+: name_(name)
+, render_window_(wnd)
+{
+}
 
-private:
-  void init(bool enable_ogre_log);
-  void renderThread(bool enable_ogre_log);
+const std::string& RenderWindow::getName()
+{
+  return name_;
+}
 
-  void oneTimeInit();
+void RenderWindow::resized(uint32_t width, uint32_t height)
+{
+  // Resize tries to actually resize the window on OSX, which can cause unfortunate results
+#if !defined(__APPLE__)
+  render_window_->resize(width, height);
+#endif
 
-  void createRenderWindow(const std::string& name, const std::string& parent_window);
+  render_window_->windowMovedOrResized();
+}
 
-  boost::thread render_thread_;
-  bool running_;
-  bool first_window_created_;
-  std::string root_path_;
-};
-
+} // namespace ogre
 } // namespace render
 } // namespace rviz
-
-#endif // RVIZ_OGRE_RENDERER_H

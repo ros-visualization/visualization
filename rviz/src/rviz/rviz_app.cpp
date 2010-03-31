@@ -27,12 +27,19 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "render/ogre/ogre_renderer.h"
+#include "ros/server/renderer_ros.h"
+#include "ros/client/init.h"
+#include "ros/client/render_window_client.h"
+
 #include <ros/package.h>
 #include <ros/time.h>
 
-#include "render/ogre_renderer.h"
-
 #include <wx/wx.h>
+
+#include <ros/time.h>
+#include <ros/ros.h>
+#include <rviz_msgs/CreateRenderWindow.h>
 
 #ifdef __WXGTK__
 #include <gdk/gdk.h>
@@ -41,8 +48,6 @@
 #include <wx/gtk/win_gtk.h>
 #include <GL/glx.h>
 #endif
-
-#include <ros/time.h>
 
 #ifdef __WXMAC__
 #include <ApplicationServices/ApplicationServices.h>
@@ -87,21 +92,42 @@ class MyFrame : public wxFrame
 public:
   MyFrame(wxWindow* parent)
   : wxFrame(parent, -1, _("rviz"), wxDefaultPosition, wxSize(800,600), wxDEFAULT_FRAME_STYLE)
+  , private_nh_("~")
   , renderer_(ros::package::getPath(ROS_PACKAGE_NAME), true)
+  , renderer_ros_(&renderer_, private_nh_)
   {
-    boost::mutex::scoped_lock lock(renderer_.test_mutex);
-    renderer_.test = getOgreHandle(this);
+    renderer_.start();
+
+    window_client_.reset(new ros_client::RenderWindowClient("primary", getOgreHandle(this), 800, 600));
+
+    Connect(wxEVT_SIZE, wxSizeEventHandler(MyFrame::onSize));
+  }
+
+  ~MyFrame()
+  {
+    window_client_->destroy();
+
+    renderer_.stop();
+  }
+
+  void onSize(wxSizeEvent& evt)
+  {
+    window_client_->resized(evt.GetSize().GetWidth(), evt.GetSize().GetHeight());
   }
 
 
 private:
+  ros::NodeHandle private_nh_;
   render::OgreRenderer renderer_;
+  RendererROS renderer_ros_;
+  boost::shared_ptr<ros_client::RenderWindowClient> window_client_;
 };
 
 // our normal wxApp-derived class, as usual
 class MyApp : public wxApp
 {
 public:
+  char** local_argv_;
 
   bool OnInit()
   {
@@ -111,6 +137,16 @@ public:
     TransformProcessType(&PSN,kProcessTransformToForegroundApplication);
     SetFrontProcess(&PSN);
 #endif
+
+    // create our own copy of argv, with regular char*s.
+    local_argv_ =  new char*[ argc ];
+    for ( int i = 0; i < argc; ++i )
+    {
+      local_argv_[ i ] = strdup( wxString( argv[ i ] ).mb_str() );
+    }
+
+    ros::init(argc, local_argv_, "rviz", ros::init_options::NoSigintHandler);
+    ros_client::initClient(ros::names::resolve("~"));
 
     wxFrame* frame = new MyFrame(NULL);
     SetTopWindow(frame);
