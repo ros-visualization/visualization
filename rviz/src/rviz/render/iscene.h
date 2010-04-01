@@ -45,6 +45,7 @@ class IScene
 public:
   virtual ICamera* createCamera(const UUID&) = 0;
   virtual void destroyCamera(const UUID&) = 0;
+  virtual ICamera* getCamera(const UUID&) = 0;
 };
 
 } // namespace render

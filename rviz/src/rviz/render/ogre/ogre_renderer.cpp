@@ -30,6 +30,8 @@
 #include "ogre_renderer.h"
 #include "render_window.h"
 #include "scene.h"
+#include "camera.h"
+
 #include <rviz/render/irender_loop_listener.h>
 
 #include <OGRE/OgreRoot.h>
@@ -161,7 +163,7 @@ IRenderWindow* OgreRenderer::createRenderWindow(const std::string& name, const s
   win->setVisible(true);
   win->setAutoUpdated(true);
 
-  RenderWindowPtr ptr(new ogre::RenderWindow(name, win));
+  RenderWindowPtr ptr(new ogre::RenderWindow(name, win, this));
   render_windows_[name] = ptr;
 
   return ptr.get();
@@ -250,6 +252,23 @@ IScene* OgreRenderer::getScene(const UUID& id)
   }
 
   return it->second.get();
+}
+
+ogre::Camera* OgreRenderer::getCamera(const UUID& id)
+{
+  M_Scene::iterator it = scenes_.begin();
+  M_Scene::iterator end = scenes_.end();
+  for (; it != end; ++it)
+  {
+    const ScenePtr& scene = it->second;
+    ICamera* cam = scene->getCamera(id);
+    if (cam)
+    {
+      return static_cast<ogre::Camera*>(cam);
+    }
+  }
+
+  return 0;
 }
 
 void OgreRenderer::renderThread()

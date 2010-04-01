@@ -40,6 +40,9 @@ namespace ros_client
 void initClient(const std::string& server_namespace);
 ros::NodeHandle& getNodeHandle();
 
+class Scene;
+Scene createScene();
+
 } // namespace ros
 } // namespace rviz
 

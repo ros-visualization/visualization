@@ -79,6 +79,15 @@ UUID& UUID::operator=(const rviz_msgs::UUID& rhs)
   return *this;
 }
 
+std::string UUID::toString() const
+{
+  uuid_t native;
+  memcpy(native, this, sizeof(native));
+  char buf[37]; // UUID is 36 bytes + NULL terminator
+  uuid_unparse(native, buf);
+  return std::string(buf, 36);
+}
+
 UUID::operator rviz_msgs::UUID() const
 {
   rviz_msgs::UUID msg;
@@ -88,12 +97,7 @@ UUID::operator rviz_msgs::UUID() const
 
 std::ostream& operator<<(std::ostream& o, const UUID& u)
 {
-  uuid_t native;
-  memcpy(native, &u, sizeof(native));
-  char buf[37]; // UUID is 36 bytes + NULL terminator
-  uuid_unparse(native, buf);
-  o << buf;
-
+  o << u.toString();
   return o;
 }
 

@@ -57,6 +57,8 @@ public:
   bool operator<(const UUID& rhs) const;
   bool operator==(const UUID& rhs) const;
 
+  std::string toString() const;
+
 private:
   boost::array<uint8_t, 16> data_;
 };

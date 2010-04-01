@@ -1,0 +1,4 @@
+UUID id
+---
+bool success
+string error_msg

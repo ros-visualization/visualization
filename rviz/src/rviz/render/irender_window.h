@@ -35,6 +35,8 @@
 
 namespace rviz
 {
+class UUID;
+
 namespace render
 {
 
@@ -43,6 +45,7 @@ class IRenderWindow
 public:
   virtual const std::string& getName() = 0;
   virtual void resized(uint32_t width, uint32_t height) = 0;
+  virtual void attachCamera(const UUID& cam_id) = 0;
 };
 
 } // namespace render

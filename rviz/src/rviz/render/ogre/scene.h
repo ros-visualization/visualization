@@ -33,6 +33,10 @@
 #include <rviz/render/iscene.h>
 #include <rviz/uuid.h>
 
+#include <map>
+
+#include <boost/shared_ptr.hpp>
+
 namespace Ogre
 {
 class SceneManager;
@@ -46,6 +50,8 @@ namespace ogre
 {
 
 class Camera;
+typedef boost::shared_ptr<Camera> CameraPtr;
+
 class Scene : public IScene
 {
 public:
@@ -54,6 +60,7 @@ public:
 
   virtual ICamera* createCamera(const UUID& id);
   virtual void destroyCamera(const UUID& id);
+  virtual ICamera* getCamera(const UUID& id);
 
   Ogre::SceneManager* getSceneManager() { return scene_manager_; }
   const UUID& getID() { return id_; }
@@ -61,6 +68,9 @@ public:
 private:
   UUID id_;
   Ogre::SceneManager* scene_manager_;
+
+  typedef std::map<UUID, CameraPtr> M_Camera;
+  M_Camera cameras_;
 };
 
 } // namespace ogre

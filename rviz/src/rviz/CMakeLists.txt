@@ -5,9 +5,12 @@ rosbuild_add_library(rviz_renderer uuid.cpp
 								   render/ogre/convert.cpp 
 								   render/ogre/ogre_renderer.cpp
 								   render/ogre/render_window.cpp
+								   render/ogre/camera.cpp
 								   render/ogre/scene.cpp
 								   ros/server/renderer_ros.cpp
-								   ros/client/render_window_client.cpp
+								   ros/client/render_window.cpp
+								   ros/client/scene.cpp
+								   ros/client/camera.cpp
 								   ros/client/init.cpp)
 target_link_libraries(rviz_renderer ${wxWidgets_LIBRARIES} ${OGRE_LIBRARIES})
 rosbuild_link_boost(rviz_renderer thread signals filesystem system program_options)

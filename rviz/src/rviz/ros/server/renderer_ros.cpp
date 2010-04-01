@@ -30,7 +30,10 @@
 #include "renderer_ros.h"
 #include <rviz/render/irenderer.h>
 #include <rviz/render/irender_window.h>
+#include <rviz/render/iscene.h>
+#include <rviz/render/icamera.h>
 #include <rviz/render/irender_loop_listener.h>
+#include <rviz/uuid.h>
 
 #include <ros/ros.h>
 #include <ros/callback_queue.h>
@@ -38,6 +41,12 @@
 #include <rviz_msgs/CreateRenderWindow.h>
 #include <rviz_msgs/DestroyRenderWindow.h>
 #include <rviz_msgs/RenderWindowCommand.h>
+
+#include <rviz_msgs/CreateCamera.h>
+#include <rviz_msgs/DestroyCamera.h>
+
+#include <rviz_msgs/CreateScene.h>
+#include <rviz_msgs/DestroyScene.h>
 
 namespace rviz
 {
@@ -70,7 +79,12 @@ RendererROS::RendererROS(render::IRenderer* renderer, const ros::NodeHandle& nh)
   srvs_.push_back(ServiceServerPtr(new ros::ServiceServer(nh_->advertiseService("render_window/create", &RendererROS::onCreateRenderWindow, this))));
   srvs_.push_back(ServiceServerPtr(new ros::ServiceServer(nh_->advertiseService("render_window/destroy", &RendererROS::onDestroyRenderWindow, this))));
 
-  command_sub_.reset(new ros::Subscriber(nh_->subscribe("render_window/command", 0, &RendererROS::onRenderWindowCommand, this)));
+  srvs_.push_back(ServiceServerPtr(new ros::ServiceServer(nh_->advertiseService("camera/create", &RendererROS::onCreateCamera, this))));
+  srvs_.push_back(ServiceServerPtr(new ros::ServiceServer(nh_->advertiseService("camera/destroy", &RendererROS::onDestroyCamera, this))));
+  srvs_.push_back(ServiceServerPtr(new ros::ServiceServer(nh_->advertiseService("scene/create", &RendererROS::onCreateScene, this))));
+  srvs_.push_back(ServiceServerPtr(new ros::ServiceServer(nh_->advertiseService("scene/destroy", &RendererROS::onDestroyScene, this))));
+
+  subs_.push_back(SubscriberPtr(new ros::Subscriber(nh_->subscribe("render_window/command", 0, &RendererROS::onRenderWindowCommand, this))));
 
   renderer_->addRenderLoopListener(render_loop_listener_.get());
 }
@@ -123,6 +137,9 @@ void RendererROS::onRenderWindowCommand(const rviz_msgs::RenderWindowCommandCons
     case rviz_msgs::RenderWindowCommand::RESIZED:
       wnd->resized(msg->resized.width, msg->resized.height);
       break;
+    case rviz_msgs::RenderWindowCommand::ATTACH_CAMERA:
+      wnd->attachCamera(msg->attach_camera.id);
+      break;
     }
   }
   catch (std::exception& e)
@@ -130,5 +147,88 @@ void RendererROS::onRenderWindowCommand(const rviz_msgs::RenderWindowCommandCons
 
   }
 }
+
+bool RendererROS::onCreateCamera(rviz_msgs::CreateCameraRequest& req, rviz_msgs::CreateCameraResponse& res)
+{
+  try
+  {
+    render::IScene* scene = renderer_->getScene(req.scene_id);
+    if (!scene)
+    {
+      throw std::runtime_error("Could not find scene [" + UUID(req.scene_id).toString() + "]");
+    }
+
+    scene->createCamera(req.camera_id);
+    res.success = true;
+  }
+  catch (std::exception& e)
+  {
+    res.success = false;
+    res.error_msg = e.what();
+  }
+
+  return true;
+}
+
+bool RendererROS::onDestroyCamera(rviz_msgs::DestroyCameraRequest& req, rviz_msgs::DestroyCameraResponse& res)
+{
+  try
+  {
+    render::IScene* scene = renderer_->getScene(req.scene_id);
+    if (!scene)
+    {
+      throw std::runtime_error("Could not find scene [" + UUID(req.scene_id).toString() + "]");
+    }
+
+    scene->destroyCamera(req.camera_id);
+
+    res.success = true;
+  }
+  catch (std::exception& e)
+  {
+    res.success = false;
+    res.error_msg = e.what();
+  }
+
+  return true;
+}
+
+bool RendererROS::onCreateScene(rviz_msgs::CreateSceneRequest& req, rviz_msgs::CreateSceneResponse& res)
+{
+  try
+  {
+    render::IScene* scene = renderer_->createScene(req.id);
+    if (!scene)
+    {
+      throw std::runtime_error("Could not create scene [" + UUID(req.id).toString() + "]");
+    }
+
+    res.success = true;
+  }
+  catch (std::exception& e)
+  {
+    res.success = false;
+    res.error_msg = e.what();
+  }
+
+  return true;
+}
+
+bool RendererROS::onDestroyScene(rviz_msgs::DestroySceneRequest& req, rviz_msgs::DestroySceneResponse& res)
+{
+  try
+  {
+    renderer_->destroyScene(req.id);
+    res.success = true;
+  }
+  catch (std::exception& e)
+  {
+    res.success = false;
+    res.error_msg = e.what();
+  }
+
+  return true;
+}
+
 
 } // namespace rviz

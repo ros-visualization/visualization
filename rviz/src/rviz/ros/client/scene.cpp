@@ -27,56 +27,49 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "render_window.h"
+#include "scene.h"
 #include "camera.h"
-#include "ogre_renderer.h"
+#include "init.h"
 
-#include <OGRE/OgreRenderWindow.h>
-
-#include <ros/assert.h>
+#include <ros/ros.h>
+#include <rviz_msgs/CreateCamera.h>
 
 namespace rviz
 {
-namespace render
-{
-namespace ogre
+namespace ros_client
 {
 
-RenderWindow::RenderWindow(const std::string& name, Ogre::RenderWindow* wnd, OgreRenderer* rend)
-: name_(name)
-, render_window_(wnd)
-, renderer_(rend)
-, cam_(0)
+Scene::Scene()
 {
 }
 
-const std::string& RenderWindow::getName()
+Scene::Scene(const UUID& id)
+: Object(id)
 {
-  return name_;
 }
 
-void RenderWindow::resized(uint32_t width, uint32_t height)
+Camera Scene::createCamera()
 {
-  // Resize tries to actually resize the window on OSX, which can cause unfortunate results
-#if !defined(__APPLE__)
-  render_window_->resize(width, height);
-#endif
+  ros::ServiceClient client = getNodeHandle().serviceClient<rviz_msgs::CreateCameraRequest, rviz_msgs::CreateCameraResponse>("renderer/camera/create");
 
-  render_window_->windowMovedOrResized();
-}
+  rviz_msgs::CreateCamera srv;
 
-void RenderWindow::attachCamera(const UUID& id)
-{
-  if (cam_)
+  UUID id = UUID::Generate();
+  srv.request.scene_id = getID();
+  srv.request.camera_id = id;
+
+  if (!client || !client.call(srv))
   {
-    render_window_->removeAllViewports();
+    throw std::runtime_error("Could not call service [" + client.getService() + "]");
   }
 
-  Camera* cam = renderer_->getCamera(id);
-  ROS_ASSERT(cam);
-  render_window_->addViewport(cam->getOgreCamera());
+  if (!srv.response.success)
+  {
+    throw std::runtime_error("Failed to create camera [" + id.toString() + "]: " + srv.response.error_msg);
+  }
+
+  return Camera(id, getID());
 }
 
-} // namespace ogre
-} // namespace render
+} // namespace ros_client
 } // namespace rviz

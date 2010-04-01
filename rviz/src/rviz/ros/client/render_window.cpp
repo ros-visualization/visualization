@@ -27,8 +27,9 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "render_window_client.h"
+#include "render_window.h"
 #include "init.h"
+#include "camera.h"
 
 #include <ros/ros.h>
 
@@ -41,7 +42,7 @@ namespace rviz
 namespace ros_client
 {
 
-RenderWindowClient::RenderWindowClient(const std::string& name, const std::string& parent_window, uint32_t width, uint32_t height)
+RenderWindow::RenderWindow(const std::string& name, const std::string& parent_window, uint32_t width, uint32_t height)
 : name_(name)
 , destroyed_(false)
 {
@@ -64,12 +65,12 @@ RenderWindowClient::RenderWindowClient(const std::string& name, const std::strin
   pub_.reset(new ros::Publisher(getNodeHandle().advertise<rviz_msgs::RenderWindowCommand>("renderer/render_window/command", 1)));
 }
 
-RenderWindowClient::~RenderWindowClient()
+RenderWindow::~RenderWindow()
 {
   destroy();
 }
 
-void RenderWindowClient::destroy()
+void RenderWindow::destroy()
 {
   if (!destroyed_)
   {
@@ -90,7 +91,7 @@ void RenderWindowClient::destroy()
   }
 }
 
-void RenderWindowClient::resized(uint32_t width, uint32_t height)
+void RenderWindow::resized(uint32_t width, uint32_t height)
 {
   rviz_msgs::RenderWindowCommandPtr cmd(new rviz_msgs::RenderWindowCommand);
   cmd->type = rviz_msgs::RenderWindowCommand::RESIZED;
@@ -98,6 +99,16 @@ void RenderWindowClient::resized(uint32_t width, uint32_t height)
 
   cmd->resized.width = width;
   cmd->resized.height = height;
+  pub_->publish(cmd);
+}
+
+void RenderWindow::attachCamera(const Camera& cam)
+{
+  rviz_msgs::RenderWindowCommandPtr cmd(new rviz_msgs::RenderWindowCommand);
+  cmd->type = rviz_msgs::RenderWindowCommand::ATTACH_CAMERA;
+  cmd->name = name_;
+
+  cmd->attach_camera.id = cam.getID();
   pub_->publish(cmd);
 }
 

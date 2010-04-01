@@ -30,7 +30,9 @@
 #include "render/ogre/ogre_renderer.h"
 #include "ros/server/renderer_ros.h"
 #include "ros/client/init.h"
-#include "ros/client/render_window_client.h"
+#include "ros/client/render_window.h"
+#include "ros/client/scene.h"
+#include "ros/client/camera.h"
 
 #include <ros/package.h>
 #include <ros/time.h>
@@ -98,7 +100,11 @@ public:
   {
     renderer_.start();
 
-    window_client_.reset(new ros_client::RenderWindowClient("primary", getOgreHandle(this), 800, 600));
+    window_client_.reset(new ros_client::RenderWindow("primary", getOgreHandle(this), 800, 600));
+
+    ros_client::Scene s = ros_client::createScene();
+    ros_client::Camera c = s.createCamera();
+    window_client_->attachCamera(c);
 
     Connect(wxEVT_SIZE, wxSizeEventHandler(MyFrame::onSize));
   }
@@ -120,7 +126,7 @@ private:
   ros::NodeHandle private_nh_;
   render::OgreRenderer renderer_;
   RendererROS renderer_ros_;
-  boost::shared_ptr<ros_client::RenderWindowClient> window_client_;
+  boost::shared_ptr<ros_client::RenderWindow> window_client_;
 };
 
 // our normal wxApp-derived class, as usual

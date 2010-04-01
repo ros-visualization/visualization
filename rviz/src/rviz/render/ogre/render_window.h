@@ -35,31 +35,35 @@
 namespace Ogre
 {
 class RenderWindow;
-class Camera;
 }
 
 namespace rviz
 {
 namespace render
 {
+class OgreRenderer;
+
 namespace ogre
 {
+
+class Camera;
 
 class RenderWindow : public IRenderWindow
 {
 public:
-  RenderWindow(const std::string& name, Ogre::RenderWindow* wnd);
+  RenderWindow(const std::string& name, Ogre::RenderWindow* wnd, OgreRenderer* rend);
 
   virtual const std::string& getName();
   virtual void resized(uint32_t width, uint32_t height);
+  virtual void attachCamera(const UUID& id);
 
   Ogre::RenderWindow* getOgreRenderWindow() { return render_window_; }
 
 private:
   std::string name_;
   Ogre::RenderWindow* render_window_;
-
-  Ogre::Camera* cam_; // TEMP: camera should really get attached separately
+  OgreRenderer* renderer_;
+  Camera* cam_;
 };
 
 } // namespace ogre

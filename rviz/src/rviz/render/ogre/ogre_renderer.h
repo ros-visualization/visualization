@@ -48,6 +48,7 @@ namespace ogre
 {
 class RenderWindow;
 class Scene;
+class Camera;
 } // namespace ogre
 
 class IRenderLoopListener;
@@ -73,6 +74,7 @@ public:
 
   virtual IRenderWindow* getRenderWindow(const std::string& name);
 
+  ogre::Camera* getCamera(const UUID& id);
 
 private:
   void init();

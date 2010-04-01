@@ -27,56 +27,30 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "render_window.h"
-#include "camera.h"
-#include "ogre_renderer.h"
+#ifndef RVIZ_ROS_CLIENT_SCENE_H
+#define RVIZ_ROS_CLIENT_SCENE_H
 
-#include <OGRE/OgreRenderWindow.h>
-
-#include <ros/assert.h>
+#include "object.h"
 
 namespace rviz
 {
-namespace render
-{
-namespace ogre
+namespace ros_client
 {
 
-RenderWindow::RenderWindow(const std::string& name, Ogre::RenderWindow* wnd, OgreRenderer* rend)
-: name_(name)
-, render_window_(wnd)
-, renderer_(rend)
-, cam_(0)
+class RenderWindow;
+class Camera;
+
+class Scene : public Object
 {
-}
+public:
+  Scene();
+  Scene(const UUID& id);
 
-const std::string& RenderWindow::getName()
-{
-  return name_;
-}
+  Camera createCamera();
+};
 
-void RenderWindow::resized(uint32_t width, uint32_t height)
-{
-  // Resize tries to actually resize the window on OSX, which can cause unfortunate results
-#if !defined(__APPLE__)
-  render_window_->resize(width, height);
-#endif
-
-  render_window_->windowMovedOrResized();
-}
-
-void RenderWindow::attachCamera(const UUID& id)
-{
-  if (cam_)
-  {
-    render_window_->removeAllViewports();
-  }
-
-  Camera* cam = renderer_->getCamera(id);
-  ROS_ASSERT(cam);
-  render_window_->addViewport(cam->getOgreCamera());
-}
-
-} // namespace ogre
-} // namespace render
+} // namespace ros_client
 } // namespace rviz
+
+#endif // RVIZ_ROS_CLIENT_SCENE_H
+

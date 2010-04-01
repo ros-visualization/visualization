@@ -27,36 +27,22 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef RVIZ_ROS_RENDER_WINDOW_CLIENT_H
-#define RVIZ_ROS_RENDER_WINDOW_CLIENT_H
-
-#include "../forwards.h"
-
-#include <ros/types.h>
-
-#include <string>
+#include "camera.h"
 
 namespace rviz
 {
 namespace ros_client
 {
 
-class RenderWindowClient
+Camera::Camera()
 {
-public:
-  RenderWindowClient(const std::string& name, const std::string& parent_window, uint32_t width, uint32_t height);
-  ~RenderWindowClient();
+}
 
-  void resized(uint32_t width, uint32_t height);
-  void destroy();
+Camera::Camera(const UUID& id, const UUID& scene_id)
+: Object(id)
+, scene_id_(scene_id)
+{
+}
 
-private:
-  std::string name_;
-  PublisherPtr pub_;
-  bool destroyed_;
-};
-
-} // namespace ros
+} // namespace ros_client
 } // namespace rviz
-
-#endif // RVIZ_ROS_RENDER_WINDOW_CLIENT_H

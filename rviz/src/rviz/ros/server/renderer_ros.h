@@ -49,6 +49,14 @@ ROS_DECLARE_MESSAGE(CreateRenderWindowResponse);
 ROS_DECLARE_MESSAGE(DestroyRenderWindowRequest);
 ROS_DECLARE_MESSAGE(DestroyRenderWindowResponse);
 ROS_DECLARE_MESSAGE(RenderWindowCommand);
+ROS_DECLARE_MESSAGE(CreateCameraRequest);
+ROS_DECLARE_MESSAGE(CreateCameraResponse);
+ROS_DECLARE_MESSAGE(DestroyCameraRequest);
+ROS_DECLARE_MESSAGE(DestroyCameraResponse);
+ROS_DECLARE_MESSAGE(CreateSceneRequest);
+ROS_DECLARE_MESSAGE(CreateSceneResponse);
+ROS_DECLARE_MESSAGE(DestroySceneRequest);
+ROS_DECLARE_MESSAGE(DestroySceneResponse);
 }
 
 namespace rviz
@@ -68,8 +76,13 @@ public:
 private:
   bool onCreateRenderWindow(rviz_msgs::CreateRenderWindowRequest& req, rviz_msgs::CreateRenderWindowResponse& res);
   bool onDestroyRenderWindow(rviz_msgs::DestroyRenderWindowRequest& req, rviz_msgs::DestroyRenderWindowResponse& res);
-
   void onRenderWindowCommand(const rviz_msgs::RenderWindowCommandConstPtr& msg);
+
+  bool onCreateCamera(rviz_msgs::CreateCameraRequest& req, rviz_msgs::CreateCameraResponse& res);
+  bool onDestroyCamera(rviz_msgs::DestroyCameraRequest& req, rviz_msgs::DestroyCameraResponse& res);
+
+  bool onCreateScene(rviz_msgs::CreateSceneRequest& req, rviz_msgs::CreateSceneResponse& res);
+  bool onDestroyScene(rviz_msgs::DestroySceneRequest& req, rviz_msgs::DestroySceneResponse& res);
 
   render::IRenderer* renderer_;
 
@@ -79,7 +92,8 @@ private:
   typedef std::vector<ServiceServerPtr> V_ServiceServerPtr;
   V_ServiceServerPtr srvs_;
 
-  SubscriberPtr command_sub_;
+  typedef std::vector<SubscriberPtr> V_SubscriberPtr;
+  V_SubscriberPtr subs_;
 
   class RenderLoopListener;
   typedef boost::shared_ptr<RenderLoopListener> RenderLoopListenerPtr;

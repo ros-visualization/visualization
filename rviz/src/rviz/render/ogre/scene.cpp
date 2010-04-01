@@ -28,8 +28,14 @@
  */
 
 #include "scene.h"
+#include "camera.h"
 
 #include <OGRE/OgreSceneManager.h>
+#include <OGRE/OgreCamera.h>
+#include <OGRE/OgreRoot.h>
+#include <OGRE/OgreEntity.h>
+
+#include <ros/assert.h>
 
 namespace rviz
 {
@@ -42,20 +48,49 @@ Scene::Scene(const UUID& id, Ogre::SceneManager* scene_manager)
 : id_(id)
 , scene_manager_(scene_manager)
 {
+  Ogre::Entity* ent = scene_manager_->createEntity("blah", "sphere.mesh");
+  Ogre::SceneNode* node = scene_manager_->getRootSceneNode()->createChildSceneNode();
+  node->attachObject(ent);
 }
 
 Scene::~Scene()
 {
-
+  //Ogre::Root::getSingleton().destroySceneManager(scene_manager_);
 }
 
 ICamera* Scene::createCamera(const UUID& id)
 {
-  return 0;
+  Ogre::Camera* ogre_cam = scene_manager_->createCamera(id.toString());
+  ogre_cam->setPosition(0, 10, 10);
+  ogre_cam->lookAt(0, 0, 0);
+  ogre_cam->setNearClipDistance(0.01);
+
+  CameraPtr cam(new Camera(ogre_cam));
+  cameras_[id] = cam;
+
+  return cam.get();
 }
 
 void Scene::destroyCamera(const UUID& id)
 {
+  M_Camera::iterator it = cameras_.find(id);
+  ROS_ASSERT(it != cameras_.end());
+
+  const CameraPtr& cam = it->second;
+  scene_manager_->destroyCamera(cam->getOgreCamera());
+
+  cameras_.erase(it);
+}
+
+ICamera* Scene::getCamera(const UUID& id)
+{
+  M_Camera::iterator it = cameras_.find(id);
+  if (it == cameras_.end())
+  {
+    return 0;
+  }
+
+  return it->second.get();
 }
 
 } // namespace ogre
