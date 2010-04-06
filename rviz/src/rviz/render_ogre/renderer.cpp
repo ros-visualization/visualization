@@ -27,12 +27,12 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "ogre_renderer.h"
+#include "renderer.h"
 #include "render_window.h"
 #include "scene.h"
 #include "camera.h"
 
-#include <rviz/render/irender_loop_listener.h>
+#include <rviz/render_interface/irender_loop_listener.h>
 
 #include <OGRE/OgreRoot.h>
 #include <OGRE/OgreRenderSystem.h>
@@ -47,8 +47,10 @@ namespace rviz
 {
 namespace render
 {
+namespace ogre
+{
 
-OgreRenderer::OgreRenderer(const std::string& root_path, bool enable_ogre_log)
+Renderer::Renderer(const std::string& root_path, bool enable_ogre_log)
 : running_(true)
 , first_window_created_(false)
 , root_path_(root_path)
@@ -56,17 +58,17 @@ OgreRenderer::OgreRenderer(const std::string& root_path, bool enable_ogre_log)
 {
 }
 
-OgreRenderer::~OgreRenderer()
+Renderer::~Renderer()
 {
   stop();
 }
 
-void OgreRenderer::start()
+void Renderer::start()
 {
-  render_thread_ = boost::thread(&OgreRenderer::renderThread, this);
+  render_thread_ = boost::thread(&Renderer::renderThread, this);
 }
 
-void OgreRenderer::stop()
+void Renderer::stop()
 {
   running_ = false;
   render_thread_.join();
@@ -74,7 +76,7 @@ void OgreRenderer::stop()
   delete Ogre::Root::getSingletonPtr();
 }
 
-void OgreRenderer::init()
+void Renderer::init()
 {
   Ogre::LogManager* log_manager = new Ogre::LogManager();
   log_manager->createLog( "Ogre.log", false, false, !enable_ogre_log_ );
@@ -130,7 +132,7 @@ void OgreRenderer::init()
   root->initialise( false );
 }
 
-void OgreRenderer::oneTimeInit()
+void Renderer::oneTimeInit()
 {
   Ogre::ResourceGroupManager::getSingleton().addResourceLocation( root_path_ + "/ogre_media/textures", "FileSystem", ROS_PACKAGE_NAME );
   Ogre::ResourceGroupManager::getSingleton().addResourceLocation( root_path_ + "/ogre_media/fonts", "FileSystem", ROS_PACKAGE_NAME );
@@ -140,7 +142,7 @@ void OgreRenderer::oneTimeInit()
   Ogre::ResourceGroupManager::getSingleton().initialiseAllResourceGroups();
 }
 
-IRenderWindow* OgreRenderer::createRenderWindow(const std::string& name, const std::string& parent_window, uint32_t width, uint32_t height)
+IRenderWindow* Renderer::createRenderWindow(const std::string& name, const std::string& parent_window, uint32_t width, uint32_t height)
 {
   if (render_windows_.count(name) > 0)
   {
@@ -163,13 +165,13 @@ IRenderWindow* OgreRenderer::createRenderWindow(const std::string& name, const s
   win->setVisible(true);
   win->setAutoUpdated(true);
 
-  RenderWindowPtr ptr(new ogre::RenderWindow(name, win, this));
+  RenderWindowPtr ptr(new RenderWindow(name, win, this));
   render_windows_[name] = ptr;
 
   return ptr.get();
 }
 
-void OgreRenderer::destroyRenderWindow(const std::string& name)
+void Renderer::destroyRenderWindow(const std::string& name)
 {
   M_RenderWindow::iterator it = render_windows_.find(name);
   if (it == render_windows_.end())
@@ -185,7 +187,7 @@ void OgreRenderer::destroyRenderWindow(const std::string& name)
   root->getRenderSystem()->destroyRenderWindow(ogre_win->getName());
 }
 
-IRenderWindow* OgreRenderer::getRenderWindow(const std::string& name)
+IRenderWindow* Renderer::getRenderWindow(const std::string& name)
 {
   M_RenderWindow::iterator it = render_windows_.find(name);
   if (it == render_windows_.end())
@@ -196,12 +198,12 @@ IRenderWindow* OgreRenderer::getRenderWindow(const std::string& name)
   return it->second.get();
 }
 
-void OgreRenderer::addRenderLoopListener(IRenderLoopListener* listener)
+void Renderer::addRenderLoopListener(IRenderLoopListener* listener)
 {
   render_loop_listeners_.push_back(listener);
 }
 
-void OgreRenderer::removeRenderLoopListener(IRenderLoopListener* listener)
+void Renderer::removeRenderLoopListener(IRenderLoopListener* listener)
 {
   V_RenderLoopListener::iterator it = std::find(render_loop_listeners_.begin(), render_loop_listeners_.end(), listener);
   if (it != render_loop_listeners_.end())
@@ -210,7 +212,7 @@ void OgreRenderer::removeRenderLoopListener(IRenderLoopListener* listener)
   }
 }
 
-IScene* OgreRenderer::createScene(const UUID& id)
+IScene* Renderer::createScene(const UUID& id)
 {
   if (scenes_.count(id) > 0)
   {
@@ -220,13 +222,13 @@ IScene* OgreRenderer::createScene(const UUID& id)
 
   Ogre::Root* root = Ogre::Root::getSingletonPtr();
   Ogre::SceneManager* scene_manager = root->createSceneManager(Ogre::ST_GENERIC);
-  ScenePtr scene(new ogre:: Scene(id, scene_manager));
+  ScenePtr scene(new Scene(id, scene_manager));
   scenes_[id] = scene;
 
   return scene.get();
 }
 
-void OgreRenderer::destroyScene(const UUID& id)
+void Renderer::destroyScene(const UUID& id)
 {
   M_Scene::iterator it = scenes_.find(id);
   if (it == scenes_.end())
@@ -241,7 +243,7 @@ void OgreRenderer::destroyScene(const UUID& id)
   root->destroySceneManager(scene->getSceneManager());
 }
 
-IScene* OgreRenderer::getScene(const UUID& id)
+IScene* Renderer::getScene(const UUID& id)
 {
   M_Scene::iterator it = scenes_.find(id);
   if (it == scenes_.end())
@@ -254,7 +256,7 @@ IScene* OgreRenderer::getScene(const UUID& id)
   return it->second.get();
 }
 
-ogre::Camera* OgreRenderer::getCamera(const UUID& id)
+Camera* Renderer::getCamera(const UUID& id)
 {
   M_Scene::iterator it = scenes_.begin();
   M_Scene::iterator end = scenes_.end();
@@ -264,14 +266,14 @@ ogre::Camera* OgreRenderer::getCamera(const UUID& id)
     ICamera* cam = scene->getCamera(id);
     if (cam)
     {
-      return static_cast<ogre::Camera*>(cam);
+      return static_cast<Camera*>(cam);
     }
   }
 
   return 0;
 }
 
-void OgreRenderer::renderThread()
+void Renderer::renderThread()
 {
   init();
 
@@ -287,5 +289,6 @@ void OgreRenderer::renderThread()
   delete Ogre::Root::getSingletonPtr();
 }
 
+} // namespace ogre
 } // namespace render
 } // namespace rviz

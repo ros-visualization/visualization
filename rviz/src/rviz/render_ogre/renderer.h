@@ -27,56 +27,80 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "render_window.h"
-#include "camera.h"
-#include "ogre_renderer.h"
+#ifndef RVIZ_OGRE_RENDERER_H
+#define RVIZ_OGRE_RENDERER_H
 
-#include <OGRE/OgreRenderWindow.h>
+#include <string>
+#include <vector>
+#include <map>
 
-#include <ros/assert.h>
+#include <boost/thread/thread.hpp>
+#include <boost/thread/mutex.hpp>
+
+#include <rviz/render_interface/irenderer.h>
+#include <rviz/uuid.h>
 
 namespace rviz
 {
 namespace render
 {
+class IRenderLoopListener;
+
 namespace ogre
 {
+class RenderWindow;
+class Scene;
+class Camera;
 
-RenderWindow::RenderWindow(const std::string& name, Ogre::RenderWindow* wnd, OgreRenderer* rend)
-: name_(name)
-, render_window_(wnd)
-, renderer_(rend)
-, cam_(0)
+class Renderer : public IRenderer
 {
-}
+public:
+  Renderer(const std::string& root_path, bool enable_ogre_log);
+  ~Renderer();
 
-const std::string& RenderWindow::getName()
-{
-  return name_;
-}
+  void start();
+  void stop();
 
-void RenderWindow::resized(uint32_t width, uint32_t height)
-{
-  // Resize tries to actually resize the window on OSX, which can cause unfortunate results
-#if !defined(__APPLE__)
-  render_window_->resize(width, height);
-#endif
+  virtual IRenderWindow* createRenderWindow(const std::string& name, const std::string& parent_window, uint32_t width, uint32_t height);
+  virtual void destroyRenderWindow(const std::string& name);
 
-  render_window_->windowMovedOrResized();
-}
+  virtual void addRenderLoopListener(IRenderLoopListener* listener);
+  virtual void removeRenderLoopListener(IRenderLoopListener* listener);
 
-void RenderWindow::attachCamera(const UUID& id)
-{
-  if (cam_)
-  {
-    render_window_->removeAllViewports();
-  }
+  virtual IScene* createScene(const UUID& id);
+  virtual void destroyScene(const UUID& id);
+  virtual IScene* getScene(const UUID& id);
 
-  Camera* cam = renderer_->getCamera(id);
-  ROS_ASSERT(cam);
-  render_window_->addViewport(cam->getOgreCamera());
-}
+  virtual IRenderWindow* getRenderWindow(const std::string& name);
+
+  Camera* getCamera(const UUID& id);
+
+private:
+  void init();
+  void renderThread();
+
+  void oneTimeInit();
+
+  boost::thread render_thread_;
+  bool running_;
+  bool first_window_created_;
+  std::string root_path_;
+  bool enable_ogre_log_;
+
+  typedef std::vector<IRenderLoopListener*> V_RenderLoopListener;
+  V_RenderLoopListener render_loop_listeners_;
+
+  typedef boost::shared_ptr<RenderWindow> RenderWindowPtr;
+  typedef std::map<std::string, RenderWindowPtr> M_RenderWindow;
+  M_RenderWindow render_windows_;
+
+  typedef boost::shared_ptr<Scene> ScenePtr;
+  typedef std::map<UUID, ScenePtr> M_Scene;
+  M_Scene scenes_;
+};
 
 } // namespace ogre
 } // namespace render
 } // namespace rviz
+
+#endif // RVIZ_OGRE_RENDERER_H

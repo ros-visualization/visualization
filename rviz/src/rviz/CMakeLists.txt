@@ -2,11 +2,11 @@ include_directories(.)
 
 # We create one lib with the C++...
 rosbuild_add_library(rviz_renderer uuid.cpp
-								   render/ogre/convert.cpp 
-								   render/ogre/ogre_renderer.cpp
-								   render/ogre/render_window.cpp
-								   render/ogre/camera.cpp
-								   render/ogre/scene.cpp
+								   render_ogre/convert.cpp 
+								   render_ogre/renderer.cpp
+								   render_ogre/render_window.cpp
+								   render_ogre/camera.cpp
+								   render_ogre/scene.cpp
 								   ros/server/renderer_ros.cpp
 								   ros/client/render_window.cpp
 								   ros/client/scene.cpp

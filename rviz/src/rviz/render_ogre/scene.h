@@ -30,7 +30,7 @@
 #ifndef RVIZ_RENDER_OGRE_SCENE_H
 #define RVIZ_RENDER_OGRE_SCENE_H
 
-#include <rviz/render/iscene.h>
+#include <rviz/render_interface/iscene.h>
 #include <rviz/uuid.h>
 
 #include <map>

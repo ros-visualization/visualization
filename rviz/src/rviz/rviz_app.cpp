@@ -27,7 +27,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "render/ogre/ogre_renderer.h"
+#include "render_ogre/renderer.h"
 #include "ros/server/renderer_ros.h"
 #include "ros/client/init.h"
 #include "ros/client/render_window.h"
@@ -124,7 +124,7 @@ public:
 
 private:
   ros::NodeHandle private_nh_;
-  render::OgreRenderer renderer_;
+  render::ogre::Renderer renderer_;
   RendererROS renderer_ros_;
   boost::shared_ptr<ros_client::RenderWindow> window_client_;
 };

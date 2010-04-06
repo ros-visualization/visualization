@@ -27,18 +27,13 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef RVIZ_OGRE_RENDERER_H
-#define RVIZ_OGRE_RENDERER_H
+#include "render_window.h"
+#include "camera.h"
+#include "renderer.h"
 
-#include <string>
-#include <vector>
-#include <map>
+#include <OGRE/OgreRenderWindow.h>
 
-#include <boost/thread/thread.hpp>
-#include <boost/thread/mutex.hpp>
-
-#include <rviz/render/irenderer.h>
-#include <rviz/uuid.h>
+#include <ros/assert.h>
 
 namespace rviz
 {
@@ -46,61 +41,42 @@ namespace render
 {
 namespace ogre
 {
-class RenderWindow;
-class Scene;
-class Camera;
-} // namespace ogre
 
-class IRenderLoopListener;
-
-class OgreRenderer : public IRenderer
+RenderWindow::RenderWindow(const std::string& name, Ogre::RenderWindow* wnd, Renderer* rend)
+: name_(name)
+, render_window_(wnd)
+, renderer_(rend)
+, cam_(0)
 {
-public:
-  OgreRenderer(const std::string& root_path, bool enable_ogre_log);
-  ~OgreRenderer();
+}
 
-  void start();
-  void stop();
+const std::string& RenderWindow::getName()
+{
+  return name_;
+}
 
-  virtual IRenderWindow* createRenderWindow(const std::string& name, const std::string& parent_window, uint32_t width, uint32_t height);
-  virtual void destroyRenderWindow(const std::string& name);
+void RenderWindow::resized(uint32_t width, uint32_t height)
+{
+  // Resize tries to actually resize the window on OSX, which can cause unfortunate results
+#if !defined(__APPLE__)
+  render_window_->resize(width, height);
+#endif
 
-  virtual void addRenderLoopListener(IRenderLoopListener* listener);
-  virtual void removeRenderLoopListener(IRenderLoopListener* listener);
+  render_window_->windowMovedOrResized();
+}
 
-  virtual IScene* createScene(const UUID& id);
-  virtual void destroyScene(const UUID& id);
-  virtual IScene* getScene(const UUID& id);
+void RenderWindow::attachCamera(const UUID& id)
+{
+  if (cam_)
+  {
+    render_window_->removeAllViewports();
+  }
 
-  virtual IRenderWindow* getRenderWindow(const std::string& name);
+  Camera* cam = renderer_->getCamera(id);
+  ROS_ASSERT(cam);
+  render_window_->addViewport(cam->getOgreCamera());
+}
 
-  ogre::Camera* getCamera(const UUID& id);
-
-private:
-  void init();
-  void renderThread();
-
-  void oneTimeInit();
-
-  boost::thread render_thread_;
-  bool running_;
-  bool first_window_created_;
-  std::string root_path_;
-  bool enable_ogre_log_;
-
-  typedef std::vector<IRenderLoopListener*> V_RenderLoopListener;
-  V_RenderLoopListener render_loop_listeners_;
-
-  typedef boost::shared_ptr<ogre::RenderWindow> RenderWindowPtr;
-  typedef std::map<std::string, RenderWindowPtr> M_RenderWindow;
-  M_RenderWindow render_windows_;
-
-  typedef boost::shared_ptr<ogre::Scene> ScenePtr;
-  typedef std::map<UUID, ScenePtr> M_Scene;
-  M_Scene scenes_;
-};
-
+} // namespace ogre
 } // namespace render
 } // namespace rviz
-
-#endif // RVIZ_OGRE_RENDERER_H

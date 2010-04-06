@@ -28,11 +28,11 @@
  */
 
 #include "renderer_ros.h"
-#include <rviz/render/irenderer.h>
-#include <rviz/render/irender_window.h>
-#include <rviz/render/iscene.h>
-#include <rviz/render/icamera.h>
-#include <rviz/render/irender_loop_listener.h>
+#include <rviz/render_interface/irenderer.h>
+#include <rviz/render_interface/irender_window.h>
+#include <rviz/render_interface/iscene.h>
+#include <rviz/render_interface/icamera.h>
+#include <rviz/render_interface/irender_loop_listener.h>
 #include <rviz/uuid.h>
 
 #include <ros/ros.h>

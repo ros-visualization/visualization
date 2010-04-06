@@ -27,47 +27,37 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef RVIZ_OGRE_RENDER_WINDOW_H
-#define RVIZ_OGRE_RENDER_WINDOW_H
+#ifndef RVIZ_RENDER_OGRE_CAMERA_H
+#define RVIZ_RENDER_OGRE_CAMERA_H
 
-#include <rviz/render/irender_window.h>
+#include <rviz/render_interface/icamera.h>
 
 namespace Ogre
 {
-class RenderWindow;
+class Camera;
 }
 
 namespace rviz
 {
 namespace render
 {
-class OgreRenderer;
-
 namespace ogre
 {
 
-class Camera;
-
-class RenderWindow : public IRenderWindow
+class Camera : public ICamera
 {
 public:
-  RenderWindow(const std::string& name, Ogre::RenderWindow* wnd, OgreRenderer* rend);
+  Camera(Ogre::Camera* cam);
 
-  virtual const std::string& getName();
-  virtual void resized(uint32_t width, uint32_t height);
-  virtual void attachCamera(const UUID& id);
-
-  Ogre::RenderWindow* getOgreRenderWindow() { return render_window_; }
+  Ogre::Camera* getOgreCamera() { return cam_; }
 
 private:
-  std::string name_;
-  Ogre::RenderWindow* render_window_;
-  OgreRenderer* renderer_;
-  Camera* cam_;
+  Ogre::Camera* cam_;
 };
 
 } // namespace ogre
 } // namespace render
 } // namespace rviz
 
-#endif // RVIZ_OGRE_RENDER_WINDOW_H
+#endif // RVIZ_RENDER_ICAMERA_H
+
