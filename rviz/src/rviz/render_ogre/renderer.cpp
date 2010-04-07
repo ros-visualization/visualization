@@ -65,6 +65,7 @@ Renderer::~Renderer()
 
 void Renderer::start()
 {
+  running_ = true;
   render_thread_ = boost::thread(&Renderer::renderThread, this);
 }
 
@@ -256,7 +257,7 @@ IScene* Renderer::getScene(const UUID& id)
   return it->second.get();
 }
 
-Camera* Renderer::getCamera(const UUID& id)
+ICamera* Renderer::getCamera(const UUID& id)
 {
   M_Scene::iterator it = scenes_.begin();
   M_Scene::iterator end = scenes_.end();
@@ -266,7 +267,7 @@ Camera* Renderer::getCamera(const UUID& id)
     ICamera* cam = scene->getCamera(id);
     if (cam)
     {
-      return static_cast<Camera*>(cam);
+      return cam;
     }
   }
 

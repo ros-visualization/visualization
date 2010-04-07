@@ -72,7 +72,7 @@ void RenderWindow::attachCamera(const UUID& id)
     render_window_->removeAllViewports();
   }
 
-  Camera* cam = renderer_->getCamera(id);
+  Camera* cam = static_cast<Camera*>(renderer_->getCamera(id));
   ROS_ASSERT(cam);
   render_window_->addViewport(cam->getOgreCamera());
 }

@@ -73,7 +73,7 @@ public:
 
   virtual IRenderWindow* getRenderWindow(const std::string& name);
 
-  Camera* getCamera(const UUID& id);
+  virtual ICamera* getCamera(const UUID& id);
 
 private:
   void init();

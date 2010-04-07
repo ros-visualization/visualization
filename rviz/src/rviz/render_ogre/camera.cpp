@@ -28,6 +28,7 @@
  */
 
 #include "camera.h"
+#include "convert.h"
 
 #include <OGRE/OgreCamera.h>
 
@@ -41,6 +42,67 @@ namespace ogre
 Camera::Camera(Ogre::Camera* cam)
 : cam_(cam)
 {
+}
+
+void Camera::setPosition(const Vector3& v)
+{
+  cam_->setPosition(fromRobot(v));
+}
+
+void Camera::setOrientation(const Quaternion& q)
+{
+  cam_->setOrientation(fromRobot(q));
+}
+
+void Camera::lookAt(const Vector3& v)
+{
+  cam_->lookAt(fromRobot(v));
+}
+
+void Camera::setFOVY(float fovy)
+{
+  cam_->setFOVy(Ogre::Radian(fovy));
+}
+
+void Camera::setAspectRatio(float aspect)
+{
+  cam_->setAspectRatio(aspect);
+}
+
+void Camera::setAutoAspectRatio(bool autoratio)
+{
+  cam_->setAutoAspectRatio(autoratio);
+}
+
+void Camera::setNearClipDistance(float dist)
+{
+  cam_->setNearClipDistance(dist);
+}
+
+void Camera::setFarClipDistance(float dist)
+{
+  cam_->setFarClipDistance(dist);
+}
+
+void Camera::setTransform(const Vector3& pos, const Quaternion& orient)
+{
+  setPosition(pos);
+  setOrientation(orient);
+}
+
+void Camera::move(const Vector3& v)
+{
+  cam_->move(fromRobot(v));
+}
+
+void Camera::moveRelative(const Vector3& v)
+{
+  cam_->moveRelative(fromRobot(v));
+}
+
+void Camera::rotate(const Quaternion& q)
+{
+  cam_->rotate(fromRobot(q));
 }
 
 } // namespace ogre

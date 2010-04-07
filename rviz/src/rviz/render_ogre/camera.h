@@ -51,6 +51,19 @@ public:
 
   Ogre::Camera* getOgreCamera() { return cam_; }
 
+  virtual void setPosition(const Vector3&);
+  virtual void setOrientation(const Quaternion&);
+  virtual void lookAt(const Vector3&);
+  virtual void move(const Vector3&);
+  virtual void moveRelative(const Vector3&) ;
+  virtual void rotate(const Quaternion&);
+  virtual void setFOVY(float fovy);
+  virtual void setAspectRatio(float aspect);
+  virtual void setAutoAspectRatio(bool autoratio);
+  virtual void setNearClipDistance(float dist);
+  virtual void setFarClipDistance(float dist);
+  virtual void setTransform(const Vector3& pos, const Quaternion& orient);
+
 private:
   Ogre::Camera* cam_;
 };

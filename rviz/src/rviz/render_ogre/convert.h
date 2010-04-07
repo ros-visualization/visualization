@@ -36,6 +36,9 @@
 
 #include <boost/function.hpp>
 
+#include <rviz/math/vector3.h>
+#include <rviz/math/quaternion.h>
+
 /**
  * \file
  */
@@ -53,101 +56,47 @@ extern Ogre::Matrix3 g_robot_to_ogre_matrix;
 extern Ogre::Quaternion g_ogre_to_robot_quat;
 extern Ogre::Quaternion g_robot_to_ogre_quat;
 
+inline Ogre::Vector3 convert(const Vector3& v)
+{
+  return Ogre::Vector3(v.x, v.y, v.z);
+}
+
+inline Ogre::Quaternion convert(const Quaternion& q)
+{
+  return Ogre::Quaternion(q.w, q.x, q.y, q.z);
+}
+
 /**
  * \brief Convert a point from robot space to ogre space
  * @param point Converts this point in-place
  */
-inline void fromRobot( Ogre::Vector3& point )
+inline Ogre::Vector3 fromRobot( const Vector3& point )
 {
-  point = g_robot_to_ogre_matrix * point;
+  return g_robot_to_ogre_matrix * convert(point);
 }
 
 /**
  * \brief Convert a scale xyz from robot space to ogre space
  * @param scale Converts this scale xyz in-place
  */
-inline void scaleFromRobot( Ogre::Vector3& scale )
+inline Ogre::Vector3 scaleFromRobot( const Vector3& scale )
 {
-  scale = g_robot_to_ogre_matrix * scale;
+  Ogre::Vector3 s = g_robot_to_ogre_matrix * convert(scale);
 
-  scale.x = fabsf( scale.x );
-  scale.y = fabsf( scale.y );
-  scale.z = fabsf( scale.z );
+  s.x = fabsf( s.x );
+  s.y = fabsf( s.y );
+  s.z = fabsf( s.z );
+
+  return s;
 }
 
 /**
  * \brief Convert a quaternion from robot space to ogre space
  * @param quat Converts this quaternion in-place
  */
-inline void fromRobot( Ogre::Quaternion& quat )
+inline Ogre::Quaternion fromRobot( const Quaternion& quat )
 {
-  quat = g_robot_to_ogre_quat * quat;
-}
-
-/**
- * \brief Convert a matrix3 from robot space to ogre space
- * @param mat Converts this matrix in-place
- */
-inline void fromRobot( Ogre::Matrix3& mat )
-{
-  mat = g_robot_to_ogre_matrix * mat;
-}
-
-
-/**
- * \brief Convert a point from ogre space to robot space
- * @param point Converts this point in-place
- */
-inline void toRobot( Ogre::Vector3& point )
-{
-  point = g_ogre_to_robot_matrix * point;
-}
-
-/**
- * \brief Convert a scale xyz from ogre space to robot space
- * @param scale Converts this scale xyz in-place
- */
-inline void scaleToRobot( Ogre::Vector3& scale )
-{
-  scale = g_ogre_to_robot_matrix * scale;
-
-  scale.x = fabsf( scale.x );
-  scale.y = fabsf( scale.y );
-  scale.z = fabsf( scale.z );
-}
-
-/**
- * \brief Convert a quaternion from ogre space to robot space
- * @param quat Converts this quaternion in-place
- */
-inline void toRobot( Ogre::Quaternion& quat )
-{
-  quat = g_ogre_to_robot_quat * quat;
-}
-
-/**
- * \brief Convert a matrix3 from ogre space to robot space
- * @param mat Converts this matrix in-place
- */
-inline void toRobot( Ogre::Matrix3& mat )
-{
-  mat = g_ogre_to_robot_matrix * mat;
-}
-
-/**
- * Gets an ogre-space rotation matrix from robot-space euler angles
- * @param yaw Robot-space yaw value
- * @param pitch Robot-space pitch value
- * @param roll Robot-space roll value
- * @return Ogre-space rotation matrix
- */
-inline Ogre::Matrix3 matrixFromRobotEulers( float yaw, float pitch, float roll )
-{
-  Ogre::Matrix3 mat;
-  mat.FromEulerAnglesZYX( Ogre::Radian( yaw ), Ogre::Radian( pitch ), Ogre::Radian( roll ) );
-  fromRobot( mat );
-
-  return mat;
+  return g_robot_to_ogre_quat * convert(quat);
 }
 
 } // namespace ogre
