@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2010, Willow Garage, Inc.
  * All rights reserved.
@@ -28,26 +27,27 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef RVIZ_RENDER_ISCENE_H
-#define RVIZ_RENDER_ISCENE_H
+#include "vector3.h"
+
+#include <geometry_msgs/Vector3.h>
 
 namespace rviz
 {
-class UUID;
 
-namespace render
+Vector3::Vector3(const geometry_msgs::Vector3& v)
+: x(v.x)
+, y(v.y)
+, z(v.z)
 {
+}
 
-class ICamera;
-class IScene
+Vector3::operator geometry_msgs::Vector3() const
 {
-public:
-  virtual ICamera* createCamera(const UUID&) = 0;
-  virtual void destroyCamera(const UUID&) = 0;
-  virtual ICamera* getCamera(const UUID&) = 0;
-};
+  geometry_msgs::Vector3 v;
+  v.x = x;
+  v.y = y;
+  v.z = z;
+  return v;
+}
 
-} // namespace render
 } // namespace rviz
-
-#endif // RVIZ_RENDER_ISCENE_H

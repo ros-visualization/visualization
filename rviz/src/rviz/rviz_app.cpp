@@ -33,6 +33,9 @@
 #include "ros/client/render_window.h"
 #include "ros/client/scene.h"
 #include "ros/client/camera.h"
+#include "ros/client/camera_proxy.h"
+#include "math/vector3.h"
+#include "math/quaternion.h"
 
 #include <ros/package.h>
 #include <ros/time.h>
@@ -97,7 +100,10 @@ public:
   , private_nh_("~")
   , renderer_(ros::package::getPath(ROS_PACKAGE_NAME), true)
   , renderer_ros_(&renderer_, private_nh_)
+  , timer_(this)
   {
+    rviz::ros_client::addProxyInterface("camera", rviz::render_client_proxy_interface::IProxyPtr(new rviz::ros_client::CameraProxy));
+
     renderer_.start();
 
     window_client_.reset(new ros_client::RenderWindow("primary", getOgreHandle(this), 800, 600));
@@ -106,7 +112,15 @@ public:
     ros_client::Camera c = s.createCamera();
     window_client_->attachCamera(c);
 
+    c.setAutoAspectRatio(true);
+    c.setPosition(Vector3(10, 0, 10));
+    c.lookAt(Vector3(0, 0, 0));
+    camera_ = c;
+
     Connect(wxEVT_SIZE, wxSizeEventHandler(MyFrame::onSize));
+    Connect(wxEVT_TIMER, wxTimerEventHandler(MyFrame::onTimer));
+
+    timer_.Start(16);
   }
 
   ~MyFrame()
@@ -121,12 +135,50 @@ public:
     window_client_->resized(evt.GetSize().GetWidth(), evt.GetSize().GetHeight());
   }
 
+  void onTimer(wxTimerEvent& evt)
+  {
+    if (last_update_.isZero())
+    {
+      last_update_ = ros::WallTime::now();
+      return;
+    }
+
+    ros::WallTime cur = ros::WallTime::now();
+    ros::WallDuration diff = cur - last_update_;
+    double dt = diff.toSec();
+
+    const float factor = 0.1;
+    if (wxGetKeyState(WXK_UP))
+    {
+      camera_.moveRelative(Vector3(dt * factor, 0.0, 0.0));
+    }
+
+    if (wxGetKeyState(WXK_DOWN))
+    {
+      camera_.moveRelative(Vector3(-dt * factor, 0.0, 0.0));
+    }
+
+    if (wxGetKeyState(WXK_LEFT))
+    {
+      camera_.moveRelative(Vector3(0.0, dt * factor, 0.0));
+    }
+
+    if (wxGetKeyState(WXK_RIGHT))
+    {
+      camera_.moveRelative(Vector3(0.0, -dt * factor, 0.0));
+    }
+}
 
 private:
   ros::NodeHandle private_nh_;
   render::ogre::Renderer renderer_;
   RendererROS renderer_ros_;
+  ros_client::Camera camera_;
   boost::shared_ptr<ros_client::RenderWindow> window_client_;
+
+  wxTimer timer_;
+
+  ros::WallTime last_update_;
 };
 
 // our normal wxApp-derived class, as usual

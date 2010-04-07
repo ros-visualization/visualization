@@ -2,6 +2,8 @@ include_directories(.)
 
 # We create one lib with the C++...
 rosbuild_add_library(rviz_renderer uuid.cpp
+								   math/vector3.cpp
+								   math/quaternion.cpp
 								   render_ogre/convert.cpp 
 								   render_ogre/renderer.cpp
 								   render_ogre/render_window.cpp
@@ -10,6 +12,7 @@ rosbuild_add_library(rviz_renderer uuid.cpp
 								   ros/server/renderer_ros.cpp
 								   ros/client/render_window.cpp
 								   ros/client/scene.cpp
+								   ros/client/camera_proxy.cpp
 								   ros/client/camera.cpp
 								   ros/client/init.cpp)
 target_link_libraries(rviz_renderer ${wxWidgets_LIBRARIES} ${OGRE_LIBRARIES})

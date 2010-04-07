@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2010, Willow Garage, Inc.
  * All rights reserved.
@@ -28,26 +27,22 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef RVIZ_RENDER_ISCENE_H
-#define RVIZ_RENDER_ISCENE_H
+#ifndef RVIZ_RENDER_CLIENT_PROXY_INTERFACE_ICOMM_H
+#define RVIZ_RENDER_CLIENT_PROXY_INTERFACE_ICOMM_H
 
 namespace rviz
 {
-class UUID;
-
-namespace render
+namespace render_client_proxy_interface
 {
 
-class ICamera;
-class IScene
+class IProxy
 {
 public:
-  virtual ICamera* createCamera(const UUID&) = 0;
-  virtual void destroyCamera(const UUID&) = 0;
-  virtual ICamera* getCamera(const UUID&) = 0;
+  virtual ~IProxy() {}
 };
 
-} // namespace render
+} // namespace render_client_comm_interface
 } // namespace rviz
 
-#endif // RVIZ_RENDER_ISCENE_H
+#endif // RVIZ_RENDER_CLIENT_PROXY_INTERFACE_ICOMM_H
+

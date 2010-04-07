@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2010, Willow Garage, Inc.
  * All rights reserved.
@@ -28,26 +27,49 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef RVIZ_RENDER_ISCENE_H
-#define RVIZ_RENDER_ISCENE_H
+#ifndef RVIZ_VECTOR3_H
+#define RVIZ_VECTOR3_H
+
+#include <ros/types.h>
+#include <ros/message_forward.h>
+
+namespace geometry_msgs
+{
+ROS_DECLARE_MESSAGE(Vector3);
+}
 
 namespace rviz
 {
-class UUID;
 
-namespace render
-{
-
-class ICamera;
-class IScene
+class Vector3
 {
 public:
-  virtual ICamera* createCamera(const UUID&) = 0;
-  virtual void destroyCamera(const UUID&) = 0;
-  virtual ICamera* getCamera(const UUID&) = 0;
+  Vector3()
+  {}
+
+  Vector3(float val)
+  : x(val), y(val), z(val)
+  {}
+
+  Vector3(float x, float y, float z)
+  : x(x)
+  , y(y)
+  , z(z)
+  {}
+
+  Vector3(const geometry_msgs::Vector3&);
+  operator geometry_msgs::Vector3() const;
+
+  float& operator[](uint32_t index)
+  {
+    return (&x)[index];
+  }
+
+  float x;
+  float y;
+  float z;
 };
 
-} // namespace render
 } // namespace rviz
 
-#endif // RVIZ_RENDER_ISCENE_H
+#endif // RVIZ_VECTOR3_H

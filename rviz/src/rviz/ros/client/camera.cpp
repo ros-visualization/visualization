@@ -28,6 +28,12 @@
  */
 
 #include "camera.h"
+#include <rviz/math/vector3.h>
+#include <rviz/math/quaternion.h>
+
+#include <rviz/render_client_proxy_interface/icamera_proxy.h>
+
+#include "init.h"
 
 namespace rviz
 {
@@ -42,7 +48,69 @@ Camera::Camera(const UUID& id, const UUID& scene_id)
 : Object(id)
 , scene_id_(scene_id)
 {
+  proxy_ = getProxyInterface<render_client_proxy_interface::ICameraProxy>("camera");
 }
+
+void Camera::setPosition(const Vector3& pos)
+{
+  proxy_->setPosition(getID(), pos);
+}
+
+void Camera::setOrientation(const Quaternion& orient)
+{
+  proxy_->setOrientation(getID(), orient);
+}
+
+void Camera::lookAt(const Vector3& point)
+{
+  proxy_->lookAt(getID(), point);
+}
+
+void Camera::move(const Vector3& v)
+{
+  proxy_->move(getID(), v);
+}
+
+void Camera::moveRelative(const Vector3& v)
+{
+  proxy_->moveRelative(getID(), v);
+}
+
+void Camera::rotate(const Quaternion& q)
+{
+  proxy_->rotate(getID(), q);
+}
+
+void Camera::setFOVY(float fovy)
+{
+  proxy_->setFOVY(getID(), fovy);
+}
+
+void Camera::setAspectRatio(float aspect)
+{
+  proxy_->setAspectRatio(getID(), aspect);
+}
+
+void Camera::setAutoAspectRatio(bool autoaspect)
+{
+  proxy_->setAutoAspectRatio(getID(), autoaspect);
+}
+
+void Camera::setNearClipDistance(float near_clip)
+{
+  proxy_->setNearClipDistance(getID(), near_clip);
+}
+
+void Camera::setFarClipDistance(float far_clip)
+{
+  proxy_->setFarClipDistance(getID(), far_clip);
+}
+
+void Camera::setTransform(const Vector3& pos, const Quaternion& orient)
+{
+  proxy_->setTransform(getID(), pos, orient);
+}
+
 
 } // namespace ros_client
 } // namespace rviz

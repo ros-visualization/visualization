@@ -32,12 +32,28 @@
 
 namespace rviz
 {
+class Vector3;
+class Quaternion;
+
 namespace render
 {
 
 class ICamera
 {
 public:
+  virtual void setPosition(const Vector3&) = 0;
+  virtual void setOrientation(const Quaternion&) = 0;
+  virtual void lookAt(const Vector3&) = 0;
+  virtual void move(const Vector3&) = 0;
+  virtual void moveRelative(const Vector3&) = 0;
+  virtual void rotate(const Quaternion&) = 0;
+  virtual void setFOVY(float fovy) = 0;
+  virtual void setAspectRatio(float aspect) = 0;
+  virtual void setAutoAspectRatio(bool autoratio) = 0;
+  virtual void setNearClipDistance(float dist) = 0;
+  virtual void setFarClipDistance(float dist) = 0;
+
+  virtual void setTransform(const Vector3& pos, const Quaternion& orient) = 0;
 };
 
 } // namespace render

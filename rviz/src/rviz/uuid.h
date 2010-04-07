@@ -32,7 +32,7 @@
 
 #include <boost/array.hpp>
 #include <ros/types.h>
-#include <ros/message_traits.h>
+#include <ros/message_forward.h>
 #include <iostream>
 
 namespace rviz_msgs

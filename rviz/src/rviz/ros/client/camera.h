@@ -34,6 +34,14 @@
 
 namespace rviz
 {
+class Vector3;
+class Quaternion;
+
+namespace render_client_proxy_interface
+{
+class ICameraProxy;
+}
+
 namespace ros_client
 {
 
@@ -45,8 +53,23 @@ public:
 
   const UUID& getSceneID() { return scene_id_; }
 
+  virtual void setPosition(const Vector3& pos);
+  virtual void setOrientation(const Quaternion& orient);
+  virtual void lookAt(const Vector3& point);
+  virtual void move(const Vector3& v);
+  virtual void moveRelative(const Vector3& v);
+  virtual void rotate(const Quaternion& q);
+  virtual void setFOVY(float fovy);
+  virtual void setAspectRatio(float aspect);
+  virtual void setAutoAspectRatio(bool autoaspect);
+  virtual void setNearClipDistance(float near_clip);
+  virtual void setFarClipDistance(float far_clip);
+
+  virtual void setTransform(const Vector3& pos, const Quaternion& orient);
+
 private:
   UUID scene_id_;
+  render_client_proxy_interface::ICameraProxy* proxy_;
 };
 
 } // namespace ros_client

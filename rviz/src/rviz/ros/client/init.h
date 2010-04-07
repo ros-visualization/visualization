@@ -32,8 +32,17 @@
 
 #include "../forwards.h"
 
+#include <vector>
+
 namespace rviz
 {
+
+namespace render_client_proxy_interface
+{
+class IProxy;
+typedef boost::shared_ptr<IProxy> IProxyPtr;
+}
+
 namespace ros_client
 {
 
@@ -42,6 +51,21 @@ ros::NodeHandle& getNodeHandle();
 
 class Scene;
 Scene createScene();
+
+void addProxyInterface(const std::string& name, const render_client_proxy_interface::IProxyPtr& comm);
+void removeProxyInterface(const std::string& name);
+
+render_client_proxy_interface::IProxy* getProxyInterface(const std::string& name);
+
+template<typename T>
+T* getProxyInterface(const std::string& name)
+{
+  return dynamic_cast<T*>(getProxyInterface(name));
+}
+
+typedef std::vector<PublisherPtr> V_Publisher;
+void waitForPub(const PublisherPtr& pub);
+void waitForPubs(const V_Publisher& pubs);
 
 } // namespace ros
 } // namespace rviz

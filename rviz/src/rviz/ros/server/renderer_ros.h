@@ -57,6 +57,7 @@ ROS_DECLARE_MESSAGE(CreateSceneRequest);
 ROS_DECLARE_MESSAGE(CreateSceneResponse);
 ROS_DECLARE_MESSAGE(DestroySceneRequest);
 ROS_DECLARE_MESSAGE(DestroySceneResponse);
+ROS_DECLARE_MESSAGE(CameraCommand);
 }
 
 namespace rviz
@@ -80,6 +81,7 @@ private:
 
   bool onCreateCamera(rviz_msgs::CreateCameraRequest& req, rviz_msgs::CreateCameraResponse& res);
   bool onDestroyCamera(rviz_msgs::DestroyCameraRequest& req, rviz_msgs::DestroyCameraResponse& res);
+  void onCameraCommand(const rviz_msgs::CameraCommandConstPtr& cmd);
 
   bool onCreateScene(rviz_msgs::CreateSceneRequest& req, rviz_msgs::CreateSceneResponse& res);
   bool onDestroyScene(rviz_msgs::DestroySceneRequest& req, rviz_msgs::DestroySceneResponse& res);

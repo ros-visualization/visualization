@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2010, Willow Garage, Inc.
  * All rights reserved.
@@ -28,26 +27,48 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef RVIZ_RENDER_ISCENE_H
-#define RVIZ_RENDER_ISCENE_H
+#ifndef RVIZ_QUATERNION_H
+#define RVIZ_QUATERNION_H
+
+#include <ros/types.h>
+#include <ros/message_forward.h>
+
+namespace geometry_msgs
+{
+ROS_DECLARE_MESSAGE(Quaternion);
+}
 
 namespace rviz
 {
-class UUID;
 
-namespace render
-{
-
-class ICamera;
-class IScene
+class Quaternion
 {
 public:
-  virtual ICamera* createCamera(const UUID&) = 0;
-  virtual void destroyCamera(const UUID&) = 0;
-  virtual ICamera* getCamera(const UUID&) = 0;
+  Quaternion()
+  {}
+
+  Quaternion(float x, float y, float z, float w)
+  : x(x)
+  , y(y)
+  , z(z)
+  , w(w)
+  {}
+
+  Quaternion(const geometry_msgs::Quaternion&);
+  operator geometry_msgs::Quaternion() const;
+
+  float& operator[](uint32_t index)
+  {
+    return (&x)[index];
+  }
+
+  float x;
+  float y;
+  float z;
+  float w;
 };
 
-} // namespace render
 } // namespace rviz
 
-#endif // RVIZ_RENDER_ISCENE_H
+#endif // RVIZ_VECTOR3_H
+

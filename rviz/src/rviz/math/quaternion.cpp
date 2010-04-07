@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2010, Willow Garage, Inc.
  * All rights reserved.
@@ -28,26 +27,30 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef RVIZ_RENDER_ISCENE_H
-#define RVIZ_RENDER_ISCENE_H
+#include "quaternion.h"
+
+#include <geometry_msgs/Quaternion.h>
 
 namespace rviz
 {
-class UUID;
 
-namespace render
+Quaternion::Quaternion(const geometry_msgs::Quaternion& q)
+: x(q.x)
+, y(q.y)
+, z(q.z)
+, w(q.w)
 {
+}
 
-class ICamera;
-class IScene
+Quaternion::operator geometry_msgs::Quaternion() const
 {
-public:
-  virtual ICamera* createCamera(const UUID&) = 0;
-  virtual void destroyCamera(const UUID&) = 0;
-  virtual ICamera* getCamera(const UUID&) = 0;
-};
+  geometry_msgs::Quaternion q;
+  q.x = x;
+  q.y = y;
+  q.z = z;
+  q.w = w;
+  return q;
+}
 
-} // namespace render
 } // namespace rviz
 
-#endif // RVIZ_RENDER_ISCENE_H

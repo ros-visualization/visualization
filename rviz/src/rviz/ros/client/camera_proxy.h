@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2010, Willow Garage, Inc.
  * All rights reserved.
@@ -28,26 +27,41 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef RVIZ_RENDER_ISCENE_H
-#define RVIZ_RENDER_ISCENE_H
+#ifndef RVIZ_ROS_CLIENT_CAMERA_COMM_H
+#define RVIZ_ROS_CLIENT_CAMERA_COMM_H
+
+#include <rviz/render_client_proxy_interface/icamera_proxy.h>
+
+#include "../forwards.h"
 
 namespace rviz
 {
-class UUID;
-
-namespace render
+namespace ros_client
 {
 
-class ICamera;
-class IScene
+class CameraProxy : public render_client_proxy_interface::ICameraProxy
 {
 public:
-  virtual ICamera* createCamera(const UUID&) = 0;
-  virtual void destroyCamera(const UUID&) = 0;
-  virtual ICamera* getCamera(const UUID&) = 0;
+  CameraProxy();
+
+  virtual void setPosition(const UUID&, const Vector3&);
+  virtual void setOrientation(const UUID&, const Quaternion&);
+  virtual void lookAt(const UUID&, const Vector3&);
+  virtual void move(const UUID&, const Vector3&);
+  virtual void moveRelative(const UUID&, const Vector3&);
+  virtual void rotate(const UUID&, const Quaternion&);
+  virtual void setFOVY(const UUID&, float fovy);
+  virtual void setAspectRatio(const UUID&, float aspect);
+  virtual void setAutoAspectRatio(const UUID&, bool autoratio);
+  virtual void setNearClipDistance(const UUID&, float dist);
+  virtual void setFarClipDistance(const UUID&, float dist);
+  virtual void setTransform(const UUID&, const Vector3& pos, const Quaternion& orient);
+
+private:
+  PublisherPtr pub_;
 };
 
-} // namespace render
+} // namespace ros_client
 } // namespace rviz
 
-#endif // RVIZ_RENDER_ISCENE_H
+#endif // RVIZ_ROS_CLIENT_CAMERA_COMM_H
