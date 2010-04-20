@@ -1,0 +1,15 @@
+<package>
+  <description brief="rviz_interface_gen">
+
+     rviz_interface_gen
+
+  </description>
+  <author>Josh Faust</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/rviz_interface_gen</url>
+  <depend package="roslib"/>
+
+</package>
+
+
