@@ -38,7 +38,7 @@
 #include <boost/thread/mutex.hpp>
 
 #include <rviz/render_interface/irenderer.h>
-#include <rviz/uuid.h>
+#include <rviz_uuid/uuid.h>
 
 namespace rviz
 {
@@ -67,13 +67,13 @@ public:
   virtual void addRenderLoopListener(IRenderLoopListener* listener);
   virtual void removeRenderLoopListener(IRenderLoopListener* listener);
 
-  virtual IScene* createScene(const UUID& id);
-  virtual void destroyScene(const UUID& id);
-  virtual IScene* getScene(const UUID& id);
+  virtual IScene* createScene(const rviz_uuid::UUID& id);
+  virtual void destroyScene(const rviz_uuid::UUID& id);
+  virtual IScene* getScene(const rviz_uuid::UUID& id);
 
   virtual IRenderWindow* getRenderWindow(const std::string& name);
 
-  virtual ICamera* getCamera(const UUID& id);
+  virtual ICamera* getCamera(const rviz_uuid::UUID& id);
 
 private:
   void init();
@@ -95,7 +95,7 @@ private:
   M_RenderWindow render_windows_;
 
   typedef boost::shared_ptr<Scene> ScenePtr;
-  typedef std::map<UUID, ScenePtr> M_Scene;
+  typedef std::map<rviz_uuid::UUID, ScenePtr> M_Scene;
   M_Scene scenes_;
 };
 

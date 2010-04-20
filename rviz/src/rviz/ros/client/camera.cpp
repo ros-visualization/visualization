@@ -35,6 +35,8 @@
 
 #include "init.h"
 
+using namespace rviz_uuid;
+
 namespace rviz
 {
 namespace ros_client

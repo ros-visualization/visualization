@@ -44,7 +44,7 @@ class Scene : public Object
 {
 public:
   Scene();
-  Scene(const UUID& id);
+  Scene(const rviz_uuid::UUID& id);
 
   Camera createCamera();
 };

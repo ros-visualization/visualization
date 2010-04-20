@@ -44,18 +44,18 @@ class CameraProxy : public render_client_proxy_interface::ICameraProxy
 public:
   CameraProxy();
 
-  virtual void setPosition(const UUID&, const Vector3&);
-  virtual void setOrientation(const UUID&, const Quaternion&);
-  virtual void lookAt(const UUID&, const Vector3&);
-  virtual void move(const UUID&, const Vector3&);
-  virtual void moveRelative(const UUID&, const Vector3&);
-  virtual void rotate(const UUID&, const Quaternion&);
-  virtual void setFOVY(const UUID&, float fovy);
-  virtual void setAspectRatio(const UUID&, float aspect);
-  virtual void setAutoAspectRatio(const UUID&, bool autoratio);
-  virtual void setNearClipDistance(const UUID&, float dist);
-  virtual void setFarClipDistance(const UUID&, float dist);
-  virtual void setTransform(const UUID&, const Vector3& pos, const Quaternion& orient);
+  virtual void setPosition(const rviz_uuid::UUID&, const Vector3&);
+  virtual void setOrientation(const rviz_uuid::UUID&, const Quaternion&);
+  virtual void lookAt(const rviz_uuid::UUID&, const Vector3&);
+  virtual void move(const rviz_uuid::UUID&, const Vector3&);
+  virtual void moveRelative(const rviz_uuid::UUID&, const Vector3&);
+  virtual void rotate(const rviz_uuid::UUID&, const Quaternion&);
+  virtual void setFOVY(const rviz_uuid::UUID&, float fovy);
+  virtual void setAspectRatio(const rviz_uuid::UUID&, float aspect);
+  virtual void setAutoAspectRatio(const rviz_uuid::UUID&, bool autoratio);
+  virtual void setNearClipDistance(const rviz_uuid::UUID&, float dist);
+  virtual void setFarClipDistance(const rviz_uuid::UUID&, float dist);
+  virtual void setTransform(const rviz_uuid::UUID&, const Vector3& pos, const Quaternion& orient);
 
 private:
   PublisherPtr pub_;

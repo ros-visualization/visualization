@@ -30,7 +30,7 @@
 #ifndef RVIZ_ROS_CLIENT_OBJECT_H
 #define RVIZ_ROS_CLIENT_OBJECT_H
 
-#include <rviz/uuid.h>
+#include <rviz_uuid/uuid.h>
 
 namespace rviz
 {
@@ -44,15 +44,15 @@ public:
   {
   }
 
-  Object(const UUID& id)
+  Object(const rviz_uuid::UUID& id)
   : id_(id)
   {
   }
 
-  const UUID& getID() const { return id_; }
+  const rviz_uuid::UUID& getID() const { return id_; }
 
 private:
-  UUID id_;
+  rviz_uuid::UUID id_;
 };
 
 } // namespace ros_client

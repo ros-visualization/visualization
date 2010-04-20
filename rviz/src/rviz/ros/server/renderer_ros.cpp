@@ -33,7 +33,7 @@
 #include <rviz/render_interface/iscene.h>
 #include <rviz/render_interface/icamera.h>
 #include <rviz/render_interface/irender_loop_listener.h>
-#include <rviz/uuid.h>
+#include <rviz_uuid/uuid.h>
 #include <rviz/math/vector3.h>
 #include <rviz/math/quaternion.h>
 
@@ -50,6 +50,8 @@
 
 #include <rviz_msgs/CreateScene.h>
 #include <rviz_msgs/DestroyScene.h>
+
+using namespace rviz_uuid;
 
 namespace rviz
 {

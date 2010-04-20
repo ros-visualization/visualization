@@ -30,6 +30,7 @@
     <depend package="urdf"/>
     <depend package="resource_retriever"/>
     <depend package="rviz_msgs"/>
+    <depend package="rviz_uuid"/>
     <export> 
         <cpp cflags="-I${prefix}/src/" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lrviz"/>
         <python path="${prefix}/lib/"/>

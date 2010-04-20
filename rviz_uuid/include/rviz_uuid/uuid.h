@@ -27,91 +27,45 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "uuid.h"
+#ifndef RVIZ_UUID_UUID_H
+#define RVIZ_UUID_UUID_H
 
-#include <rviz_msgs/UUID.h>
+#include <boost/array.hpp>
+#include <ros/types.h>
+#include <ros/message_forward.h>
+#include <iostream>
 
-#include <uuid/uuid.h>
-
-#include <ros/assert.h>
-
-namespace rviz
+namespace rviz_msgs
 {
-
-ROS_STATIC_ASSERT(sizeof(uuid_t) == 16);
-ROS_STATIC_ASSERT(sizeof(UUID) == sizeof(uuid_t));
-
-UUID UUID::Generate()
-{
-  uuid_t native;
-  uuid_generate(native);
-
-  UUID uuid;
-  memcpy(&uuid, native, sizeof(uuid));
-
-  return uuid;
+ROS_DECLARE_MESSAGE(UUID);
 }
 
-UUID::UUID()
+namespace rviz_uuid
 {
-  data_.assign(0);
-}
 
-UUID::UUID(const rviz_msgs::UUID& rhs)
+class UUID
 {
-  *this = rhs;
-}
+public:
+  static UUID Generate();
 
-bool UUID::operator<(const UUID& rhs) const
-{
-  return memcmp(this, &rhs, sizeof(rhs)) < 0;
-}
+  UUID();
+  UUID(const rviz_msgs::UUID&);
 
-bool UUID::operator==(const UUID& rhs) const
-{
-  return memcmp(this, &rhs, sizeof(rhs)) == 0;
-}
+  UUID& operator=(const rviz_msgs::UUID&);
+  operator rviz_msgs::UUID() const;
 
-UUID& UUID::operator=(const rviz_msgs::UUID& rhs)
-{
-  std::copy(rhs.data.begin(), rhs.data.end(), data_.begin());
+  bool operator<(const UUID& rhs) const;
+  bool operator==(const UUID& rhs) const;
 
-  return *this;
-}
+  std::string toString() const;
 
-std::string UUID::toString() const
-{
-  uuid_t native;
-  memcpy(native, this, sizeof(native));
-  char buf[37]; // UUID is 36 bytes + NULL terminator
-  uuid_unparse(native, buf);
-  return std::string(buf, 36);
-}
+private:
+  boost::array<uint8_t, 16> data_;
+};
 
-UUID::operator rviz_msgs::UUID() const
-{
-  rviz_msgs::UUID msg;
-  std::copy(data_.begin(), data_.end(), msg.data.begin());
-  return msg;
-}
+std::ostream& operator<<(std::ostream& o, const UUID& u);
+std::istream& operator>>(std::istream& i, UUID& u);
 
-std::ostream& operator<<(std::ostream& o, const UUID& u)
-{
-  o << u.toString();
-  return o;
-}
+} // namespace rviz_uuid
 
-std::istream& operator>>(std::istream& i, UUID& u)
-{
-  char buf[37];
-  i.get(buf, 36);
-  buf[36] = 0;
-
-  uuid_t native;
-  uuid_parse(buf, native);
-  memcpy(&u, native, sizeof(u));
-
-  return i;
-}
-
-} // namespace rviz
+#endif // RVIZ_UUID_UUID_H

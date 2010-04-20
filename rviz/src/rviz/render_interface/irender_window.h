@@ -33,10 +33,13 @@
 #include <string>
 #include <ros/types.h>
 
-namespace rviz
+namespace rviz_uuid
 {
 class UUID;
+}
 
+namespace rviz
+{
 namespace render
 {
 
@@ -45,7 +48,7 @@ class IRenderWindow
 public:
   virtual const std::string& getName() = 0;
   virtual void resized(uint32_t width, uint32_t height) = 0;
-  virtual void attachCamera(const UUID& cam_id) = 0;
+  virtual void attachCamera(const rviz_uuid::UUID& cam_id) = 0;
 };
 
 } // namespace render

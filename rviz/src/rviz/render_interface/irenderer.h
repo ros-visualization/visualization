@@ -30,10 +30,13 @@
 #ifndef RVIZ_IRENDERER_H
 #define RVIZ_IRENDERER_H
 
-namespace rviz
+namespace rviz_uuid
 {
 class UUID;
+}
 
+namespace rviz
+{
 namespace render
 {
 
@@ -49,11 +52,11 @@ public:
   virtual void destroyRenderWindow(const std::string& name) = 0;
   virtual IRenderWindow* getRenderWindow(const std::string& name) = 0;
 
-  virtual IScene* createScene(const UUID& id) = 0;
-  virtual void destroyScene(const UUID& id) = 0;
-  virtual IScene* getScene(const UUID& id) = 0;
+  virtual IScene* createScene(const rviz_uuid::UUID& id) = 0;
+  virtual void destroyScene(const rviz_uuid::UUID& id) = 0;
+  virtual IScene* getScene(const rviz_uuid::UUID& id) = 0;
 
-  virtual ICamera* getCamera(const UUID& id) = 0;
+  virtual ICamera* getCamera(const rviz_uuid::UUID& id) = 0;
 
   virtual void addRenderLoopListener(IRenderLoopListener* listener) = 0;
   virtual void removeRenderLoopListener(IRenderLoopListener* listener) = 0;

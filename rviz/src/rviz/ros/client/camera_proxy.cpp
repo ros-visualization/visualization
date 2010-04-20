@@ -32,7 +32,7 @@
 
 #include <rviz/math/vector3.h>
 #include <rviz/math/quaternion.h>
-#include <rviz/uuid.h>
+#include <rviz_uuid/uuid.h>
 
 #include <rviz_msgs/CameraCommand.h>
 
@@ -57,22 +57,22 @@ CameraProxy::CameraProxy()
   cmd->var = val; \
   pub_->publish(cmd);
 
-void CameraProxy::setPosition(const UUID& id, const Vector3& pos)
+void CameraProxy::setPosition(const rviz_uuid::UUID& id, const Vector3& pos)
 {
   CAMERA_COMMAND(position, POSITION, pos);
 }
 
-void CameraProxy::setOrientation(const UUID& id, const Quaternion& orient)
+void CameraProxy::setOrientation(const rviz_uuid::UUID& id, const Quaternion& orient)
 {
   CAMERA_COMMAND(orientation, ORIENTATION, orient);
 }
 
-void CameraProxy::lookAt(const UUID& id, const Vector3& point)
+void CameraProxy::lookAt(const rviz_uuid::UUID& id, const Vector3& point)
 {
   CAMERA_COMMAND(look_at, LOOK_AT, point);
 }
 
-void CameraProxy::move(const UUID& id, const Vector3& vec)
+void CameraProxy::move(const rviz_uuid::UUID& id, const Vector3& vec)
 {
   rviz_msgs::CameraCommandPtr cmd(new rviz_msgs::CameraCommand);
   cmd->id = id;
@@ -82,7 +82,7 @@ void CameraProxy::move(const UUID& id, const Vector3& vec)
   pub_->publish(cmd);
 }
 
-void CameraProxy::moveRelative(const UUID& id, const Vector3& vec)
+void CameraProxy::moveRelative(const rviz_uuid::UUID& id, const Vector3& vec)
 {
   rviz_msgs::CameraCommandPtr cmd(new rviz_msgs::CameraCommand);
   cmd->id = id;
@@ -92,37 +92,37 @@ void CameraProxy::moveRelative(const UUID& id, const Vector3& vec)
   pub_->publish(cmd);
 }
 
-void CameraProxy::rotate(const UUID& id, const Quaternion& q)
+void CameraProxy::rotate(const rviz_uuid::UUID& id, const Quaternion& q)
 {
   CAMERA_COMMAND(rotate, ROTATE, q);
 }
 
-void CameraProxy::setFOVY(const UUID& id, float fovy)
+void CameraProxy::setFOVY(const rviz_uuid::UUID& id, float fovy)
 {
   CAMERA_COMMAND(fovy, FOVY, fovy);
 }
 
-void CameraProxy::setAspectRatio(const UUID& id, float aspect)
+void CameraProxy::setAspectRatio(const rviz_uuid::UUID& id, float aspect)
 {
   CAMERA_COMMAND(aspect_ratio, ASPECT_RATIO, aspect);
 }
 
-void CameraProxy::setAutoAspectRatio(const UUID& id, bool autoaspect)
+void CameraProxy::setAutoAspectRatio(const rviz_uuid::UUID& id, bool autoaspect)
 {
   CAMERA_COMMAND(auto_aspect_ratio, AUTO_ASPECT_RATIO, autoaspect);
 }
 
-void CameraProxy::setNearClipDistance(const UUID& id, float near_clip)
+void CameraProxy::setNearClipDistance(const rviz_uuid::UUID& id, float near_clip)
 {
   CAMERA_COMMAND(near_clip, NEAR_CLIP, near_clip);
 }
 
-void CameraProxy::setFarClipDistance(const UUID& id, float far_clip)
+void CameraProxy::setFarClipDistance(const rviz_uuid::UUID& id, float far_clip)
 {
   CAMERA_COMMAND(far_clip, FAR_CLIP, far_clip);
 }
 
-void CameraProxy::setTransform(const UUID& id, const Vector3& pos, const Quaternion& orient)
+void CameraProxy::setTransform(const rviz_uuid::UUID& id, const Vector3& pos, const Quaternion& orient)
 {
   rviz_msgs::CameraCommandPtr cmd(new rviz_msgs::CameraCommand);
   cmd->id = id;

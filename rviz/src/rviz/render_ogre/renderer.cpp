@@ -43,6 +43,8 @@
 
 #include <ros/console.h>
 
+using namespace rviz_uuid;
+
 namespace rviz
 {
 namespace render

@@ -49,9 +49,9 @@ class Camera : public Object
 {
 public:
   Camera();
-  Camera(const UUID& id, const UUID& scene_id);
+  Camera(const rviz_uuid::UUID& id, const rviz_uuid::UUID& scene_id);
 
-  const UUID& getSceneID() { return scene_id_; }
+  const rviz_uuid::UUID& getSceneID() { return scene_id_; }
 
   virtual void setPosition(const Vector3& pos);
   virtual void setOrientation(const Quaternion& orient);
@@ -68,7 +68,7 @@ public:
   virtual void setTransform(const Vector3& pos, const Quaternion& orient);
 
 private:
-  UUID scene_id_;
+  rviz_uuid::UUID scene_id_;
   render_client_proxy_interface::ICameraProxy* proxy_;
 };
 

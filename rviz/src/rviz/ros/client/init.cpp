@@ -29,12 +29,14 @@
 
 #include "init.h"
 #include "scene.h"
-#include <rviz/uuid.h>
+#include <rviz_uuid/uuid.h>
 
 #include <ros/ros.h>
 
 #include <rviz_msgs/CreateScene.h>
 #include <rviz_msgs/DestroyScene.h>
+
+using namespace rviz_uuid;
 
 namespace rviz
 {

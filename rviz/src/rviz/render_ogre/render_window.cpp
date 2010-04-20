@@ -35,6 +35,8 @@
 
 #include <ros/assert.h>
 
+using namespace rviz_uuid;
+
 namespace rviz
 {
 namespace render

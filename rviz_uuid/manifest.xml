@@ -1,0 +1,19 @@
+<package>
+  <description brief="rviz_uuid">
+
+     rviz_uuid
+
+  </description>
+  <author>Josh Faust</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/rviz_uuid</url>
+  <depend package="rviz_msgs"/>
+  <depend package="roslib"/>
+  
+  <export>
+  	<cpp cflags="-I${prefix}/include/" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lrviz_uuid"/>
+  </export>
+</package>
+
+

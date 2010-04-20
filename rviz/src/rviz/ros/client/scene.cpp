@@ -34,6 +34,8 @@
 #include <ros/ros.h>
 #include <rviz_msgs/CreateCamera.h>
 
+using namespace rviz_uuid;
+
 namespace rviz
 {
 namespace ros_client

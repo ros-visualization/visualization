@@ -32,9 +32,13 @@
 
 #include "iproxy.h"
 
-namespace rviz
+namespace rviz_uuid
 {
 class UUID;
+}
+
+namespace rviz
+{
 class Vector3;
 class Quaternion;
 
@@ -44,18 +48,18 @@ namespace render_client_proxy_interface
 class ICameraProxy : public IProxy
 {
 public:
-  virtual void setPosition(const UUID&, const Vector3&) = 0;
-  virtual void setOrientation(const UUID&, const Quaternion&) = 0;
-  virtual void lookAt(const UUID&, const Vector3&) = 0;
-  virtual void move(const UUID&, const Vector3&) = 0;
-  virtual void moveRelative(const UUID&, const Vector3&) = 0;
-  virtual void rotate(const UUID&, const Quaternion&) = 0;
-  virtual void setFOVY(const UUID&, float fovy) = 0;
-  virtual void setAspectRatio(const UUID&, float aspect) = 0;
-  virtual void setAutoAspectRatio(const UUID&, bool autoratio) = 0;
-  virtual void setNearClipDistance(const UUID&, float dist) = 0;
-  virtual void setFarClipDistance(const UUID&, float dist) = 0;
-  virtual void setTransform(const UUID&, const Vector3& pos, const Quaternion& orient) = 0;
+  virtual void setPosition(const rviz_uuid::UUID&, const Vector3&) = 0;
+  virtual void setOrientation(const rviz_uuid::UUID&, const Quaternion&) = 0;
+  virtual void lookAt(const rviz_uuid::UUID&, const Vector3&) = 0;
+  virtual void move(const rviz_uuid::UUID&, const Vector3&) = 0;
+  virtual void moveRelative(const rviz_uuid::UUID&, const Vector3&) = 0;
+  virtual void rotate(const rviz_uuid::UUID&, const Quaternion&) = 0;
+  virtual void setFOVY(const rviz_uuid::UUID&, float fovy) = 0;
+  virtual void setAspectRatio(const rviz_uuid::UUID&, float aspect) = 0;
+  virtual void setAutoAspectRatio(const rviz_uuid::UUID&, bool autoratio) = 0;
+  virtual void setNearClipDistance(const rviz_uuid::UUID&, float dist) = 0;
+  virtual void setFarClipDistance(const rviz_uuid::UUID&, float dist) = 0;
+  virtual void setTransform(const rviz_uuid::UUID&, const Vector3& pos, const Quaternion& orient) = 0;
 };
 
 } // namespace render_client_proxy_interface

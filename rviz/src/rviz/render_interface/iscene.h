@@ -31,9 +31,13 @@
 #ifndef RVIZ_RENDER_ISCENE_H
 #define RVIZ_RENDER_ISCENE_H
 
-namespace rviz
+namespace rviz_uuid
 {
 class UUID;
+}
+
+namespace rviz
+{
 
 namespace render
 {
@@ -42,9 +46,9 @@ class ICamera;
 class IScene
 {
 public:
-  virtual ICamera* createCamera(const UUID&) = 0;
-  virtual void destroyCamera(const UUID&) = 0;
-  virtual ICamera* getCamera(const UUID&) = 0;
+  virtual ICamera* createCamera(const rviz_uuid::UUID&) = 0;
+  virtual void destroyCamera(const rviz_uuid::UUID&) = 0;
+  virtual ICamera* getCamera(const rviz_uuid::UUID&) = 0;
 };
 
 } // namespace render

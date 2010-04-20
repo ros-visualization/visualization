@@ -1,8 +1,7 @@
 include_directories(.)
 
 # We create one lib with the C++...
-rosbuild_add_library(rviz_renderer uuid.cpp
-								   math/vector3.cpp
+rosbuild_add_library(rviz_renderer math/vector3.cpp
 								   math/quaternion.cpp
 								   render_ogre/convert.cpp 
 								   render_ogre/renderer.cpp

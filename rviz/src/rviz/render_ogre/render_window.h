@@ -54,7 +54,7 @@ public:
 
   virtual const std::string& getName();
   virtual void resized(uint32_t width, uint32_t height);
-  virtual void attachCamera(const UUID& id);
+  virtual void attachCamera(const rviz_uuid::UUID& id);
 
   Ogre::RenderWindow* getOgreRenderWindow() { return render_window_; }
 
