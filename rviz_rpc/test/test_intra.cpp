@@ -30,17 +30,28 @@
 #include <rviz_rpc/client.h>
 #include <rviz_rpc/server.h>
 
-#include <gtest/gtest.h>
-
 #include <rviz_rpc/TestRequest.h>
 #include <rviz_rpc/TestResponse.h>
 
+#include <ros/ros.h>
+
+#include <gtest/gtest.h>
+
+#include <boost/thread.hpp>
+
 using namespace rviz_rpc;
 
-TestResponsePtr doubleCallback(const TestRequestConstPtr& req)
+TestResponsePtr doubleCallback(const ros::MessageEvent<TestRequest>& req)
 {
   TestResponsePtr res(new TestResponse);
-  res->value_doubled = req->value * 2;
+  res->value = req.getMessage()->value * 2;
+  return res;
+}
+
+TestResponsePtr tripleCallback(const ros::MessageEvent<TestRequest>& req)
+{
+  TestResponsePtr res(new TestResponse);
+  res->value = req.getMessage()->value * 3;
   return res;
 }
 
@@ -49,31 +60,87 @@ TEST(Intra, callWithReturn)
   ros::AsyncSpinner sp(1);
   sp.start();
   ros::NodeHandle nh;
-  Client<TestRequest, TestResponse> c("test", nh);
-  Server<TestRequest, TestResponse> s("test", nh, doubleCallback);
+  Server s("test", nh);
+  s.addMethod<TestRequest, TestResponse>("double", doubleCallback);
+  s.ready();
 
-  c.waitForServer();
+  Client c("test", nh);
+  Method<TestRequest, TestResponse> m = c.addMethod<TestRequest, TestResponse>("double");
+  c.connect();
 
   TestRequestPtr req(new TestRequest);
   req->value = 5;
-  TestResponseConstPtr res = c.call(req);
-  EXPECT_EQ(res->value_doubled, 10U);
+  TestResponseConstPtr res = m.call(req);
+  EXPECT_EQ(res->value, 10U);
 }
 
-void callThread(volatile bool& done, bool& success, uint32_t start)
+TEST(Intra, multipleMethodsWithReturn)
 {
+  ros::AsyncSpinner sp(1);
+  sp.start();
   ros::NodeHandle nh;
-  Client<TestRequest, TestResponse> c("test", nh);
-  c.waitForServer();
+  Server s("test", nh);
+  s.addMethod<TestRequest, TestResponse>("double", doubleCallback);
+  s.addMethod<TestRequest, TestResponse>("triple", tripleCallback);
+  s.ready();
 
+  Client c("test", nh);
+  Method<TestRequest, TestResponse> d = c.addMethod<TestRequest, TestResponse>("double");
+  Method<TestRequest, TestResponse> t = c.addMethod<TestRequest, TestResponse>("triple");
+  c.connect();
+
+  {
+    TestRequestPtr req(new TestRequest);
+    req->value = 5;
+    TestResponseConstPtr res = d.call(req);
+    EXPECT_EQ(res->value, 10U);
+  }
+
+  {
+    TestRequestPtr req(new TestRequest);
+    req->value = 20;
+    TestResponseConstPtr res = t.call(req);
+    EXPECT_EQ(res->value, 60U);
+  }
+}
+
+TEST(Intra, callUnknownMethod)
+{
+  ros::AsyncSpinner sp(1);
+  sp.start();
+  ros::NodeHandle nh;
+  Server s("test", nh);
+  s.addMethod<TestRequest, TestResponse>("double", doubleCallback);
+  s.ready();
+
+  Client c("test", nh);
+  Method<TestRequest, TestResponse> m = c.addMethod<TestRequest, TestResponse>("triple");
+  c.connect();
+
+  TestRequestPtr req(new TestRequest);
+  req->value = 5;
+
+  try
+  {
+    TestResponseConstPtr res = m.call(req);
+    FAIL();
+  }
+  catch (CallException&)
+  {
+    SUCCEED();
+  }
+}
+
+void callThread(Method<TestRequest, TestResponse>& m, volatile bool& done, bool& success, uint32_t start)
+{
   while (!done)
   {
     TestRequestPtr req(new TestRequest);
     req->value = start++;
-    TestResponseConstPtr res = c.call(req);
-    if (res->value_doubled != req->value * 2)
+    TestResponseConstPtr res = m.call(req);
+    if (res->value != req->value * 2)
     {
-      ROS_ERROR("Expected %d but got %d", req->value, res->value_doubled);
+      ROS_ERROR("Expected %d but got %d", req->value, res->value);
       success = false;
     }
   }
@@ -81,17 +148,23 @@ void callThread(volatile bool& done, bool& success, uint32_t start)
 
 TEST(Intra, multipleCallerThreads)
 {
-  ros::AsyncSpinner sp(4);
+  ros::AsyncSpinner sp(1);
   sp.start();
   ros::NodeHandle nh;
-  Server<TestRequest, TestResponse> s("test", nh, doubleCallback);
+  Server s("test", nh);
+  s.addMethod<TestRequest, TestResponse>("double", doubleCallback);
+  s.ready();
+
+  Client c("test", nh);
+  Method<TestRequest, TestResponse> m = c.addMethod<TestRequest, TestResponse>("double");
+  c.connect();
 
   bool done = false;
   bool success = true;
   boost::thread_group tg;
   for (uint32_t i = 0; i < 10; ++i)
   {
-    tg.create_thread(boost::bind(callThread, boost::ref(done), boost::ref(success), i * 10000));
+    tg.create_thread(boost::bind(callThread, boost::ref(m), boost::ref(done), boost::ref(success), i * 10000));
   }
 
   ros::WallDuration(5.0).sleep();
@@ -100,6 +173,7 @@ TEST(Intra, multipleCallerThreads)
 
   ASSERT_TRUE(success);
 }
+
 
 int main(int argc, char** argv)
 {

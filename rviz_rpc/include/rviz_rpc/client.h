@@ -31,17 +31,18 @@
 #define RVIZ_RPC_CLIENT_H
 
 
-#include "traits.h"
 #include "exceptions.h"
+#include <rviz_rpc/Request.h>
+#include <rviz_rpc/Response.h>
 #include <rviz_uuid/uuid.h>
 
 #include <string>
 #include <boost/shared_ptr.hpp>
+#include <boost/make_shared.hpp>
+#include <boost/function.hpp>
+#include <boost/bind.hpp>
 
-#include <ros/ros.h>
-#include <ros/callback_queue.h>
-
-#include <boost/thread.hpp>
+#include <ros/serialization.h>
 
 namespace ros
 {
@@ -52,7 +53,7 @@ namespace rviz_rpc
 {
 
 template<typename Req, typename Res>
-class Client
+class Method
 {
 public:
   typedef boost::shared_ptr<Req> ReqPtr;
@@ -60,104 +61,89 @@ public:
   typedef boost::shared_ptr<Res> ResPtr;
   typedef boost::shared_ptr<Res const> ResConstPtr;
 
-  Client(const std::string& name, const ros::NodeHandle& nh)
-  : nh_(nh, name)
-  {
-    pub_ = nh_.advertise<Req>("request", 0);
+  typedef boost::function<ResponseConstPtr(const RequestPtr&)> CallFn;
+  typedef boost::function<void(const RequestPtr&)> AsyncCallFn;
 
-    ros::SubscribeOptions sub_ops;
-    sub_ops.init<Res>("response", 0, boost::bind(&Client::cb, this, _1));
-    sub_ops.callback_queue = &cbqueue_;
-    sub_ = nh_.subscribe(sub_ops);
+  Method() {}
+
+  Method(const std::string& name, const CallFn& c, const AsyncCallFn& ac)
+  : impl_(new Impl)
+  {
+    impl_->name = name;
+    impl_->call_fn = c;
+    impl_->async_call_fn = ac;
   }
 
-  void waitForServer()
+  ResConstPtr call(const ReqConstPtr& req)
   {
-    while (sub_.getNumPublishers() == 0 && pub_.getNumSubscribers() == 0)
-    {
-      ros::WallDuration(0.01).sleep();
-    }
+    ROS_ASSERT(impl_);
+
+    namespace ser = ros::serialization;
+
+    RequestPtr request(new Request);
+    request->method = impl_->name;
+
+    ros::SerializedMessage sm = ser::serializeMessage(*req);
+    request->data.insert(request->data.end(), sm.message_start, sm.message_start + sm.num_bytes);
+
+    ResponseConstPtr response = impl_->call_fn(request);
+
+    ResPtr res = boost::make_shared<Res>();
+    ROS_ASSERT(!response->data.empty());
+    ser::IStream stream((uint8_t*)&response->data.front(), response->data.size());
+    ser::deserialize(stream, *res);
+
+    return res;
   }
 
-  ResConstPtr call(const ReqPtr& req)
+  void callAsync(const ReqConstPtr& req)
   {
-    RequestInfoPtr info(new RequestInfo);
-    info->id = rviz_uuid::UUID::Generate();
-    traits::RequestID<Req>::reference(*req) = info->id;
+    ROS_ASSERT(impl_);
 
-    {
-      boost::mutex::scoped_lock lock(requests_mutex_);
-      requests_.insert(std::make_pair(info->id, info));
-    }
+    namespace ser = ros::serialization;
 
-    pub_.publish(req);
+    RequestPtr request(new Request);
+    request->method = impl_->name;
 
-    while (!info->received)
-    {
-      cbqueue_.callOne(ros::WallDuration(0.1));
-    }
+    ros::SerializedMessage sm = ser::serializeMessage(*req);
+    request->data.insert(request->data.end(), sm.buf.get(), sm.buf.get() + sm.num_bytes);
 
-    ROS_ASSERT(info->res);
-
-    uint8_t error_code = traits::ErrorCode<Res>::value(*info->res);
-    if (error_code == error_codes::Success)
-    {
-      return info->res;
-    }
-    else if (error_code == error_codes::Exception)
-    {
-      throw CallException(traits::ErrorString<Res>::constReference(*info->res));
-    }
-    else
-    {
-      std::stringstream ss;
-      ss << "Unknown error code [" << error_code << "] while calling [" << pub_.getTopic() << "]";
-      throw CallException(ss.str().c_str());
-    }
-  }
-
-  void callAsync(const ReqPtr& req)
-  {
-    traits::RequestID<Req>::reference(*req) = rviz_uuid::UUID::Generate();
-    pub_.publish(req);
+    impl_->async_call_fn(request);
   }
 
 private:
-  void cb(const ResConstPtr& res)
+  struct Impl
   {
-    rviz_uuid::UUID id = traits::RequestID<Res>::value(*res);
+    CallFn call_fn;
+    AsyncCallFn async_call_fn;
+    std::string name;
+  };
+  typedef boost::shared_ptr<Impl> ImplPtr;
+  ImplPtr impl_;
+};
 
-    {
-      boost::mutex::scoped_lock lock(requests_mutex_);
-      typename M_RequestInfo::iterator it = requests_.find(id);
-      if (it != requests_.end())
-      {
-        it->second->res = res;
-        it->second->received = true;
-      }
-    }
+class Client
+{
+public:
+  Client(const std::string& name, const ros::NodeHandle& nh);
+  void connect();
+
+  template<typename Req, typename Res>
+  Method<Req, Res> addMethod(const std::string& name)
+  {
+    Method<Req, Res> method(name, boost::bind(&Client::call, this, _1), boost::bind(&Client::callAsync, this, _1));
+    addMethod(name);
+    return method;
   }
 
-  ros::CallbackQueue cbqueue_;
-  ros::Subscriber sub_;
-  ros::Publisher pub_;
-  ros::NodeHandle nh_;
+private:
+  void addMethod(const std::string& name);
+  ResponseConstPtr call(const RequestPtr& req);
+  void callAsync(const RequestPtr& req);
 
-  struct RequestInfo
-  {
-    RequestInfo()
-    : received(false)
-    {}
-
-    rviz_uuid::UUID id;
-    ResConstPtr res;
-    volatile bool received;
-  };
-  typedef boost::shared_ptr<RequestInfo> RequestInfoPtr;
-
-  typedef std::map<rviz_uuid::UUID, RequestInfoPtr> M_RequestInfo;
-  M_RequestInfo requests_;
-  boost::mutex requests_mutex_;
+  struct Impl;
+  typedef boost::shared_ptr<Impl> ImplPtr;
+  ImplPtr impl_;
 };
 
 } // namespace rviz_rpc

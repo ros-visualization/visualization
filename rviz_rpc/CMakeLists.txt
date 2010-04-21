@@ -21,8 +21,11 @@ rosbuild_genmsg()
 #uncomment if you have defined services
 #rosbuild_gensrv()
 
+rosbuild_add_library(${PROJECT_NAME} src/server.cpp src/client.cpp)
+rosbuild_add_boost_directories()
+rosbuild_link_boost(${PROJECT_NAME} thread)
 
 rosbuild_add_executable(test_intra EXCLUDE_FROM_ALL  test/test_intra.cpp)
-#target_link_libraries(test_intra ${PROJECT_NAME})
+target_link_libraries(test_intra ${PROJECT_NAME})
 rosbuild_add_gtest_build_flags(test_intra)
 rosbuild_add_rostest(test/test_intra.test)

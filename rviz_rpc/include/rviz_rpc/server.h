@@ -30,66 +30,122 @@
 #ifndef RVIZ_RPC_SERVER_H
 #define RVIZ_RPC_SERVER_H
 
-#include "traits.h"
-#include <rviz_uuid/uuid.h>
+#include "exceptions.h"
+#include "rviz_rpc/Request.h"
 
 #include <string>
 #include <boost/shared_ptr.hpp>
+#include <boost/make_shared.hpp>
+#include <boost/function.hpp>
 
-#include <ros/ros.h>
-#include <ros/callback_queue.h>
+#include <boost/type_traits/remove_const.hpp>
+#include <boost/type_traits/is_const.hpp>
 
-#include <boost/thread.hpp>
+#include <ros/serialization.h>
+#include <ros/message_event.h>
+
+namespace ros
+{
+class NodeHandle;
+class Publisher;
+}
 
 namespace rviz_rpc
 {
 
+typedef boost::shared_ptr<void> VoidPtr;
+typedef boost::shared_ptr<void const> VoidConstPtr;
+
+template<typename T>
+ros::SerializedMessage serialize(const VoidConstPtr& message)
+{
+  namespace ser = ros::serialization;
+  boost::shared_ptr<T const> m = boost::static_pointer_cast<T const>(message);
+  return ser::serializeMessage(*m);
+}
+
+struct SerializableMessage
+{
+  VoidConstPtr message;
+  boost::function<ros::SerializedMessage(const VoidConstPtr& message)> serialize;
+};
+
+class CallbackHelper
+{
+public:
+  virtual ~CallbackHelper() {}
+  virtual SerializableMessage call(const ros::MessageEvent<Request const>& incoming_event) = 0;
+  virtual const std::type_info& getRequestTypeInfo() = 0;
+  virtual const std::type_info& getResponseTypeInfo() = 0;
+};
+typedef boost::shared_ptr<CallbackHelper> CallbackHelperPtr;
+
 template<typename Req, typename Res>
-class Server
+class CallbackHelperT : public CallbackHelper
 {
 public:
   typedef boost::shared_ptr<Req> ReqPtr;
   typedef boost::shared_ptr<Req const> ReqConstPtr;
+  typedef ros::MessageEvent<Req const> ReqEvent;
   typedef boost::shared_ptr<Res> ResPtr;
   typedef boost::shared_ptr<Res const> ResConstPtr;
-  typedef boost::function<ResPtr(const ReqConstPtr&)> Callback;
+  typedef boost::function<ResConstPtr(const ReqEvent&)> Callback;
 
-  Server(const std::string& name, ros::NodeHandle& nh, const Callback& cb)
-  : nh_(nh, name)
-  , cb_(cb)
+  CallbackHelperT(const Callback& cb)
+  : cb_(cb)
+  {}
+
+  virtual SerializableMessage call(const ros::MessageEvent<Request const>& incoming_event)
   {
-    pub_ = nh_.advertise<Res>("response", 0);
-    sub_ = nh_.subscribe("request", 0, &Server::cb, this);
+    namespace ser = ros::serialization;
+
+    ReqPtr req = boost::make_shared<Req>();
+
+    if (!req)
+    {
+      throw CallException("Allocate failed");
+    }
+
+    ROS_ASSERT(!incoming_event.getMessage()->data.empty());
+    ser::IStream stream((uint8_t*)&incoming_event.getMessage()->data.front(), incoming_event.getMessage()->data.size());
+    ser::deserialize(stream, *req);
+
+    ros::MessageEvent<Req> evt(req, incoming_event.getConnectionHeaderPtr(), ros::Time::now());
+
+    ResConstPtr res = cb_(evt);
+    SerializableMessage sm;
+    sm.message = res;
+    sm.serialize = serialize<Res>;
+    return sm;
   }
+
+  virtual const std::type_info& getRequestTypeInfo() { return typeid(Req); }
+  virtual const std::type_info& getResponseTypeInfo() { return typeid(Res); }
 
 private:
+  Callback cb_;
+};
 
-  void cb(const ReqConstPtr& req)
+class Server
+{
+public:
+  Server(const std::string& name, const ros::NodeHandle& nh);
+
+  template<typename Req, typename Res>
+  void addMethod(const std::string& name, const boost::function<boost::shared_ptr<Res const>(const ros::MessageEvent<Req const>&)>& callback)
   {
-    try
-    {
-      ResPtr res = cb_(req);
-      ROS_ASSERT(res);
-
-      traits::RequestID<Res>::reference(*res) = traits::RequestID<Req>::value(*req);
-
-      pub_.publish(res);
-    }
-    catch (std::exception& e)
-    {
-      ResPtr res(new Res);
-      traits::ErrorCode<Res>::reference(*res) = error_codes::Exception;
-      traits::ErrorString<Res>::reference(*res) = e.what();
-      traits::RequestID<Res>::reference(*res) = traits::RequestID<Req>::value(*req);
-
-      pub_.publish(res);
-    }
+    CallbackHelperPtr helper(new CallbackHelperT<Req, Res>(callback));
+    addMethod(name, helper);
   }
 
-  ros::Subscriber sub_;
-  ros::Publisher pub_;
-  ros::NodeHandle nh_;
-  Callback cb_;
+  void addMethod(const std::string& name, const CallbackHelperPtr& helper);
+
+  void ready();
+
+private:
+  struct Impl;
+  typedef boost::shared_ptr<Impl> ImplPtr;
+  ImplPtr impl_;
 };
 
 } // namespace rviz_rpc
