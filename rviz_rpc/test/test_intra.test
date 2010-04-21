@@ -1,0 +1,3 @@
+<launch>
+	<test test-name="test_intra" pkg="rviz_rpc" type="test_intra"/>
+</launch>

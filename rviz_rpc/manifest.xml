@@ -1,0 +1,17 @@
+<package>
+  <description brief="rviz_rpc">
+
+     rviz_rpc
+
+  </description>
+  <author>Josh Faust</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/rviz_rpc</url>
+  <depend package="roscpp"/>
+  <depend package="roslib"/>
+  <depend package="rviz_uuid"/>
+  <depend package="rviz_msgs"/>
+</package>
+
+
