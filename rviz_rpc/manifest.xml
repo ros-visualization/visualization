@@ -12,6 +12,7 @@
   <depend package="roslib"/>
   <depend package="rviz_uuid"/>
   <depend package="rviz_msgs"/>
+  <depend package="std_msgs"/>
 </package>
 
 

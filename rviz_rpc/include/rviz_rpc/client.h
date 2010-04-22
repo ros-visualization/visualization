@@ -32,8 +32,8 @@
 
 
 #include "exceptions.h"
-#include <rviz_rpc/Request.h>
-#include <rviz_rpc/Response.h>
+#include "request_wrapper.h"
+#include "response_wrapper.h"
 #include <rviz_uuid/uuid.h>
 
 #include <string>
@@ -61,8 +61,8 @@ public:
   typedef boost::shared_ptr<Res> ResPtr;
   typedef boost::shared_ptr<Res const> ResConstPtr;
 
-  typedef boost::function<ResponseConstPtr(const RequestPtr&)> CallFn;
-  typedef boost::function<void(const RequestPtr&)> AsyncCallFn;
+  typedef boost::function<ResponseWrapperConstPtr(const RequestWrapperPtr&)> CallFn;
+  typedef boost::function<void(const RequestWrapperPtr&)> AsyncCallFn;
 
   Method() {}
 
@@ -80,20 +80,15 @@ public:
 
     namespace ser = ros::serialization;
 
-    RequestPtr request(new Request);
+    RequestWrapperPtr request(boost::make_shared<RequestWrapper>());
     request->method = impl_->name;
+    request->message.message = req;
+    request->message.serialize = serialize<Req>;
+    request->message.serialized_length = serializedLength<Req>;
+    request->message.ti = &typeid(Req);
 
-    ros::SerializedMessage sm = ser::serializeMessage(*req);
-    request->data.insert(request->data.end(), sm.message_start, sm.message_start + sm.num_bytes);
-
-    ResponseConstPtr response = impl_->call_fn(request);
-
-    ResPtr res = boost::make_shared<Res>();
-    ROS_ASSERT(!response->data.empty());
-    ser::IStream stream((uint8_t*)&response->data.front(), response->data.size());
-    ser::deserialize(stream, *res);
-
-    return res;
+    ResponseWrapperConstPtr response = impl_->call_fn(request);
+    return response->instantiate<Res>();
   }
 
   void callAsync(const ReqConstPtr& req)
@@ -102,11 +97,12 @@ public:
 
     namespace ser = ros::serialization;
 
-    RequestPtr request(new Request);
+    RequestWrapperPtr request(boost::make_shared<RequestWrapper>());
     request->method = impl_->name;
-
-    ros::SerializedMessage sm = ser::serializeMessage(*req);
-    request->data.insert(request->data.end(), sm.buf.get(), sm.buf.get() + sm.num_bytes);
+    request->message.message = req;
+    request->message.serialize = serialize<Req>;
+    request->message.serialized_length = serializedLength<Req>;
+    request->message.ti = &typeid(Req);
 
     impl_->async_call_fn(request);
   }
@@ -138,8 +134,8 @@ public:
 
 private:
   void addMethod(const std::string& name);
-  ResponseConstPtr call(const RequestPtr& req);
-  void callAsync(const RequestPtr& req);
+  ResponseWrapperConstPtr call(const RequestWrapperPtr& req);
+  void callAsync(const RequestWrapperPtr& req);
 
   struct Impl;
   typedef boost::shared_ptr<Impl> ImplPtr;

@@ -1,0 +1,3 @@
+<launch>
+	<test test-name="test_wrappers" pkg="rviz_rpc" type="test_wrappers"/>
+</launch>

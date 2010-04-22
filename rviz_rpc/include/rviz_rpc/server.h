@@ -31,7 +31,9 @@
 #define RVIZ_RPC_SERVER_H
 
 #include "exceptions.h"
-#include "rviz_rpc/Request.h"
+#include "serializable_message.h"
+#include "request_wrapper.h"
+#include "response_wrapper.h"
 
 #include <string>
 #include <boost/shared_ptr.hpp>
@@ -53,28 +55,11 @@ class Publisher;
 namespace rviz_rpc
 {
 
-typedef boost::shared_ptr<void> VoidPtr;
-typedef boost::shared_ptr<void const> VoidConstPtr;
-
-template<typename T>
-ros::SerializedMessage serialize(const VoidConstPtr& message)
-{
-  namespace ser = ros::serialization;
-  boost::shared_ptr<T const> m = boost::static_pointer_cast<T const>(message);
-  return ser::serializeMessage(*m);
-}
-
-struct SerializableMessage
-{
-  VoidConstPtr message;
-  boost::function<ros::SerializedMessage(const VoidConstPtr& message)> serialize;
-};
-
 class CallbackHelper
 {
 public:
   virtual ~CallbackHelper() {}
-  virtual SerializableMessage call(const ros::MessageEvent<Request const>& incoming_event) = 0;
+  virtual SerializableMessage call(const ros::MessageEvent<RequestWrapper const>& incoming_event) = 0;
   virtual const std::type_info& getRequestTypeInfo() = 0;
   virtual const std::type_info& getResponseTypeInfo() = 0;
 };
@@ -95,27 +80,20 @@ public:
   : cb_(cb)
   {}
 
-  virtual SerializableMessage call(const ros::MessageEvent<Request const>& incoming_event)
+  virtual SerializableMessage call(const ros::MessageEvent<RequestWrapper const>& incoming_event)
   {
     namespace ser = ros::serialization;
 
-    ReqPtr req = boost::make_shared<Req>();
-
-    if (!req)
-    {
-      throw CallException("Allocate failed");
-    }
-
-    ROS_ASSERT(!incoming_event.getMessage()->data.empty());
-    ser::IStream stream((uint8_t*)&incoming_event.getMessage()->data.front(), incoming_event.getMessage()->data.size());
-    ser::deserialize(stream, *req);
-
-    ros::MessageEvent<Req> evt(req, incoming_event.getConnectionHeaderPtr(), ros::Time::now());
+    ros::MessageEvent<Req const> evt(incoming_event.getMessage()->instantiate<Req>(), incoming_event.getConnectionHeaderPtr(),
+                                     incoming_event.getReceiptTime(), incoming_event.getMessageWillCopy(),
+                                     typename ros::MessageEvent<Req const>::CreateFunction());
 
     ResConstPtr res = cb_(evt);
     SerializableMessage sm;
     sm.message = res;
     sm.serialize = serialize<Res>;
+    sm.serialized_length = serializedLength<Res>;
+    sm.ti = &typeid(Res);
     return sm;
   }
 

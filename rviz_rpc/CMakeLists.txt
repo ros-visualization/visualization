@@ -29,3 +29,8 @@ rosbuild_add_executable(test_intra EXCLUDE_FROM_ALL  test/test_intra.cpp)
 target_link_libraries(test_intra ${PROJECT_NAME})
 rosbuild_add_gtest_build_flags(test_intra)
 rosbuild_add_rostest(test/test_intra.test)
+
+rosbuild_add_executable(test_wrappers EXCLUDE_FROM_ALL  test/test_wrappers.cpp)
+target_link_libraries(test_wrappers ${PROJECT_NAME})
+rosbuild_add_gtest_build_flags(test_wrappers)
+rosbuild_add_rostest(test/test_wrappers.test)

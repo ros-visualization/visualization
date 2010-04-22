@@ -43,9 +43,9 @@ struct Client::Impl
   Impl(const std::string& name, const ros::NodeHandle& nh);
 
   void connect();
-  ResponseConstPtr call(const RequestPtr& req);
-  void callAsync(const RequestPtr& req);
-  void cb(const ResponseConstPtr& res);
+  ResponseWrapperConstPtr call(const RequestWrapperPtr& req);
+  void callAsync(const RequestWrapperPtr& req);
+  void cb(const ResponseWrapperConstPtr& res);
   void addMethod(const std::string& name);
 
   ros::CallbackQueue cbqueue_;
@@ -60,7 +60,7 @@ struct Client::Impl
     {}
 
     rviz_uuid::UUID id;
-    ResponseConstPtr res;
+    ResponseWrapperConstPtr res;
     volatile bool received;
   };
   typedef boost::shared_ptr<RequestInfo> RequestInfoPtr;
@@ -77,10 +77,10 @@ Client::Impl::Impl(const std::string& name, const ros::NodeHandle& nh)
 
 void Client::Impl::connect()
 {
-  pub_ = nh_.advertise<Request>("request", 0);
+  pub_ = nh_.advertise<RequestWrapper>("request", 0);
 
   ros::SubscribeOptions sub_ops;
-  sub_ops.init<Response>("response", 0, boost::bind(&Impl::cb, this, _1));
+  sub_ops.init<ResponseWrapper>("response", 0, boost::bind(&Impl::cb, this, _1));
   sub_ops.callback_queue = &cbqueue_;
   sub_ = nh_.subscribe(sub_ops);
 
@@ -90,7 +90,7 @@ void Client::Impl::connect()
   }
 }
 
-void Client::Impl::cb(const ResponseConstPtr& res)
+void Client::Impl::cb(const ResponseWrapperConstPtr& res)
 {
   rviz_uuid::UUID id = res->request_id;
 
@@ -110,11 +110,11 @@ void Client::Impl::addMethod(const std::string& name)
 
 }
 
-ResponseConstPtr Client::Impl::call(const RequestPtr& req)
+ResponseWrapperConstPtr Client::Impl::call(const RequestWrapperPtr& req)
 {
   req->request_id = rviz_uuid::UUID::Generate();
 
-  RequestInfoPtr info(new RequestInfo);
+  RequestInfoPtr info(boost::make_shared<RequestInfo>());
   info->id = req->request_id;
 
   {
@@ -154,7 +154,7 @@ ResponseConstPtr Client::Impl::call(const RequestPtr& req)
   }
 }
 
-void Client::Impl::callAsync(const RequestPtr& req)
+void Client::Impl::callAsync(const RequestWrapperPtr& req)
 {
   req->request_id = rviz_uuid::UUID::Generate();
   pub_.publish(req);
@@ -174,12 +174,12 @@ void Client::connect()
   impl_->connect();
 }
 
-ResponseConstPtr Client::call(const RequestPtr& req)
+ResponseWrapperConstPtr Client::call(const RequestWrapperPtr& req)
 {
   return impl_->call(req);
 }
 
-void Client::callAsync(const RequestPtr& req)
+void Client::callAsync(const RequestWrapperPtr& req)
 {
   impl_->callAsync(req);
 }

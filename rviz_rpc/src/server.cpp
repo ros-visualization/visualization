@@ -32,9 +32,6 @@
 #include <ros/ros.h>
 #include <ros/callback_queue.h>
 
-#include <rviz_rpc/Request.h>
-#include <rviz_rpc/Response.h>
-
 namespace rviz_rpc
 {
 
@@ -44,7 +41,7 @@ struct Server::Impl
   void ready();
   void addMethod(const std::string& name, const CallbackHelperPtr& helper);
 
-  void callback(const ros::MessageEvent<rviz_rpc::Request const>& evt);
+  void callback(const ros::MessageEvent<RequestWrapper const>& evt);
 
   ros::CallbackQueue cbqueue_;
   ros::NodeHandle nh_;
@@ -66,7 +63,7 @@ void Server::Impl::ready()
 {
   ROS_ASSERT(!pub_);
   ROS_ASSERT(!sub_);
-  pub_ = nh_.advertise<rviz_rpc::Response>("response", 0);
+  pub_ = nh_.advertise<ResponseWrapper>("response", 0);
   sub_ = nh_.subscribe("request", 0, &Impl::callback, this);
 }
 
@@ -79,10 +76,10 @@ void Server::Impl::addMethod(const std::string& name, const CallbackHelperPtr& h
   methods_[name] = helper;
 }
 
-void Server::Impl::callback(const ros::MessageEvent<rviz_rpc::Request const>& evt)
+void Server::Impl::callback(const ros::MessageEvent<RequestWrapper const>& evt)
 {
-  RequestConstPtr req = evt.getMessage();
-  ResponsePtr res(new Response);
+  RequestWrapperConstPtr req = evt.getMessage();
+  ResponseWrapperPtr res(new ResponseWrapper);
   res->request_id = req->request_id;
   M_Method::iterator it = methods_.find(req->method);
   if (it == methods_.end())
@@ -97,19 +94,15 @@ void Server::Impl::callback(const ros::MessageEvent<rviz_rpc::Request const>& ev
 
   try
   {
-    SerializableMessage m = helper->call(evt);
-    ros::SerializedMessage sm = m.serialize(m.message);
-
-    res->data.insert(res->data.end(), sm.message_start, sm.message_start + sm.num_bytes);
-    pub_.publish(res);
+    res->message = helper->call(evt);
   }
   catch (std::exception& e)
   {
     res->error_code = Response::EXCEPTION;
     res->error_string = e.what();
-    pub_.publish(res);
-    return;
   }
+
+  pub_.publish(res);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////
