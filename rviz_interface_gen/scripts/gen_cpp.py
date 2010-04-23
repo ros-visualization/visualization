@@ -41,6 +41,7 @@ import roscpp.msg_gen as genmsg_cpp
 from cStringIO import StringIO
 
 import sys
+import os
 
 def write_header_begin(hs, i, pkg):
     print >> hs, '#ifndef INTERFACE_%s_%s_H'%(pkg.upper(), i.name.upper())
@@ -149,9 +150,10 @@ def write_header_server_declaration(hs, i, pkg):
     
     print >> hs, '};\n'
 
-def generate(i, pkg, pkg_path):
+def generate(output_dir, i, pkg, pkg_path):
     hs = StringIO()
     cpps = StringIO()
+    
     write_header_begin(hs, i, pkg)
     write_header_includes(hs, i, pkg)
     
@@ -164,11 +166,30 @@ def generate(i, pkg, pkg_path):
     print >> hs, '}\n'
     
     write_header_end(hs, i, pkg)
-    print hs.getvalue()
+    
+    try:
+        os.makedirs('%s/include'%(output_dir))
+    except OSError, e:
+        pass
+    try:
+        os.makedirs('%s/src'%(output_dir))
+    except OSError, e:
+        pass
+         
+    f = open('%s/include/%s.h'%(output_dir, i.name), 'w')
+    print >> f, hs.getvalue()
+    f.close()
+    
+    f = open('%s/src/%s.cpp'%(output_dir, i.name), 'w')
+    print >> f, cpps.getvalue()
+    f.close()
 
 if __name__ == "__main__":
-    for arg in sys.argv[1:]:
-        (package_dir, package) = roslib.packages.get_dir_pkg(arg)
-        p = gen.load_from_file(arg)
-        for i in p.interfaces:
-            generate(i, package, package_dir)
+    input = sys.argv[1]
+    output_dir = sys.argv[2]
+        
+    (package_dir, package) = roslib.packages.get_dir_pkg(input)
+    p = gen.load_from_file(input)
+    for i in p.interfaces:
+        generate(output_dir, i, package, package_dir)
+        
