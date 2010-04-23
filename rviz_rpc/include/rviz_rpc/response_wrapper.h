@@ -49,10 +49,12 @@ namespace rviz_rpc
 struct ResponseWrapper
 {
   ResponseWrapper()
-  : error_code(0)
+  : protocol(0)
+  , error_code(0)
   {}
 
   rviz_uuid::UUID request_id;
+  uint8_t protocol;
   uint8_t error_code;
   std::string error_string;
 
@@ -122,6 +124,7 @@ struct Serializer<rviz_rpc::ResponseWrapper>
   inline static void write(Stream& stream, const rviz_rpc::ResponseWrapper& r)
   {
     stream.next(rviz_msgs::UUID(r.request_id));
+    stream.next(r.protocol);
     stream.next(r.error_code);
     stream.next(r.error_string);
 
@@ -143,6 +146,7 @@ struct Serializer<rviz_rpc::ResponseWrapper>
     rviz_msgs::UUID req_id;
     stream.next(req_id);
     r.request_id = req_id;
+    stream.next(r.protocol);
     stream.next(r.error_code);
     stream.next(r.error_string);
     uint32_t len = 0;
@@ -157,6 +161,7 @@ struct Serializer<rviz_rpc::ResponseWrapper>
   {
     uint32_t size = 0;
     size += sizeof(r.request_id);
+    size += serializationLength(r.protocol);
     size += serializationLength(r.error_code);
     size += serializationLength(r.error_string);
     size += 4; // message length field

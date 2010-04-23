@@ -32,6 +32,8 @@
 #include <ros/ros.h>
 #include <ros/callback_queue.h>
 
+#include <rviz_rpc/ProtocolResponseHeader.h>
+
 namespace rviz_rpc
 {
 
@@ -42,6 +44,17 @@ struct Server::Impl
   void addMethod(const std::string& name, const CallbackHelperPtr& helper);
 
   void callback(const ros::MessageEvent<RequestWrapper const>& evt);
+
+  void subscriberConnected(const ros::SingleSubscriberPublisher& pub);
+
+  template<typename T>
+  void fillResponse(const ResponseWrapperPtr& res, const boost::shared_ptr<T>& msg)
+  {
+    res->message.message = msg;
+    res->message.serialize = serialize<T>;
+    res->message.serialized_length = serializedLength<T>;
+    res->message.ti = &typeid(T);
+  }
 
   ros::CallbackQueue cbqueue_;
   ros::NodeHandle nh_;
@@ -59,11 +72,41 @@ Server::Impl::Impl(const std::string& name, const ros::NodeHandle& nh)
 {
 }
 
+void Server::Impl::subscriberConnected(const ros::SingleSubscriberPublisher& pub)
+{
+  ResponseWrapperPtr res(boost::make_shared<ResponseWrapper>());
+  res->request_id = rviz_uuid::UUID::Generate();
+  res->protocol = Response::PROTOCOL_HEADER;
+
+  ProtocolResponseHeaderPtr header(boost::make_shared<ProtocolResponseHeader>());
+
+  M_Method::const_iterator it = methods_.begin();
+  M_Method::const_iterator end = methods_.end();
+  for (; it != end; ++it)
+  {
+    const std::string& name = it->first;
+    const CallbackHelperPtr& helper = it->second;
+    MethodSpec spec;
+    spec.name = name;
+    spec.request_md5sum = helper->getRequestMD5Sum();
+    spec.request_datatype = helper->getRequestDataType();
+    spec.request_definition = helper->getRequestDefinition();
+    spec.response_md5sum = helper->getResponseMD5Sum();
+    spec.response_datatype = helper->getResponseDataType();
+    spec.response_definition = helper->getResponseDefinition();
+    header->methods.push_back(spec);
+  }
+
+  fillResponse(res, header);
+
+  pub.publish(res);
+}
+
 void Server::Impl::ready()
 {
   ROS_ASSERT(!pub_);
   ROS_ASSERT(!sub_);
-  pub_ = nh_.advertise<ResponseWrapper>("response", 0);
+  pub_ = nh_.advertise<ResponseWrapper>("response", 0, boost::bind(&Impl::subscriberConnected, this, _1));
   sub_ = nh_.subscribe("request", 0, &Impl::callback, this);
 }
 

@@ -125,10 +125,72 @@ TEST(Intra, callUnknownMethod)
     TestResponseConstPtr res = m.call(req);
     FAIL();
   }
-  catch (CallException&)
+  catch (CallException& e)
   {
+    ROS_INFO("%s", e.what());
     SUCCEED();
   }
+}
+
+TEST(Intra, connectAsync)
+{
+  ros::NodeHandle nh;
+  Server s("test", nh);
+  s.addMethod<TestRequest, TestResponse>("double", doubleCallback);
+  s.ready();
+
+  Client c("test", nh);
+  Method<TestRequest, TestResponse> m = c.addMethod<TestRequest, TestResponse>("double");
+  c.connectAsync();
+  ASSERT_FALSE(c.isConnected());
+  while (!c.isConnected())
+  {
+    ros::spinOnce();
+    ros::WallDuration(0.01).sleep();
+  }
+
+  ros::AsyncSpinner sp(1);
+  sp.start();
+  TestRequestPtr req(new TestRequest);
+  req->value = 5;
+  TestResponseConstPtr res = m.call(req);
+  EXPECT_EQ(res->value, 10U);
+}
+
+struct Helper
+{
+  TestResponsePtr cb(const ros::MessageEvent<TestRequest const>& req)
+  {
+    req_ = req.getMessage();
+    res_.reset(new TestResponse);
+    res_->value = req.getMessage()->value * 2;
+    return res_;
+  }
+
+  TestRequestConstPtr req_;
+  TestResponsePtr res_;
+};
+
+TEST(Intra, noCopy)
+{
+  ros::AsyncSpinner sp(1);
+  sp.start();
+  ros::NodeHandle nh;
+  Server s("test", nh);
+  Helper h;
+  s.addMethod<TestRequest, TestResponse>("double", boost::bind(&Helper::cb, &h, _1));
+  s.ready();
+
+  Client c("test", nh);
+  Method<TestRequest, TestResponse> m = c.addMethod<TestRequest, TestResponse>("double");
+  c.connect();
+
+  TestRequestPtr req(new TestRequest);
+  req->value = 5;
+  TestResponseConstPtr res = m.call(req);
+  EXPECT_EQ(res->value, 10U);
+  EXPECT_EQ(req, h.req_);
+  EXPECT_EQ(res, h.res_);
 }
 
 void callThread(Method<TestRequest, TestResponse>& m, volatile bool& done, bool& success, uint32_t start)
@@ -172,42 +234,6 @@ TEST(Intra, multipleCallerThreads)
   tg.join_all();
 
   ASSERT_TRUE(success);
-}
-
-struct Helper
-{
-  TestResponsePtr cb(const ros::MessageEvent<TestRequest const>& req)
-  {
-    req_ = req.getMessage();
-    res_.reset(new TestResponse);
-    res_->value = req.getMessage()->value * 2;
-    return res_;
-  }
-
-  TestRequestConstPtr req_;
-  TestResponsePtr res_;
-};
-
-TEST(Intra, noCopy)
-{
-  ros::AsyncSpinner sp(1);
-  sp.start();
-  ros::NodeHandle nh;
-  Server s("test", nh);
-  Helper h;
-  s.addMethod<TestRequest, TestResponse>("double", boost::bind(&Helper::cb, &h, _1));
-  s.ready();
-
-  Client c("test", nh);
-  Method<TestRequest, TestResponse> m = c.addMethod<TestRequest, TestResponse>("double");
-  c.connect();
-
-  TestRequestPtr req(new TestRequest);
-  req->value = 5;
-  TestResponseConstPtr res = m.call(req);
-  EXPECT_EQ(res->value, 10U);
-  EXPECT_EQ(req, h.req_);
-  EXPECT_EQ(res, h.res_);
 }
 
 int main(int argc, char** argv)

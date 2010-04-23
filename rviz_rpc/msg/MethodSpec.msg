@@ -1,0 +1,7 @@
+string name
+string request_md5sum
+string request_datatype
+string request_definition
+string response_md5sum
+string response_datatype
+string response_definition

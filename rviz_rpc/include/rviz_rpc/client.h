@@ -42,8 +42,6 @@
 #include <boost/function.hpp>
 #include <boost/bind.hpp>
 
-#include <ros/serialization.h>
-
 namespace ros
 {
 class NodeHandle;
@@ -78,8 +76,6 @@ public:
   {
     ROS_ASSERT(impl_);
 
-    namespace ser = ros::serialization;
-
     RequestWrapperPtr request(boost::make_shared<RequestWrapper>());
     request->method = impl_->name;
     request->message.message = req;
@@ -94,8 +90,6 @@ public:
   void callAsync(const ReqConstPtr& req)
   {
     ROS_ASSERT(impl_);
-
-    namespace ser = ros::serialization;
 
     RequestWrapperPtr request(boost::make_shared<RequestWrapper>());
     request->method = impl_->name;
@@ -120,20 +114,43 @@ private:
 
 class Client
 {
+private:
+  struct MethodInfo
+  {
+    std::string name;
+    std::string request_md5sum;
+    std::string request_datatype;
+    std::string request_definition;
+    std::string response_md5sum;
+    std::string response_datatype;
+    std::string response_definition;
+  };
+
 public:
   Client(const std::string& name, const ros::NodeHandle& nh);
   void connect();
+  void connectAsync();
+  void waitForConnection();
+  bool isConnected();
 
   template<typename Req, typename Res>
   Method<Req, Res> addMethod(const std::string& name)
   {
     Method<Req, Res> method(name, boost::bind(&Client::call, this, _1), boost::bind(&Client::callAsync, this, _1));
-    addMethod(name);
+    MethodInfo info;
+    info.name = name;
+    info.request_md5sum = ros::message_traits::md5sum<Req>();
+    info.request_datatype = ros::message_traits::datatype<Req>();
+    info.request_definition = ros::message_traits::definition<Req>();
+    info.response_md5sum = ros::message_traits::md5sum<Res>();
+    info.response_datatype = ros::message_traits::datatype<Res>();
+    info.response_definition = ros::message_traits::definition<Res>();
+    addMethod(info);
     return method;
   }
 
 private:
-  void addMethod(const std::string& name);
+  void addMethod(const MethodInfo& name);
   ResponseWrapperConstPtr call(const RequestWrapperPtr& req);
   void callAsync(const RequestWrapperPtr& req);
 

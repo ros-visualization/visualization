@@ -49,11 +49,13 @@ namespace rviz_rpc
 struct RequestWrapper
 {
   RequestWrapper()
+  : protocol(0)
   {
 
   }
 
   rviz_uuid::UUID request_id;
+  uint8_t protocol;
   std::string method;
 
   SerializableMessage message;
@@ -122,6 +124,7 @@ struct Serializer<rviz_rpc::RequestWrapper>
   inline static void write(Stream& stream, const rviz_rpc::RequestWrapper& r)
   {
     stream.next(rviz_msgs::UUID(r.request_id));
+    stream.next(r.protocol);
     stream.next(r.method);
 
     if (r.message.serialize)
@@ -142,6 +145,7 @@ struct Serializer<rviz_rpc::RequestWrapper>
     rviz_msgs::UUID req_id;
     stream.next(req_id);
     r.request_id = req_id;
+    stream.next(r.protocol);
     stream.next(r.method);
     uint32_t len = 0;
     stream.next(len);
@@ -155,6 +159,7 @@ struct Serializer<rviz_rpc::RequestWrapper>
   {
     uint32_t size = 0;
     size += sizeof(r.request_id);
+    size += serializationLength(r.protocol);
     size += serializationLength(r.method);
     size += 4; // message length field
     if (r.serialized_message.buf)

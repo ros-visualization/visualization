@@ -60,8 +60,13 @@ class CallbackHelper
 public:
   virtual ~CallbackHelper() {}
   virtual SerializableMessage call(const ros::MessageEvent<RequestWrapper const>& incoming_event) = 0;
-  virtual const std::type_info& getRequestTypeInfo() = 0;
-  virtual const std::type_info& getResponseTypeInfo() = 0;
+
+  virtual const char* getRequestMD5Sum() = 0;
+  virtual const char* getRequestDataType() = 0;
+  virtual const char* getRequestDefinition() = 0;
+  virtual const char* getResponseMD5Sum() = 0;
+  virtual const char* getResponseDataType() = 0;
+  virtual const char* getResponseDefinition() = 0;
 };
 typedef boost::shared_ptr<CallbackHelper> CallbackHelperPtr;
 
@@ -97,8 +102,12 @@ public:
     return sm;
   }
 
-  virtual const std::type_info& getRequestTypeInfo() { return typeid(Req); }
-  virtual const std::type_info& getResponseTypeInfo() { return typeid(Res); }
+  virtual const char* getRequestMD5Sum() { return ros::message_traits::md5sum<Req>(); }
+  virtual const char* getRequestDataType() { return ros::message_traits::datatype<Req>(); }
+  virtual const char* getRequestDefinition() { return ros::message_traits::definition<Req>(); }
+  virtual const char* getResponseMD5Sum() { return ros::message_traits::md5sum<Res>(); }
+  virtual const char* getResponseDataType() { return ros::message_traits::md5sum<Res>(); }
+  virtual const char* getResponseDefinition() { return ros::message_traits::md5sum<Res>(); }
 
 private:
   Callback cb_;

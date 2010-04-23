@@ -34,6 +34,7 @@
 
 #include <rviz_rpc/Request.h>
 #include <rviz_rpc/Response.h>
+#include <rviz_rpc/ProtocolResponseHeader.h>
 
 namespace rviz_rpc
 {
@@ -43,10 +44,16 @@ struct Client::Impl
   Impl(const std::string& name, const ros::NodeHandle& nh);
 
   void connect();
+  void connectAsync();
+  bool isConnected() { return connected_; }
   ResponseWrapperConstPtr call(const RequestWrapperPtr& req);
   void callAsync(const RequestWrapperPtr& req);
-  void cb(const ResponseWrapperConstPtr& res);
-  void addMethod(const std::string& name);
+  void cb(const ros::MessageEvent<ResponseWrapper const>& res);
+  void addMethod(const MethodInfo& method);
+  void handleHeader(const ros::MessageEvent<ResponseWrapper const>& evt);
+
+  void subAndPub();
+  void waitForConnection();
 
   ros::CallbackQueue cbqueue_;
   ros::Subscriber sub_;
@@ -68,50 +75,176 @@ struct Client::Impl
   typedef std::map<rviz_uuid::UUID, RequestInfoPtr> M_RequestInfo;
   M_RequestInfo requests_;
   boost::mutex requests_mutex_;
+
+  typedef std::map<std::string, MethodInfo> M_MethodInfo;
+  M_MethodInfo methods_;
+
+  typedef std::set<std::string> S_string;
+  S_string broken_methods_;
+
+  bool header_received_;
+  bool connected_;
+
+  void onQueueTimer(const ros::WallTimerEvent&);
+  ros::WallTimer queue_timer_;
 };
 
 Client::Impl::Impl(const std::string& name, const ros::NodeHandle& nh)
 : nh_(nh, name)
+, header_received_(false)
+, connected_(false)
 {
+}
+
+void Client::Impl::subAndPub()
+{
+  ROS_ASSERT(!pub_);
+  ROS_ASSERT(!sub_);
+  ROS_ASSERT(!queue_timer_);
+
+  pub_ = nh_.advertise<RequestWrapper>("request", 0);
+
+  ros::SubscribeOptions sub_ops;
+  sub_ops.initByFullCallbackType<const ros::MessageEvent<ResponseWrapper>&>("response", 0, boost::bind(&Impl::cb, this, _1));
+  sub_ops.callback_queue = &cbqueue_;
+  sub_ = nh_.subscribe(sub_ops);
+
+  queue_timer_ = nh_.createWallTimer(ros::WallDuration(0.05), &Impl::onQueueTimer, this);
 }
 
 void Client::Impl::connect()
 {
-  pub_ = nh_.advertise<RequestWrapper>("request", 0);
+  subAndPub();
+  waitForConnection();
+}
 
-  ros::SubscribeOptions sub_ops;
-  sub_ops.init<ResponseWrapper>("response", 0, boost::bind(&Impl::cb, this, _1));
-  sub_ops.callback_queue = &cbqueue_;
-  sub_ = nh_.subscribe(sub_ops);
-
-  while (pub_.getNumSubscribers() == 0 || sub_.getNumPublishers() == 0)
+void Client::Impl::waitForConnection()
+{
+  while (nh_.ok() && !connected_)
   {
-    ros::WallDuration(0.01).sleep();
+    cbqueue_.callAvailable(ros::WallDuration(0.1));
   }
 }
 
-void Client::Impl::cb(const ResponseWrapperConstPtr& res)
+void Client::Impl::onQueueTimer(const ros::WallTimerEvent&)
 {
-  rviz_uuid::UUID id = res->request_id;
+  cbqueue_.callAvailable();
+}
 
+void Client::Impl::connectAsync()
+{
+  subAndPub();
+}
+
+void Client::Impl::handleHeader(const ros::MessageEvent<ResponseWrapper const>& evt)
+{
+  ResponseWrapperConstPtr res = evt.getMessage();
+
+  try
   {
-    boost::mutex::scoped_lock lock(requests_mutex_);
-    M_RequestInfo::iterator it = requests_.find(id);
-    if (it != requests_.end())
+    ProtocolResponseHeaderConstPtr header = res->instantiate<ProtocolResponseHeader>();
+    std::set<std::string> server_methods;
+    for (size_t i = 0; i < header->methods.size(); ++i)
     {
-      it->second->res = res;
-      it->second->received = true;
+      const MethodSpec& spec = header->methods[i];
+      server_methods.insert(spec.name);
+
+      M_MethodInfo::iterator it = methods_.find(spec.name);
+      if (it != methods_.end())
+      {
+        const MethodInfo& info = it->second;
+        if (info.request_md5sum != spec.request_md5sum)
+        {
+          ROS_ERROR("RPC Server wants method [%s:%s] to have request of type [%s/%s] but I have [%s/%s]", nh_.getNamespace().c_str(), spec.name.c_str(),
+              spec.request_datatype.c_str(), spec.request_md5sum.c_str(), info.request_datatype.c_str(), info.request_md5sum.c_str());
+
+          broken_methods_.insert(info.name);
+        }
+
+        if (info.response_md5sum != spec.response_md5sum)
+        {
+          ROS_ERROR("RPC Server wants method [%s:%s] to have response of type [%s/%s] but I have [%s/%s]", nh_.getNamespace().c_str(), spec.name.c_str(),
+              spec.response_datatype.c_str(), spec.response_md5sum.c_str(), info.response_datatype.c_str(), info.response_md5sum.c_str());
+
+          broken_methods_.insert(info.name);
+        }
+      }
+      else
+      {
+        ROS_WARN("RPC Server for [%s] at [%s] has extra method [%s]", nh_.getNamespace().c_str(), evt.getPublisherName().c_str(), spec.name.c_str());
+      }
+    }
+
+    M_MethodInfo::iterator it = methods_.begin();
+    M_MethodInfo::iterator end = methods_.end();
+    for (; it != end; ++it)
+    {
+      const std::string& name = it->first;
+      if (server_methods.find(name) == server_methods.end())
+      {
+        ROS_ERROR("RPC Server for [%s] at [%s] does not have client method [%s]", nh_.getNamespace().c_str(), evt.getPublisherName().c_str(), name.c_str());
+        broken_methods_.insert(name);
+      }
+    }
+  }
+  catch (std::exception& e)
+  {
+    ROS_ERROR("Exception thrown while processing header from rpc server for [%s] at [%s]", nh_.getNamespace().c_str(), evt.getPublisherName().c_str());
+  }
+
+  header_received_ = true;
+  connected_ = true;
+}
+
+void Client::Impl::cb(const ros::MessageEvent<ResponseWrapper const>& evt)
+{
+  ResponseWrapperConstPtr res = evt.getMessage();
+  if (res->protocol != 0)
+  {
+    switch (res->protocol)
+    {
+    case Response::PROTOCOL_HEADER:
+      handleHeader(evt);
+      break;
+    default:
+      ROS_ERROR("Unknown protocol message type [%d]", res->protocol);
+    }
+  }
+  else
+  {
+    rviz_uuid::UUID id = res->request_id;
+
+    {
+      boost::mutex::scoped_lock lock(requests_mutex_);
+      M_RequestInfo::iterator it = requests_.find(id);
+      if (it != requests_.end())
+      {
+        it->second->res = res;
+        it->second->received = true;
+      }
     }
   }
 }
 
-void Client::Impl::addMethod(const std::string& name)
+void Client::Impl::addMethod(const MethodInfo& method)
 {
+  ROS_ASSERT(methods_.count(method.name) == 0);
 
+  methods_[method.name] = method;
 }
 
 ResponseWrapperConstPtr Client::Impl::call(const RequestWrapperPtr& req)
 {
+  if (!connected_)
+  {
+    throw CallException("Client to [" + nh_.getNamespace() + "] is not connected");
+  }
+
+  if (broken_methods_.find(req->method) != broken_methods_.end())
+  {
+    throw CallException("Unconnected method [" + req->method + "], see previously generated errors for more details");
+  }
+
   req->request_id = rviz_uuid::UUID::Generate();
 
   RequestInfoPtr info(boost::make_shared<RequestInfo>());
@@ -174,6 +307,21 @@ void Client::connect()
   impl_->connect();
 }
 
+void Client::connectAsync()
+{
+  impl_->connectAsync();
+}
+
+bool Client::isConnected()
+{
+  return impl_->isConnected();
+}
+
+void Client::waitForConnection()
+{
+  impl_->waitForConnection();
+}
+
 ResponseWrapperConstPtr Client::call(const RequestWrapperPtr& req)
 {
   return impl_->call(req);
@@ -184,9 +332,9 @@ void Client::callAsync(const RequestWrapperPtr& req)
   impl_->callAsync(req);
 }
 
-void Client::addMethod(const std::string& name)
+void Client::addMethod(const MethodInfo& method)
 {
-  impl_->addMethod(name);
+  impl_->addMethod(method);
 }
 
 } // namespace rviz_rpc
