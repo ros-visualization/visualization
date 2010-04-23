@@ -76,12 +76,12 @@ method returns [name, rs, ps, attrs]
 			$attrs.append(attr.text)
 		}
 	)* 
-	rvals = return_vals {$rs = $rvals.rs} my_name=ID {$name = my_name.text} OPENPAREN 
+	my_name=ID {$name = my_name.text} OPENPAREN 
 	pvals = parameter_list 
 	{ 
 		$ps = $pvals.params 
 	} 
-	CLOSEPAREN SEMICOLON 
+	CLOSEPAREN (RETURNS rvals = return_vals {$rs = $rvals.rs})? SEMICOLON 
 	;
 	
 interface 

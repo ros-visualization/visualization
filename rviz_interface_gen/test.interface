@@ -1,0 +1,13 @@
+interface Test
+{
+  triple(uint32 val) returns (uint32 val);
+  blockFor(time t);
+  async noBlock();
+  
+  complex(std_msgs/String name, float32 val) returns (std_msgs/String ret);
+}
+
+message Foo
+{
+  uint32 bar;
+}

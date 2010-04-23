@@ -1,4 +1,4 @@
-# $ANTLR 3.1.2 /wg/bgr/jfaust/ros/dev/visualization-2.0/visualization/rviz_interface_gen/antlr/InterfaceParser.g 2010-04-20 11:13:55
+# $ANTLR 3.1.2 /wg/bgr/jfaust/ros/dev/visualization-2.0/visualization/rviz_interface_gen/antlr/InterfaceParser.g 2010-04-22 17:11:19
 
 import sys
 from antlr3 import *
@@ -40,29 +40,30 @@ class Interface(object):
 HIDDEN = BaseRecognizer.HIDDEN
 
 # token types
-CLOSEBRACKET=7
 CLOSEPAREN=9
-SLASH=12
-COMMA=11
-LETTER=16
+LETTER=17
 ATTRIBUTE=5
 OPENBRACKET=6
 WHITESPACE=4
-MESSAGE=14
 SEMICOLON=10
-INTERFACE=13
-DIGIT=15
-OPENPAREN=8
-ID=17
-COMMENT=18
+ID=18
 EOF=-1
+CLOSEBRACKET=7
+SLASH=12
+COMMA=11
+MESSAGE=14
+INTERFACE=13
+DIGIT=16
+OPENPAREN=8
+COMMENT=19
+RETURNS=15
 
 # token names
 tokenNames = [
     "<invalid>", "<EOR>", "<DOWN>", "<UP>", 
     "WHITESPACE", "ATTRIBUTE", "OPENBRACKET", "CLOSEBRACKET", "OPENPAREN", 
     "CLOSEPAREN", "SEMICOLON", "COMMA", "SLASH", "INTERFACE", "MESSAGE", 
-    "DIGIT", "LETTER", "ID", "COMMENT"
+    "RETURNS", "DIGIT", "LETTER", "ID", "COMMENT"
 ]
 
 
@@ -108,7 +109,7 @@ class InterfaceParser(Parser):
 
 
     # $ANTLR start "method"
-    # /wg/bgr/jfaust/ros/dev/visualization-2.0/visualization/rviz_interface_gen/antlr/InterfaceParser.g:65:1: method returns [name, rs, ps, attrs] : (attr= ATTRIBUTE )* rvals= return_vals my_name= ID OPENPAREN pvals= parameter_list CLOSEPAREN SEMICOLON ;
+    # /wg/bgr/jfaust/ros/dev/visualization-2.0/visualization/rviz_interface_gen/antlr/InterfaceParser.g:65:1: method returns [name, rs, ps, attrs] : (attr= ATTRIBUTE )* my_name= ID OPENPAREN pvals= parameter_list CLOSEPAREN ( RETURNS rvals= return_vals )? SEMICOLON ;
     def method(self, ):
 
         retval = self.method_return()
@@ -116,15 +117,15 @@ class InterfaceParser(Parser):
 
         attr = None
         my_name = None
-        rvals = None
-
         pvals = None
+
+        rvals = None
 
 
         try:
             try:
-                # /wg/bgr/jfaust/ros/dev/visualization-2.0/visualization/rviz_interface_gen/antlr/InterfaceParser.g:66:2: ( (attr= ATTRIBUTE )* rvals= return_vals my_name= ID OPENPAREN pvals= parameter_list CLOSEPAREN SEMICOLON )
-                # /wg/bgr/jfaust/ros/dev/visualization-2.0/visualization/rviz_interface_gen/antlr/InterfaceParser.g:67:2: (attr= ATTRIBUTE )* rvals= return_vals my_name= ID OPENPAREN pvals= parameter_list CLOSEPAREN SEMICOLON
+                # /wg/bgr/jfaust/ros/dev/visualization-2.0/visualization/rviz_interface_gen/antlr/InterfaceParser.g:66:2: ( (attr= ATTRIBUTE )* my_name= ID OPENPAREN pvals= parameter_list CLOSEPAREN ( RETURNS rvals= return_vals )? SEMICOLON )
+                # /wg/bgr/jfaust/ros/dev/visualization-2.0/visualization/rviz_interface_gen/antlr/InterfaceParser.g:67:2: (attr= ATTRIBUTE )* my_name= ID OPENPAREN pvals= parameter_list CLOSEPAREN ( RETURNS rvals= return_vals )? SEMICOLON
                 pass 
                 #action start
                    
@@ -157,19 +158,12 @@ class InterfaceParser(Parser):
                         break #loop1
 
 
-                self._state.following.append(self.FOLLOW_return_vals_in_method94)
-                rvals = self.return_vals()
-
-                self._state.following.pop()
-                #action start
-                retval.rs = rvals
-                #action end
-                my_name=self.match(self.input, ID, self.FOLLOW_ID_in_method100)
+                my_name=self.match(self.input, ID, self.FOLLOW_ID_in_method92)
                 #action start
                 retval.name = my_name.text
                 #action end
-                self.match(self.input, OPENPAREN, self.FOLLOW_OPENPAREN_in_method104)
-                self._state.following.append(self.FOLLOW_parameter_list_in_method112)
+                self.match(self.input, OPENPAREN, self.FOLLOW_OPENPAREN_in_method96)
+                self._state.following.append(self.FOLLOW_parameter_list_in_method104)
                 pvals = self.parameter_list()
 
                 self._state.following.pop()
@@ -178,8 +172,28 @@ class InterfaceParser(Parser):
                 retval.ps = pvals 
                 	
                 #action end
-                self.match(self.input, CLOSEPAREN, self.FOLLOW_CLOSEPAREN_in_method120)
-                self.match(self.input, SEMICOLON, self.FOLLOW_SEMICOLON_in_method122)
+                self.match(self.input, CLOSEPAREN, self.FOLLOW_CLOSEPAREN_in_method112)
+                # /wg/bgr/jfaust/ros/dev/visualization-2.0/visualization/rviz_interface_gen/antlr/InterfaceParser.g:84:13: ( RETURNS rvals= return_vals )?
+                alt2 = 2
+                LA2_0 = self.input.LA(1)
+
+                if (LA2_0 == RETURNS) :
+                    alt2 = 1
+                if alt2 == 1:
+                    # /wg/bgr/jfaust/ros/dev/visualization-2.0/visualization/rviz_interface_gen/antlr/InterfaceParser.g:84:14: RETURNS rvals= return_vals
+                    pass 
+                    self.match(self.input, RETURNS, self.FOLLOW_RETURNS_in_method115)
+                    self._state.following.append(self.FOLLOW_return_vals_in_method121)
+                    rvals = self.return_vals()
+
+                    self._state.following.pop()
+                    #action start
+                    retval.rs = rvals
+                    #action end
+
+
+
+                self.match(self.input, SEMICOLON, self.FOLLOW_SEMICOLON_in_method127)
 
 
 
@@ -211,25 +225,25 @@ class InterfaceParser(Parser):
                 # /wg/bgr/jfaust/ros/dev/visualization-2.0/visualization/rviz_interface_gen/antlr/InterfaceParser.g:88:2: ( INTERFACE name= ID OPENBRACKET (mt= method )* CLOSEBRACKET )
                 # /wg/bgr/jfaust/ros/dev/visualization-2.0/visualization/rviz_interface_gen/antlr/InterfaceParser.g:88:4: INTERFACE name= ID OPENBRACKET (mt= method )* CLOSEBRACKET
                 pass 
-                self.match(self.input, INTERFACE, self.FOLLOW_INTERFACE_in_interface136)
-                name=self.match(self.input, ID, self.FOLLOW_ID_in_interface140)
+                self.match(self.input, INTERFACE, self.FOLLOW_INTERFACE_in_interface141)
+                name=self.match(self.input, ID, self.FOLLOW_ID_in_interface145)
                 #action start
                 self.interfaces.append(Interface(name.text)) 
                 #action end
-                self.match(self.input, OPENBRACKET, self.FOLLOW_OPENBRACKET_in_interface144)
+                self.match(self.input, OPENBRACKET, self.FOLLOW_OPENBRACKET_in_interface149)
                 # /wg/bgr/jfaust/ros/dev/visualization-2.0/visualization/rviz_interface_gen/antlr/InterfaceParser.g:89:3: (mt= method )*
-                while True: #loop2
-                    alt2 = 2
-                    LA2_0 = self.input.LA(1)
+                while True: #loop3
+                    alt3 = 2
+                    LA3_0 = self.input.LA(1)
 
-                    if (LA2_0 == ATTRIBUTE or LA2_0 == OPENPAREN or LA2_0 == ID) :
-                        alt2 = 1
+                    if (LA3_0 == ATTRIBUTE or LA3_0 == ID) :
+                        alt3 = 1
 
 
-                    if alt2 == 1:
+                    if alt3 == 1:
                         # /wg/bgr/jfaust/ros/dev/visualization-2.0/visualization/rviz_interface_gen/antlr/InterfaceParser.g:90:3: mt= method
                         pass 
-                        self._state.following.append(self.FOLLOW_method_in_interface157)
+                        self._state.following.append(self.FOLLOW_method_in_interface162)
                         mt = self.method()
 
                         self._state.following.pop()
@@ -241,10 +255,10 @@ class InterfaceParser(Parser):
 
 
                     else:
-                        break #loop2
+                        break #loop3
 
 
-                self.match(self.input, CLOSEBRACKET, self.FOLLOW_CLOSEBRACKET_in_interface173)
+                self.match(self.input, CLOSEBRACKET, self.FOLLOW_CLOSEBRACKET_in_interface178)
 
 
 
@@ -277,58 +291,58 @@ class InterfaceParser(Parser):
         try:
             try:
                 # /wg/bgr/jfaust/ros/dev/visualization-2.0/visualization/rviz_interface_gen/antlr/InterfaceParser.g:100:2: ( | tv= type i= ID ( COMMA tvo= type io= ID )* )
-                alt4 = 2
-                LA4_0 = self.input.LA(1)
+                alt5 = 2
+                LA5_0 = self.input.LA(1)
 
-                if (LA4_0 == CLOSEPAREN) :
-                    alt4 = 1
-                elif (LA4_0 == ID) :
-                    alt4 = 2
+                if (LA5_0 == CLOSEPAREN) :
+                    alt5 = 1
+                elif (LA5_0 == ID) :
+                    alt5 = 2
                 else:
-                    nvae = NoViableAltException("", 4, 0, self.input)
+                    nvae = NoViableAltException("", 5, 0, self.input)
 
                     raise nvae
 
-                if alt4 == 1:
+                if alt5 == 1:
                     # /wg/bgr/jfaust/ros/dev/visualization-2.0/visualization/rviz_interface_gen/antlr/InterfaceParser.g:101:2: 
                     pass 
 
-                elif alt4 == 2:
+                elif alt5 == 2:
                     # /wg/bgr/jfaust/ros/dev/visualization-2.0/visualization/rviz_interface_gen/antlr/InterfaceParser.g:101:4: tv= type i= ID ( COMMA tvo= type io= ID )*
                     pass 
-                    self._state.following.append(self.FOLLOW_type_in_parameter_list199)
+                    self._state.following.append(self.FOLLOW_type_in_parameter_list204)
                     tv = self.type()
 
                     self._state.following.pop()
-                    i=self.match(self.input, ID, self.FOLLOW_ID_in_parameter_list205)
+                    i=self.match(self.input, ID, self.FOLLOW_ID_in_parameter_list210)
                     #action start
                     params = [(((tv is not None) and [self.input.toString(tv.start,tv.stop)] or [None])[0], i.text)]
                     #action end
                     # /wg/bgr/jfaust/ros/dev/visualization-2.0/visualization/rviz_interface_gen/antlr/InterfaceParser.g:101:55: ( COMMA tvo= type io= ID )*
-                    while True: #loop3
-                        alt3 = 2
-                        LA3_0 = self.input.LA(1)
+                    while True: #loop4
+                        alt4 = 2
+                        LA4_0 = self.input.LA(1)
 
-                        if (LA3_0 == COMMA) :
-                            alt3 = 1
+                        if (LA4_0 == COMMA) :
+                            alt4 = 1
 
 
-                        if alt3 == 1:
+                        if alt4 == 1:
                             # /wg/bgr/jfaust/ros/dev/visualization-2.0/visualization/rviz_interface_gen/antlr/InterfaceParser.g:101:56: COMMA tvo= type io= ID
                             pass 
-                            self.match(self.input, COMMA, self.FOLLOW_COMMA_in_parameter_list210)
-                            self._state.following.append(self.FOLLOW_type_in_parameter_list216)
+                            self.match(self.input, COMMA, self.FOLLOW_COMMA_in_parameter_list215)
+                            self._state.following.append(self.FOLLOW_type_in_parameter_list221)
                             tvo = self.type()
 
                             self._state.following.pop()
-                            io=self.match(self.input, ID, self.FOLLOW_ID_in_parameter_list222)
+                            io=self.match(self.input, ID, self.FOLLOW_ID_in_parameter_list227)
                             #action start
                             params.append((((tvo is not None) and [self.input.toString(tvo.start,tvo.stop)] or [None])[0], io.text)) 
                             #action end
 
 
                         else:
-                            break #loop3
+                            break #loop4
 
 
 
@@ -360,9 +374,9 @@ class InterfaceParser(Parser):
                 # /wg/bgr/jfaust/ros/dev/visualization-2.0/visualization/rviz_interface_gen/antlr/InterfaceParser.g:105:2: (pkg= ID SLASH id= ID )
                 # /wg/bgr/jfaust/ros/dev/visualization-2.0/visualization/rviz_interface_gen/antlr/InterfaceParser.g:105:4: pkg= ID SLASH id= ID
                 pass 
-                pkg=self.match(self.input, ID, self.FOLLOW_ID_in_package_type245)
-                self.match(self.input, SLASH, self.FOLLOW_SLASH_in_package_type247)
-                id=self.match(self.input, ID, self.FOLLOW_ID_in_package_type251)
+                pkg=self.match(self.input, ID, self.FOLLOW_ID_in_package_type250)
+                self.match(self.input, SLASH, self.FOLLOW_SLASH_in_package_type252)
+                id=self.match(self.input, ID, self.FOLLOW_ID_in_package_type256)
                 #action start
                 t = '%s/%s'%(pkg, id) 
                 #action end
@@ -404,39 +418,39 @@ class InterfaceParser(Parser):
         try:
             try:
                 # /wg/bgr/jfaust/ros/dev/visualization-2.0/visualization/rviz_interface_gen/antlr/InterfaceParser.g:109:2: (n= ID | np= package_type )
-                alt5 = 2
-                LA5_0 = self.input.LA(1)
+                alt6 = 2
+                LA6_0 = self.input.LA(1)
 
-                if (LA5_0 == ID) :
-                    LA5_1 = self.input.LA(2)
+                if (LA6_0 == ID) :
+                    LA6_1 = self.input.LA(2)
 
-                    if (LA5_1 == SLASH) :
-                        alt5 = 2
-                    elif (LA5_1 == ID) :
-                        alt5 = 1
+                    if (LA6_1 == SLASH) :
+                        alt6 = 2
+                    elif (LA6_1 == ID) :
+                        alt6 = 1
                     else:
-                        nvae = NoViableAltException("", 5, 1, self.input)
+                        nvae = NoViableAltException("", 6, 1, self.input)
 
                         raise nvae
 
                 else:
-                    nvae = NoViableAltException("", 5, 0, self.input)
+                    nvae = NoViableAltException("", 6, 0, self.input)
 
                     raise nvae
 
-                if alt5 == 1:
+                if alt6 == 1:
                     # /wg/bgr/jfaust/ros/dev/visualization-2.0/visualization/rviz_interface_gen/antlr/InterfaceParser.g:109:4: n= ID
                     pass 
-                    n=self.match(self.input, ID, self.FOLLOW_ID_in_type273)
+                    n=self.match(self.input, ID, self.FOLLOW_ID_in_type278)
                     #action start
                     retval.type_name = n
                     #action end
 
 
-                elif alt5 == 2:
+                elif alt6 == 2:
                     # /wg/bgr/jfaust/ros/dev/visualization-2.0/visualization/rviz_interface_gen/antlr/InterfaceParser.g:110:4: np= package_type
                     pass 
-                    self._state.following.append(self.FOLLOW_package_type_in_type284)
+                    self._state.following.append(self.FOLLOW_package_type_in_type289)
                     np = self.package_type()
 
                     self._state.following.pop()
@@ -472,34 +486,34 @@ class InterfaceParser(Parser):
         try:
             try:
                 # /wg/bgr/jfaust/ros/dev/visualization-2.0/visualization/rviz_interface_gen/antlr/InterfaceParser.g:114:2: ( | OPENPAREN pl= parameter_list CLOSEPAREN )
-                alt6 = 2
-                LA6_0 = self.input.LA(1)
+                alt7 = 2
+                LA7_0 = self.input.LA(1)
 
-                if (LA6_0 == ID) :
-                    alt6 = 1
-                elif (LA6_0 == OPENPAREN) :
-                    alt6 = 2
+                if (LA7_0 == SEMICOLON) :
+                    alt7 = 1
+                elif (LA7_0 == OPENPAREN) :
+                    alt7 = 2
                 else:
-                    nvae = NoViableAltException("", 6, 0, self.input)
+                    nvae = NoViableAltException("", 7, 0, self.input)
 
                     raise nvae
 
-                if alt6 == 1:
+                if alt7 == 1:
                     # /wg/bgr/jfaust/ros/dev/visualization-2.0/visualization/rviz_interface_gen/antlr/InterfaceParser.g:115:2: 
                     pass 
 
-                elif alt6 == 2:
+                elif alt7 == 2:
                     # /wg/bgr/jfaust/ros/dev/visualization-2.0/visualization/rviz_interface_gen/antlr/InterfaceParser.g:115:4: OPENPAREN pl= parameter_list CLOSEPAREN
                     pass 
-                    self.match(self.input, OPENPAREN, self.FOLLOW_OPENPAREN_in_return_vals306)
-                    self._state.following.append(self.FOLLOW_parameter_list_in_return_vals312)
+                    self.match(self.input, OPENPAREN, self.FOLLOW_OPENPAREN_in_return_vals311)
+                    self._state.following.append(self.FOLLOW_parameter_list_in_return_vals317)
                     pl = self.parameter_list()
 
                     self._state.following.pop()
                     #action start
                     rs = pl 
                     #action end
-                    self.match(self.input, CLOSEPAREN, self.FOLLOW_CLOSEPAREN_in_return_vals316)
+                    self.match(self.input, CLOSEPAREN, self.FOLLOW_CLOSEPAREN_in_return_vals321)
 
 
 
@@ -524,34 +538,34 @@ class InterfaceParser(Parser):
                 # /wg/bgr/jfaust/ros/dev/visualization-2.0/visualization/rviz_interface_gen/antlr/InterfaceParser.g:119:2: ( MESSAGE ID OPENBRACKET ( type ID SEMICOLON )* CLOSEBRACKET )
                 # /wg/bgr/jfaust/ros/dev/visualization-2.0/visualization/rviz_interface_gen/antlr/InterfaceParser.g:119:4: MESSAGE ID OPENBRACKET ( type ID SEMICOLON )* CLOSEBRACKET
                 pass 
-                self.match(self.input, MESSAGE, self.FOLLOW_MESSAGE_in_message329)
-                self.match(self.input, ID, self.FOLLOW_ID_in_message331)
-                self.match(self.input, OPENBRACKET, self.FOLLOW_OPENBRACKET_in_message333)
+                self.match(self.input, MESSAGE, self.FOLLOW_MESSAGE_in_message334)
+                self.match(self.input, ID, self.FOLLOW_ID_in_message336)
+                self.match(self.input, OPENBRACKET, self.FOLLOW_OPENBRACKET_in_message338)
                 # /wg/bgr/jfaust/ros/dev/visualization-2.0/visualization/rviz_interface_gen/antlr/InterfaceParser.g:119:27: ( type ID SEMICOLON )*
-                while True: #loop7
-                    alt7 = 2
-                    LA7_0 = self.input.LA(1)
+                while True: #loop8
+                    alt8 = 2
+                    LA8_0 = self.input.LA(1)
 
-                    if (LA7_0 == ID) :
-                        alt7 = 1
+                    if (LA8_0 == ID) :
+                        alt8 = 1
 
 
-                    if alt7 == 1:
+                    if alt8 == 1:
                         # /wg/bgr/jfaust/ros/dev/visualization-2.0/visualization/rviz_interface_gen/antlr/InterfaceParser.g:119:28: type ID SEMICOLON
                         pass 
-                        self._state.following.append(self.FOLLOW_type_in_message336)
+                        self._state.following.append(self.FOLLOW_type_in_message341)
                         self.type()
 
                         self._state.following.pop()
-                        self.match(self.input, ID, self.FOLLOW_ID_in_message338)
-                        self.match(self.input, SEMICOLON, self.FOLLOW_SEMICOLON_in_message340)
+                        self.match(self.input, ID, self.FOLLOW_ID_in_message343)
+                        self.match(self.input, SEMICOLON, self.FOLLOW_SEMICOLON_in_message345)
 
 
                     else:
-                        break #loop7
+                        break #loop8
 
 
-                self.match(self.input, CLOSEBRACKET, self.FOLLOW_CLOSEBRACKET_in_message344)
+                self.match(self.input, CLOSEBRACKET, self.FOLLOW_CLOSEBRACKET_in_message349)
 
 
 
@@ -578,39 +592,39 @@ class InterfaceParser(Parser):
                 # /wg/bgr/jfaust/ros/dev/visualization-2.0/visualization/rviz_interface_gen/antlr/InterfaceParser.g:123:4: ( interface | message )* EOF
                 pass 
                 # /wg/bgr/jfaust/ros/dev/visualization-2.0/visualization/rviz_interface_gen/antlr/InterfaceParser.g:123:4: ( interface | message )*
-                while True: #loop8
-                    alt8 = 3
-                    LA8_0 = self.input.LA(1)
+                while True: #loop9
+                    alt9 = 3
+                    LA9_0 = self.input.LA(1)
 
-                    if (LA8_0 == INTERFACE) :
-                        alt8 = 1
-                    elif (LA8_0 == MESSAGE) :
-                        alt8 = 2
+                    if (LA9_0 == INTERFACE) :
+                        alt9 = 1
+                    elif (LA9_0 == MESSAGE) :
+                        alt9 = 2
 
 
-                    if alt8 == 1:
+                    if alt9 == 1:
                         # /wg/bgr/jfaust/ros/dev/visualization-2.0/visualization/rviz_interface_gen/antlr/InterfaceParser.g:123:5: interface
                         pass 
-                        self._state.following.append(self.FOLLOW_interface_in_main358)
+                        self._state.following.append(self.FOLLOW_interface_in_main363)
                         self.interface()
 
                         self._state.following.pop()
 
 
-                    elif alt8 == 2:
+                    elif alt9 == 2:
                         # /wg/bgr/jfaust/ros/dev/visualization-2.0/visualization/rviz_interface_gen/antlr/InterfaceParser.g:123:17: message
                         pass 
-                        self._state.following.append(self.FOLLOW_message_in_main362)
+                        self._state.following.append(self.FOLLOW_message_in_main367)
                         self.message()
 
                         self._state.following.pop()
 
 
                     else:
-                        break #loop8
+                        break #loop9
 
 
-                self.match(self.input, EOF, self.FOLLOW_EOF_in_main366)
+                self.match(self.input, EOF, self.FOLLOW_EOF_in_main371)
 
 
 
@@ -632,41 +646,42 @@ class InterfaceParser(Parser):
 
  
 
-    FOLLOW_ATTRIBUTE_in_method78 = frozenset([5, 8, 17])
-    FOLLOW_return_vals_in_method94 = frozenset([17])
-    FOLLOW_ID_in_method100 = frozenset([8])
-    FOLLOW_OPENPAREN_in_method104 = frozenset([9, 17])
-    FOLLOW_parameter_list_in_method112 = frozenset([9])
-    FOLLOW_CLOSEPAREN_in_method120 = frozenset([10])
-    FOLLOW_SEMICOLON_in_method122 = frozenset([1])
-    FOLLOW_INTERFACE_in_interface136 = frozenset([17])
-    FOLLOW_ID_in_interface140 = frozenset([6])
-    FOLLOW_OPENBRACKET_in_interface144 = frozenset([5, 7, 8, 17])
-    FOLLOW_method_in_interface157 = frozenset([5, 7, 8, 17])
-    FOLLOW_CLOSEBRACKET_in_interface173 = frozenset([1])
-    FOLLOW_type_in_parameter_list199 = frozenset([17])
-    FOLLOW_ID_in_parameter_list205 = frozenset([1, 11])
-    FOLLOW_COMMA_in_parameter_list210 = frozenset([17])
-    FOLLOW_type_in_parameter_list216 = frozenset([17])
-    FOLLOW_ID_in_parameter_list222 = frozenset([1, 11])
-    FOLLOW_ID_in_package_type245 = frozenset([12])
-    FOLLOW_SLASH_in_package_type247 = frozenset([17])
-    FOLLOW_ID_in_package_type251 = frozenset([1])
-    FOLLOW_ID_in_type273 = frozenset([1])
-    FOLLOW_package_type_in_type284 = frozenset([1])
-    FOLLOW_OPENPAREN_in_return_vals306 = frozenset([9, 17])
-    FOLLOW_parameter_list_in_return_vals312 = frozenset([9])
-    FOLLOW_CLOSEPAREN_in_return_vals316 = frozenset([1])
-    FOLLOW_MESSAGE_in_message329 = frozenset([17])
-    FOLLOW_ID_in_message331 = frozenset([6])
-    FOLLOW_OPENBRACKET_in_message333 = frozenset([7, 17])
-    FOLLOW_type_in_message336 = frozenset([17])
-    FOLLOW_ID_in_message338 = frozenset([10])
-    FOLLOW_SEMICOLON_in_message340 = frozenset([7, 17])
-    FOLLOW_CLOSEBRACKET_in_message344 = frozenset([1])
-    FOLLOW_interface_in_main358 = frozenset([13, 14])
-    FOLLOW_message_in_main362 = frozenset([13, 14])
-    FOLLOW_EOF_in_main366 = frozenset([1])
+    FOLLOW_ATTRIBUTE_in_method78 = frozenset([5, 18])
+    FOLLOW_ID_in_method92 = frozenset([8])
+    FOLLOW_OPENPAREN_in_method96 = frozenset([9, 18])
+    FOLLOW_parameter_list_in_method104 = frozenset([9])
+    FOLLOW_CLOSEPAREN_in_method112 = frozenset([10, 15])
+    FOLLOW_RETURNS_in_method115 = frozenset([8, 10])
+    FOLLOW_return_vals_in_method121 = frozenset([10])
+    FOLLOW_SEMICOLON_in_method127 = frozenset([1])
+    FOLLOW_INTERFACE_in_interface141 = frozenset([18])
+    FOLLOW_ID_in_interface145 = frozenset([6])
+    FOLLOW_OPENBRACKET_in_interface149 = frozenset([5, 7, 18])
+    FOLLOW_method_in_interface162 = frozenset([5, 7, 18])
+    FOLLOW_CLOSEBRACKET_in_interface178 = frozenset([1])
+    FOLLOW_type_in_parameter_list204 = frozenset([18])
+    FOLLOW_ID_in_parameter_list210 = frozenset([1, 11])
+    FOLLOW_COMMA_in_parameter_list215 = frozenset([18])
+    FOLLOW_type_in_parameter_list221 = frozenset([18])
+    FOLLOW_ID_in_parameter_list227 = frozenset([1, 11])
+    FOLLOW_ID_in_package_type250 = frozenset([12])
+    FOLLOW_SLASH_in_package_type252 = frozenset([18])
+    FOLLOW_ID_in_package_type256 = frozenset([1])
+    FOLLOW_ID_in_type278 = frozenset([1])
+    FOLLOW_package_type_in_type289 = frozenset([1])
+    FOLLOW_OPENPAREN_in_return_vals311 = frozenset([9, 18])
+    FOLLOW_parameter_list_in_return_vals317 = frozenset([9])
+    FOLLOW_CLOSEPAREN_in_return_vals321 = frozenset([1])
+    FOLLOW_MESSAGE_in_message334 = frozenset([18])
+    FOLLOW_ID_in_message336 = frozenset([6])
+    FOLLOW_OPENBRACKET_in_message338 = frozenset([7, 18])
+    FOLLOW_type_in_message341 = frozenset([18])
+    FOLLOW_ID_in_message343 = frozenset([10])
+    FOLLOW_SEMICOLON_in_message345 = frozenset([7, 18])
+    FOLLOW_CLOSEBRACKET_in_message349 = frozenset([1])
+    FOLLOW_interface_in_main363 = frozenset([13, 14])
+    FOLLOW_message_in_main367 = frozenset([13, 14])
+    FOLLOW_EOF_in_main371 = frozenset([1])
 
 
 

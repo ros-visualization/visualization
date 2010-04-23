@@ -21,6 +21,7 @@ COMMA :	 ',';
 SLASH :	'/';
 INTERFACE :	'interface';
 MESSAGE :	'message';
+RETURNS : 'returns';
 
 fragment DIGIT : ('0'..'9') ;
 fragment LETTER : ('a'..'z'|'A'..'Z') ;

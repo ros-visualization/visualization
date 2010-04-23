@@ -1,4 +1,4 @@
-# $ANTLR 3.1.2 /wg/bgr/jfaust/ros/dev/visualization-2.0/visualization/rviz_interface_gen/antlr/InterfaceLexer.g 2010-04-20 11:13:54
+# $ANTLR 3.1.2 /wg/bgr/jfaust/ros/dev/visualization-2.0/visualization/rviz_interface_gen/antlr/InterfaceLexer.g 2010-04-22 17:11:19
 
 import sys
 from antlr3 import *
@@ -9,22 +9,23 @@ from antlr3.compat import set, frozenset
 HIDDEN = BaseRecognizer.HIDDEN
 
 # token types
-CLOSEBRACKET=7
 CLOSEPAREN=9
-SLASH=12
-COMMA=11
-LETTER=16
+LETTER=17
 ATTRIBUTE=5
 OPENBRACKET=6
-MESSAGE=14
 WHITESPACE=4
 SEMICOLON=10
-INTERFACE=13
-DIGIT=15
-OPENPAREN=8
-COMMENT=18
-ID=17
+ID=18
 EOF=-1
+CLOSEBRACKET=7
+SLASH=12
+COMMA=11
+MESSAGE=14
+INTERFACE=13
+DIGIT=16
+OPENPAREN=8
+COMMENT=19
+RETURNS=15
 
 
 class InterfaceLexer(Lexer):
@@ -388,15 +389,40 @@ class InterfaceLexer(Lexer):
 
 
 
+    # $ANTLR start "RETURNS"
+    def mRETURNS(self, ):
+
+        try:
+            _type = RETURNS
+            _channel = DEFAULT_CHANNEL
+
+            # /wg/bgr/jfaust/ros/dev/visualization-2.0/visualization/rviz_interface_gen/antlr/InterfaceLexer.g:24:9: ( 'returns' )
+            # /wg/bgr/jfaust/ros/dev/visualization-2.0/visualization/rviz_interface_gen/antlr/InterfaceLexer.g:24:11: 'returns'
+            pass 
+            self.match("returns")
+
+
+
+            self._state.type = _type
+            self._state.channel = _channel
+
+        finally:
+
+            pass
+
+    # $ANTLR end "RETURNS"
+
+
+
     # $ANTLR start "DIGIT"
     def mDIGIT(self, ):
 
         try:
-            # /wg/bgr/jfaust/ros/dev/visualization-2.0/visualization/rviz_interface_gen/antlr/InterfaceLexer.g:25:16: ( ( '0' .. '9' ) )
-            # /wg/bgr/jfaust/ros/dev/visualization-2.0/visualization/rviz_interface_gen/antlr/InterfaceLexer.g:25:18: ( '0' .. '9' )
+            # /wg/bgr/jfaust/ros/dev/visualization-2.0/visualization/rviz_interface_gen/antlr/InterfaceLexer.g:26:16: ( ( '0' .. '9' ) )
+            # /wg/bgr/jfaust/ros/dev/visualization-2.0/visualization/rviz_interface_gen/antlr/InterfaceLexer.g:26:18: ( '0' .. '9' )
             pass 
-            # /wg/bgr/jfaust/ros/dev/visualization-2.0/visualization/rviz_interface_gen/antlr/InterfaceLexer.g:25:18: ( '0' .. '9' )
-            # /wg/bgr/jfaust/ros/dev/visualization-2.0/visualization/rviz_interface_gen/antlr/InterfaceLexer.g:25:19: '0' .. '9'
+            # /wg/bgr/jfaust/ros/dev/visualization-2.0/visualization/rviz_interface_gen/antlr/InterfaceLexer.g:26:18: ( '0' .. '9' )
+            # /wg/bgr/jfaust/ros/dev/visualization-2.0/visualization/rviz_interface_gen/antlr/InterfaceLexer.g:26:19: '0' .. '9'
             pass 
             self.matchRange(48, 57)
 
@@ -418,8 +444,8 @@ class InterfaceLexer(Lexer):
     def mLETTER(self, ):
 
         try:
-            # /wg/bgr/jfaust/ros/dev/visualization-2.0/visualization/rviz_interface_gen/antlr/InterfaceLexer.g:26:17: ( ( 'a' .. 'z' | 'A' .. 'Z' ) )
-            # /wg/bgr/jfaust/ros/dev/visualization-2.0/visualization/rviz_interface_gen/antlr/InterfaceLexer.g:26:19: ( 'a' .. 'z' | 'A' .. 'Z' )
+            # /wg/bgr/jfaust/ros/dev/visualization-2.0/visualization/rviz_interface_gen/antlr/InterfaceLexer.g:27:17: ( ( 'a' .. 'z' | 'A' .. 'Z' ) )
+            # /wg/bgr/jfaust/ros/dev/visualization-2.0/visualization/rviz_interface_gen/antlr/InterfaceLexer.g:27:19: ( 'a' .. 'z' | 'A' .. 'Z' )
             pass 
             if (65 <= self.input.LA(1) <= 90) or (97 <= self.input.LA(1) <= 122):
                 self.input.consume()
@@ -447,8 +473,8 @@ class InterfaceLexer(Lexer):
             _type = ID
             _channel = DEFAULT_CHANNEL
 
-            # /wg/bgr/jfaust/ros/dev/visualization-2.0/visualization/rviz_interface_gen/antlr/InterfaceLexer.g:27:5: ( ( LETTER | '_' ) ( LETTER | DIGIT | '_' )* )
-            # /wg/bgr/jfaust/ros/dev/visualization-2.0/visualization/rviz_interface_gen/antlr/InterfaceLexer.g:27:7: ( LETTER | '_' ) ( LETTER | DIGIT | '_' )*
+            # /wg/bgr/jfaust/ros/dev/visualization-2.0/visualization/rviz_interface_gen/antlr/InterfaceLexer.g:28:5: ( ( LETTER | '_' ) ( LETTER | DIGIT | '_' )* )
+            # /wg/bgr/jfaust/ros/dev/visualization-2.0/visualization/rviz_interface_gen/antlr/InterfaceLexer.g:28:7: ( LETTER | '_' ) ( LETTER | DIGIT | '_' )*
             pass 
             if (65 <= self.input.LA(1) <= 90) or self.input.LA(1) == 95 or (97 <= self.input.LA(1) <= 122):
                 self.input.consume()
@@ -457,7 +483,7 @@ class InterfaceLexer(Lexer):
                 self.recover(mse)
                 raise mse
 
-            # /wg/bgr/jfaust/ros/dev/visualization-2.0/visualization/rviz_interface_gen/antlr/InterfaceLexer.g:27:22: ( LETTER | DIGIT | '_' )*
+            # /wg/bgr/jfaust/ros/dev/visualization-2.0/visualization/rviz_interface_gen/antlr/InterfaceLexer.g:28:22: ( LETTER | DIGIT | '_' )*
             while True: #loop3
                 alt3 = 4
                 LA3 = self.input.LA(1)
@@ -469,19 +495,19 @@ class InterfaceLexer(Lexer):
                     alt3 = 3
 
                 if alt3 == 1:
-                    # /wg/bgr/jfaust/ros/dev/visualization-2.0/visualization/rviz_interface_gen/antlr/InterfaceLexer.g:27:23: LETTER
+                    # /wg/bgr/jfaust/ros/dev/visualization-2.0/visualization/rviz_interface_gen/antlr/InterfaceLexer.g:28:23: LETTER
                     pass 
                     self.mLETTER()
 
 
                 elif alt3 == 2:
-                    # /wg/bgr/jfaust/ros/dev/visualization-2.0/visualization/rviz_interface_gen/antlr/InterfaceLexer.g:27:32: DIGIT
+                    # /wg/bgr/jfaust/ros/dev/visualization-2.0/visualization/rviz_interface_gen/antlr/InterfaceLexer.g:28:32: DIGIT
                     pass 
                     self.mDIGIT()
 
 
                 elif alt3 == 3:
-                    # /wg/bgr/jfaust/ros/dev/visualization-2.0/visualization/rviz_interface_gen/antlr/InterfaceLexer.g:27:40: '_'
+                    # /wg/bgr/jfaust/ros/dev/visualization-2.0/visualization/rviz_interface_gen/antlr/InterfaceLexer.g:28:40: '_'
                     pass 
                     self.match(95)
 
@@ -511,7 +537,7 @@ class InterfaceLexer(Lexer):
             _type = COMMENT
             _channel = DEFAULT_CHANNEL
 
-            # /wg/bgr/jfaust/ros/dev/visualization-2.0/visualization/rviz_interface_gen/antlr/InterfaceLexer.g:30:5: ( '//' (~ ( '\\n' | '\\r' ) )* ( '\\r' )? '\\n' | '/*' ( options {greedy=false; } : . )* '*/' )
+            # /wg/bgr/jfaust/ros/dev/visualization-2.0/visualization/rviz_interface_gen/antlr/InterfaceLexer.g:31:5: ( '//' (~ ( '\\n' | '\\r' ) )* ( '\\r' )? '\\n' | '/*' ( options {greedy=false; } : . )* '*/' )
             alt7 = 2
             LA7_0 = self.input.LA(1)
 
@@ -533,10 +559,10 @@ class InterfaceLexer(Lexer):
                 raise nvae
 
             if alt7 == 1:
-                # /wg/bgr/jfaust/ros/dev/visualization-2.0/visualization/rviz_interface_gen/antlr/InterfaceLexer.g:30:9: '//' (~ ( '\\n' | '\\r' ) )* ( '\\r' )? '\\n'
+                # /wg/bgr/jfaust/ros/dev/visualization-2.0/visualization/rviz_interface_gen/antlr/InterfaceLexer.g:31:9: '//' (~ ( '\\n' | '\\r' ) )* ( '\\r' )? '\\n'
                 pass 
                 self.match("//")
-                # /wg/bgr/jfaust/ros/dev/visualization-2.0/visualization/rviz_interface_gen/antlr/InterfaceLexer.g:30:14: (~ ( '\\n' | '\\r' ) )*
+                # /wg/bgr/jfaust/ros/dev/visualization-2.0/visualization/rviz_interface_gen/antlr/InterfaceLexer.g:31:14: (~ ( '\\n' | '\\r' ) )*
                 while True: #loop4
                     alt4 = 2
                     LA4_0 = self.input.LA(1)
@@ -546,7 +572,7 @@ class InterfaceLexer(Lexer):
 
 
                     if alt4 == 1:
-                        # /wg/bgr/jfaust/ros/dev/visualization-2.0/visualization/rviz_interface_gen/antlr/InterfaceLexer.g:30:14: ~ ( '\\n' | '\\r' )
+                        # /wg/bgr/jfaust/ros/dev/visualization-2.0/visualization/rviz_interface_gen/antlr/InterfaceLexer.g:31:14: ~ ( '\\n' | '\\r' )
                         pass 
                         if (0 <= self.input.LA(1) <= 9) or (11 <= self.input.LA(1) <= 12) or (14 <= self.input.LA(1) <= 65535):
                             self.input.consume()
@@ -561,14 +587,14 @@ class InterfaceLexer(Lexer):
                         break #loop4
 
 
-                # /wg/bgr/jfaust/ros/dev/visualization-2.0/visualization/rviz_interface_gen/antlr/InterfaceLexer.g:30:28: ( '\\r' )?
+                # /wg/bgr/jfaust/ros/dev/visualization-2.0/visualization/rviz_interface_gen/antlr/InterfaceLexer.g:31:28: ( '\\r' )?
                 alt5 = 2
                 LA5_0 = self.input.LA(1)
 
                 if (LA5_0 == 13) :
                     alt5 = 1
                 if alt5 == 1:
-                    # /wg/bgr/jfaust/ros/dev/visualization-2.0/visualization/rviz_interface_gen/antlr/InterfaceLexer.g:30:28: '\\r'
+                    # /wg/bgr/jfaust/ros/dev/visualization-2.0/visualization/rviz_interface_gen/antlr/InterfaceLexer.g:31:28: '\\r'
                     pass 
                     self.match(13)
 
@@ -581,10 +607,10 @@ class InterfaceLexer(Lexer):
 
 
             elif alt7 == 2:
-                # /wg/bgr/jfaust/ros/dev/visualization-2.0/visualization/rviz_interface_gen/antlr/InterfaceLexer.g:31:9: '/*' ( options {greedy=false; } : . )* '*/'
+                # /wg/bgr/jfaust/ros/dev/visualization-2.0/visualization/rviz_interface_gen/antlr/InterfaceLexer.g:32:9: '/*' ( options {greedy=false; } : . )* '*/'
                 pass 
                 self.match("/*")
-                # /wg/bgr/jfaust/ros/dev/visualization-2.0/visualization/rviz_interface_gen/antlr/InterfaceLexer.g:31:14: ( options {greedy=false; } : . )*
+                # /wg/bgr/jfaust/ros/dev/visualization-2.0/visualization/rviz_interface_gen/antlr/InterfaceLexer.g:32:14: ( options {greedy=false; } : . )*
                 while True: #loop6
                     alt6 = 2
                     LA6_0 = self.input.LA(1)
@@ -603,7 +629,7 @@ class InterfaceLexer(Lexer):
 
 
                     if alt6 == 1:
-                        # /wg/bgr/jfaust/ros/dev/visualization-2.0/visualization/rviz_interface_gen/antlr/InterfaceLexer.g:31:42: .
+                        # /wg/bgr/jfaust/ros/dev/visualization-2.0/visualization/rviz_interface_gen/antlr/InterfaceLexer.g:32:42: .
                         pass 
                         self.matchAny()
 
@@ -630,8 +656,8 @@ class InterfaceLexer(Lexer):
 
 
     def mTokens(self):
-        # /wg/bgr/jfaust/ros/dev/visualization-2.0/visualization/rviz_interface_gen/antlr/InterfaceLexer.g:1:8: ( WHITESPACE | ATTRIBUTE | OPENBRACKET | CLOSEBRACKET | OPENPAREN | CLOSEPAREN | SEMICOLON | COMMA | SLASH | INTERFACE | MESSAGE | ID | COMMENT )
-        alt8 = 13
+        # /wg/bgr/jfaust/ros/dev/visualization-2.0/visualization/rviz_interface_gen/antlr/InterfaceLexer.g:1:8: ( WHITESPACE | ATTRIBUTE | OPENBRACKET | CLOSEBRACKET | OPENPAREN | CLOSEPAREN | SEMICOLON | COMMA | SLASH | INTERFACE | MESSAGE | RETURNS | ID | COMMENT )
+        alt8 = 14
         alt8 = self.dfa8.predict(self.input)
         if alt8 == 1:
             # /wg/bgr/jfaust/ros/dev/visualization-2.0/visualization/rviz_interface_gen/antlr/InterfaceLexer.g:1:10: WHITESPACE
@@ -700,13 +726,19 @@ class InterfaceLexer(Lexer):
 
 
         elif alt8 == 12:
-            # /wg/bgr/jfaust/ros/dev/visualization-2.0/visualization/rviz_interface_gen/antlr/InterfaceLexer.g:1:117: ID
+            # /wg/bgr/jfaust/ros/dev/visualization-2.0/visualization/rviz_interface_gen/antlr/InterfaceLexer.g:1:117: RETURNS
+            pass 
+            self.mRETURNS()
+
+
+        elif alt8 == 13:
+            # /wg/bgr/jfaust/ros/dev/visualization-2.0/visualization/rviz_interface_gen/antlr/InterfaceLexer.g:1:125: ID
             pass 
             self.mID()
 
 
-        elif alt8 == 13:
-            # /wg/bgr/jfaust/ros/dev/visualization-2.0/visualization/rviz_interface_gen/antlr/InterfaceLexer.g:1:120: COMMENT
+        elif alt8 == 14:
+            # /wg/bgr/jfaust/ros/dev/visualization-2.0/visualization/rviz_interface_gen/antlr/InterfaceLexer.g:1:128: COMMENT
             pass 
             self.mCOMMENT()
 
@@ -719,80 +751,88 @@ class InterfaceLexer(Lexer):
     # lookup tables for DFA #8
 
     DFA8_eot = DFA.unpack(
-        u"\2\uffff\2\15\6\uffff\1\21\2\15\1\uffff\2\15\2\uffff\6\15\1\34"
-        u"\3\15\1\uffff\1\34\5\15\1\45\1\15\1\uffff\1\47\1\uffff"
+        u"\2\uffff\2\16\6\uffff\1\22\3\16\1\uffff\2\16\2\uffff\10\16\1\40"
+        u"\4\16\1\uffff\1\40\7\16\1\54\1\55\1\16\2\uffff\1\57\1\uffff"
         )
 
     DFA8_eof = DFA.unpack(
-        u"\50\uffff"
+        u"\60\uffff"
         )
 
     DFA8_min = DFA.unpack(
-        u"\1\11\1\uffff\1\171\1\163\6\uffff\1\52\1\156\1\145\1\uffff\1\156"
-        u"\1\171\2\uffff\1\164\1\163\1\143\1\156\1\145\1\163\1\60\1\143\1"
-        u"\162\1\141\1\uffff\1\60\1\146\1\147\1\141\1\145\1\143\1\60\1\145"
-        u"\1\uffff\1\60\1\uffff"
+        u"\1\11\1\uffff\1\171\1\163\6\uffff\1\52\1\156\2\145\1\uffff\1\156"
+        u"\1\171\2\uffff\1\164\1\163\1\164\1\143\1\156\1\145\1\163\1\165"
+        u"\1\60\1\143\1\162\1\141\1\162\1\uffff\1\60\1\146\1\147\1\156\1"
+        u"\141\1\145\1\163\1\143\2\60\1\145\2\uffff\1\60\1\uffff"
         )
 
     DFA8_max = DFA.unpack(
-        u"\1\175\1\uffff\1\171\1\163\6\uffff\1\57\1\156\1\145\1\uffff\1\156"
-        u"\1\171\2\uffff\1\164\1\163\1\143\1\156\1\145\1\163\1\172\1\143"
-        u"\1\162\1\141\1\uffff\1\172\1\146\1\147\1\141\1\145\1\143\1\172"
-        u"\1\145\1\uffff\1\172\1\uffff"
+        u"\1\175\1\uffff\1\171\1\163\6\uffff\1\57\1\156\2\145\1\uffff\1\156"
+        u"\1\171\2\uffff\1\164\1\163\1\164\1\143\1\156\1\145\1\163\1\165"
+        u"\1\172\1\143\1\162\1\141\1\162\1\uffff\1\172\1\146\1\147\1\156"
+        u"\1\141\1\145\1\163\1\143\2\172\1\145\2\uffff\1\172\1\uffff"
         )
 
     DFA8_accept = DFA.unpack(
-        u"\1\uffff\1\1\2\uffff\1\3\1\4\1\5\1\6\1\7\1\10\3\uffff\1\14\2\uffff"
-        u"\1\15\1\11\12\uffff\1\2\10\uffff\1\13\1\uffff\1\12"
+        u"\1\uffff\1\1\2\uffff\1\3\1\4\1\5\1\6\1\7\1\10\4\uffff\1\15\2\uffff"
+        u"\1\16\1\11\15\uffff\1\2\13\uffff\1\13\1\14\1\uffff\1\12"
         )
 
     DFA8_special = DFA.unpack(
-        u"\50\uffff"
+        u"\60\uffff"
         )
 
             
     DFA8_transition = [
         DFA.unpack(u"\2\1\1\uffff\2\1\22\uffff\1\1\7\uffff\1\6\1\7\2\uffff"
-        u"\1\11\2\uffff\1\12\13\uffff\1\10\5\uffff\32\15\4\uffff\1\15\1\uffff"
-        u"\1\3\7\15\1\13\3\15\1\14\5\15\1\2\7\15\1\4\1\uffff\1\5"),
+        u"\1\11\2\uffff\1\12\13\uffff\1\10\5\uffff\32\16\4\uffff\1\16\1\uffff"
+        u"\1\3\7\16\1\13\3\16\1\14\4\16\1\15\1\2\7\16\1\4\1\uffff\1\5"),
         DFA.unpack(u""),
-        DFA.unpack(u"\1\16"),
         DFA.unpack(u"\1\17"),
+        DFA.unpack(u"\1\20"),
         DFA.unpack(u""),
         DFA.unpack(u""),
         DFA.unpack(u""),
         DFA.unpack(u""),
         DFA.unpack(u""),
         DFA.unpack(u""),
-        DFA.unpack(u"\1\20\4\uffff\1\20"),
-        DFA.unpack(u"\1\22"),
+        DFA.unpack(u"\1\21\4\uffff\1\21"),
         DFA.unpack(u"\1\23"),
-        DFA.unpack(u""),
         DFA.unpack(u"\1\24"),
         DFA.unpack(u"\1\25"),
         DFA.unpack(u""),
-        DFA.unpack(u""),
         DFA.unpack(u"\1\26"),
         DFA.unpack(u"\1\27"),
+        DFA.unpack(u""),
+        DFA.unpack(u""),
         DFA.unpack(u"\1\30"),
         DFA.unpack(u"\1\31"),
         DFA.unpack(u"\1\32"),
         DFA.unpack(u"\1\33"),
-        DFA.unpack(u"\12\15\7\uffff\32\15\4\uffff\1\15\1\uffff\32\15"),
+        DFA.unpack(u"\1\34"),
         DFA.unpack(u"\1\35"),
         DFA.unpack(u"\1\36"),
         DFA.unpack(u"\1\37"),
-        DFA.unpack(u""),
-        DFA.unpack(u"\12\15\7\uffff\32\15\4\uffff\1\15\1\uffff\32\15"),
-        DFA.unpack(u"\1\40"),
+        DFA.unpack(u"\12\16\7\uffff\32\16\4\uffff\1\16\1\uffff\32\16"),
         DFA.unpack(u"\1\41"),
         DFA.unpack(u"\1\42"),
         DFA.unpack(u"\1\43"),
         DFA.unpack(u"\1\44"),
-        DFA.unpack(u"\12\15\7\uffff\32\15\4\uffff\1\15\1\uffff\32\15"),
-        DFA.unpack(u"\1\46"),
         DFA.unpack(u""),
-        DFA.unpack(u"\12\15\7\uffff\32\15\4\uffff\1\15\1\uffff\32\15"),
+        DFA.unpack(u"\12\16\7\uffff\32\16\4\uffff\1\16\1\uffff\32\16"),
+        DFA.unpack(u"\1\45"),
+        DFA.unpack(u"\1\46"),
+        DFA.unpack(u"\1\47"),
+        DFA.unpack(u"\1\50"),
+        DFA.unpack(u"\1\51"),
+        DFA.unpack(u"\1\52"),
+        DFA.unpack(u"\1\53"),
+        DFA.unpack(u"\12\16\7\uffff\32\16\4\uffff\1\16\1\uffff\32\16"),
+        DFA.unpack(u"\12\16\7\uffff\32\16\4\uffff\1\16\1\uffff\32\16"),
+        DFA.unpack(u"\1\56"),
+        DFA.unpack(u""),
+        DFA.unpack(u""),
+        DFA.unpack(u"\12\16\7\uffff\32\16\4\uffff\1\16\1\uffff\32\16"),
         DFA.unpack(u"")
     ]
 

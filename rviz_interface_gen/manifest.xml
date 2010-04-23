@@ -9,7 +9,7 @@
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/rviz_interface_gen</url>
   <depend package="roslib"/>
-
+  <depend package="roscpp"/>
 </package>
 
 
