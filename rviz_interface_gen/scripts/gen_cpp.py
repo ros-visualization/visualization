@@ -149,6 +149,12 @@ def write_header_server_declaration(hs, i, pkg):
     print >> hs, '  ImplPtr impl_;'
     
     print >> hs, '};\n'
+    
+def write_cpp_begin(cpps, i, pkg):
+    pass
+
+def write_cpp_end(cpps, i, pkg):
+    pass
 
 def generate(output_dir, i, pkg, pkg_path):
     hs = StringIO()
@@ -167,20 +173,25 @@ def generate(output_dir, i, pkg, pkg_path):
     
     write_header_end(hs, i, pkg)
     
+    write_cpp_begin(cpps, i, pkg)
+    write_cpp_end(cpps, i, pkg)
+    
+    header_dir = '%s/include/%s'%(output_dir, pkg)
+    cpp_dir = '%s/src'%(output_dir)
     try:
-        os.makedirs('%s/include'%(output_dir))
+        os.makedirs(header_dir)
     except OSError, e:
         pass
     try:
-        os.makedirs('%s/src'%(output_dir))
+        os.makedirs(cpp_dir)
     except OSError, e:
         pass
          
-    f = open('%s/include/%s.h'%(output_dir, i.name), 'w')
+    f = open('%s/%s.h'%(header_dir, i.name), 'w')
     print >> f, hs.getvalue()
     f.close()
     
-    f = open('%s/src/%s.cpp'%(output_dir, i.name), 'w')
+    f = open('%s/%s.cpp'%(cpp_dir, i.name), 'w')
     print >> f, cpps.getvalue()
     f.close()
 
