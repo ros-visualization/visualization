@@ -1,10 +1,12 @@
 interface Test
 {
   triple(uint32 val) returns (uint32 val);
-  blockFor(time t);
+  blockFor(duration d);
   async noBlock();
   
   complex(std_msgs/String name, float32 val) returns (std_msgs/String ret);
+  
+  multipleReturn(uint32 val) returns (uint32 val, uint32 val_doubled);
 }
 
 message Foo

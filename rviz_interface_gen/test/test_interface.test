@@ -1,0 +1,4 @@
+<launch>
+	<test test-name="test_interface" pkg="rviz_interface_gen" type="test_interface"/>
+</launch>
+

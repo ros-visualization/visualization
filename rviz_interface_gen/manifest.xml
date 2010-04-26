@@ -10,6 +10,8 @@
   <url>http://ros.org/wiki/rviz_interface_gen</url>
   <depend package="roslib"/>
   <depend package="roscpp"/>
+  <depend package="rviz_rpc"/>
+  <depend package="std_msgs"/>
 </package>
 
 

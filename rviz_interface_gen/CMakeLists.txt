@@ -17,14 +17,17 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
 #uncomment if you have defined messages
-#rosbuild_genmsg()
+rosbuild_genmsg()
 #uncomment if you have defined services
 #rosbuild_gensrv()
 
+include_directories(interface_generated/cpp/include)
+
 #common commands for building c++ executables and libraries
-#rosbuild_add_library(${PROJECT_NAME} src/example.cpp)
-#target_link_libraries(${PROJECT_NAME} another_library)
-#rosbuild_add_boost_directories()
-#rosbuild_link_boost(${PROJECT_NAME} thread)
-#rosbuild_add_executable(example examples/example.cpp)
-#target_link_libraries(example ${PROJECT_NAME})
+rosbuild_add_library(test_interfaces interface_generated/cpp/src/Test.cpp)
+rosbuild_add_boost_directories()
+
+rosbuild_add_executable(test_interface EXCLUDE_FROM_ALL  test/test_interface.cpp)
+target_link_libraries(test_interface test_interfaces)
+rosbuild_add_gtest_build_flags(test_interface)
+rosbuild_add_rostest(test/test_interface.test)
