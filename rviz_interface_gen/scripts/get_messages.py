@@ -39,11 +39,10 @@ import rviz_interface_gen.msgs
 import sys
 
 if __name__ == "__main__":
-    for arg in sys.argv[1:]:
-        p = rviz_interface_gen.msgs.load_from_file(arg)
-        for i in p.interfaces:
-            msgs = rviz_interface_gen.msgs.get_generated_messages(i)
-            for m in msgs:
-                print m
+    p = rviz_interface_gen.msgs.load_from_file(sys.argv[1])
+    for i in p.interfaces:
+        msgs = rviz_interface_gen.msgs.get_generated_messages(i)
+        for m in msgs:
+            print '%s.msg'%m,
     
 
