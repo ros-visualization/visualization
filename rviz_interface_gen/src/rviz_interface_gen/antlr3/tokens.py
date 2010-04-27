@@ -30,7 +30,7 @@
 #
 # end[licence]
 
-from antlr3.constants import EOF, DEFAULT_CHANNEL, INVALID_TOKEN_TYPE
+from constants import EOF, DEFAULT_CHANNEL, INVALID_TOKEN_TYPE
 
 ############################################################################
 #

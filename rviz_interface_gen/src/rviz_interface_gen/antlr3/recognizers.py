@@ -33,16 +33,16 @@
 import sys
 import inspect
 
-from antlr3 import runtime_version, runtime_version_str
-from antlr3.constants import DEFAULT_CHANNEL, HIDDEN_CHANNEL, EOF, \
+from rviz_interface_gen.antlr3 import runtime_version, runtime_version_str
+from constants import DEFAULT_CHANNEL, HIDDEN_CHANNEL, EOF, \
      EOR_TOKEN_TYPE, INVALID_TOKEN_TYPE
-from antlr3.exceptions import RecognitionException, MismatchedTokenException, \
+from exceptions import RecognitionException, MismatchedTokenException, \
      MismatchedRangeException, MismatchedTreeNodeException, \
      NoViableAltException, EarlyExitException, MismatchedSetException, \
      MismatchedNotSetException, FailedPredicateException, \
      BacktrackingFailed, UnwantedTokenException, MissingTokenException
-from antlr3.tokens import CommonToken, EOF_TOKEN, SKIP_TOKEN
-from antlr3.compat import set, frozenset, reversed
+from tokens import CommonToken, EOF_TOKEN, SKIP_TOKEN
+from compat import set, frozenset, reversed
 
 
 class RecognizerSharedState(object):

@@ -33,8 +33,8 @@
 import codecs
 from StringIO import StringIO
 
-from antlr3.constants import DEFAULT_CHANNEL, EOF
-from antlr3.tokens import Token, EOF_TOKEN
+from constants import DEFAULT_CHANNEL, EOF
+from tokens import Token, EOF_TOKEN
 
 
 ############################################################################

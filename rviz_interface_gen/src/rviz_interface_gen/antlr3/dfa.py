@@ -30,8 +30,8 @@
 #
 # end[licensc]
 
-from antlr3.constants import EOF
-from antlr3.exceptions import NoViableAltException, BacktrackingFailed
+from constants import EOF
+from exceptions import NoViableAltException, BacktrackingFailed
 
 
 class DFA(object):

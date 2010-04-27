@@ -30,7 +30,7 @@
 #
 # end[licence]
 
-from antlr3.constants import INVALID_TOKEN_TYPE
+from constants import INVALID_TOKEN_TYPE
 
 
 class BacktrackingFailed(Exception):
