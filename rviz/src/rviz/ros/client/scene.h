@@ -32,6 +32,11 @@
 
 #include "object.h"
 
+namespace rviz_interfaces
+{
+class SceneProxy;
+}
+
 namespace rviz
 {
 namespace ros_client
@@ -47,7 +52,14 @@ public:
   Scene(const rviz_uuid::UUID& id);
 
   Camera createCamera();
+  void destroyCamera(const Camera& cam);
+
+private:
+  rviz_interfaces::SceneProxy* proxy_;
 };
+
+Scene createScene();
+void destroyScene(const Scene& scene);
 
 } // namespace ros_client
 } // namespace rviz

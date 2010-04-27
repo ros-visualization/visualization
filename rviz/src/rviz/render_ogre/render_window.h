@@ -31,6 +31,7 @@
 #define RVIZ_OGRE_RENDER_WINDOW_H
 
 #include <rviz/render_interface/irender_window.h>
+#include <rviz_uuid/uuid.h>
 
 namespace Ogre
 {
@@ -50,16 +51,16 @@ class Renderer;
 class RenderWindow : public IRenderWindow
 {
 public:
-  RenderWindow(const std::string& name, Ogre::RenderWindow* wnd, Renderer* rend);
+  RenderWindow(const rviz_uuid::UUID& id, Ogre::RenderWindow* wnd, Renderer* rend);
 
-  virtual const std::string& getName();
+  virtual const rviz_uuid::UUID& getID();
   virtual void resized(uint32_t width, uint32_t height);
   virtual void attachCamera(const rviz_uuid::UUID& id);
 
   Ogre::RenderWindow* getOgreRenderWindow() { return render_window_; }
 
 private:
-  std::string name_;
+  rviz_uuid::UUID id_;
   Ogre::RenderWindow* render_window_;
   Renderer* renderer_;
   Camera* cam_;

@@ -40,17 +40,9 @@
 #include <ros/ros.h>
 #include <ros/callback_queue.h>
 
-#include <rviz_msgs/CreateRenderWindow.h>
-#include <rviz_msgs/DestroyRenderWindow.h>
-#include <rviz_msgs/RenderWindowCommand.h>
-
-#include <rviz_msgs/CreateCamera.h>
-#include <rviz_msgs/DestroyCamera.h>
-
-#include <rviz_msgs/CreateScene.h>
-#include <rviz_msgs/DestroyScene.h>
-
 #include <rviz_interfaces/Camera.h>
+#include <rviz_interfaces/RenderWindow.h>
+#include <rviz_interfaces/Scene.h>
 
 using namespace rviz_uuid;
 
@@ -156,6 +148,90 @@ private:
   render::IRenderer* renderer_;
 };
 
+class RenderWindowServer : public rviz_interfaces::RenderWindowServer
+{
+public:
+  RenderWindowServer(render::IRenderer* rend, const std::string& name, const ros::NodeHandle& nh)
+  : rviz_interfaces::RenderWindowServer(name, nh)
+  , renderer_(rend)
+  {
+  }
+
+  virtual void resized(const rviz_msgs::UUID& id, uint32_t width, uint32_t height)
+  {
+    render::IRenderWindow* wnd = renderer_->getRenderWindow(id);
+    wnd->resized(width, height);
+  }
+
+  virtual void attachCamera(const rviz_msgs::UUID& id, const rviz_msgs::UUID& camera_id)
+  {
+    render::IRenderWindow* wnd = renderer_->getRenderWindow(id);
+    wnd->attachCamera(camera_id);
+  }
+
+  virtual void create(const rviz_msgs::UUID& id, const std::string& parent_window, uint32_t width, uint32_t height)
+  {
+    renderer_->createRenderWindow(id, parent_window, width, height);
+  }
+
+  virtual void destroy(const rviz_msgs::UUID& id)
+  {
+    renderer_->destroyRenderWindow(id);
+  }
+
+private:
+  render::IRenderer* renderer_;
+};
+
+class SceneServer : public rviz_interfaces::SceneServer
+{
+public:
+  SceneServer(render::IRenderer* rend, const std::string& name, const ros::NodeHandle& nh)
+  : rviz_interfaces::SceneServer(name, nh)
+  , renderer_(rend)
+  {
+  }
+
+  virtual void create(const rviz_msgs::UUID& id)
+  {
+    render::IScene* scene = renderer_->createScene(id);
+    if (!scene)
+    {
+      throw std::runtime_error("Could not create scene [" + UUID(id).toString() + "]");
+    }
+  }
+
+  virtual void destroy(const rviz_msgs::UUID& id)
+  {
+    renderer_->destroyScene(id);
+  }
+
+  virtual void createCamera(const rviz_msgs::UUID& id, const rviz_msgs::UUID& camera_id)
+  {
+    render::IScene* scene = renderer_->getScene(id);
+    if (!scene)
+    {
+      throw std::runtime_error("Scene [" + UUID(id).toString() + "] does not exist");
+    }
+
+    scene->createCamera(camera_id);
+  }
+
+  virtual void destroyCamera(const rviz_msgs::UUID& id, const rviz_msgs::UUID& camera_id)
+  {
+    render::IScene* scene = renderer_->getScene(id);
+    if (!scene)
+    {
+      throw std::runtime_error("Scene [" + UUID(id).toString() + "] does not exist");
+    }
+
+    scene->destroyCamera(camera_id);
+  }
+
+private:
+  render::IRenderer* renderer_;
+};
+
 RendererROS::RendererROS(render::IRenderer* renderer, const ros::NodeHandle& nh)
 : renderer_(renderer)
 , callback_queue_(new ros::CallbackQueue)
@@ -164,16 +240,8 @@ RendererROS::RendererROS(render::IRenderer* renderer, const ros::NodeHandle& nh)
 {
   nh_->setCallbackQueue(callback_queue_.get());
   camera_server_.reset(new CameraServer(renderer_, "camera", *nh_));
-
-  srvs_.push_back(ServiceServerPtr(new ros::ServiceServer(nh_->advertiseService("render_window/create", &RendererROS::onCreateRenderWindow, this))));
-  srvs_.push_back(ServiceServerPtr(new ros::ServiceServer(nh_->advertiseService("render_window/destroy", &RendererROS::onDestroyRenderWindow, this))));
-
-  srvs_.push_back(ServiceServerPtr(new ros::ServiceServer(nh_->advertiseService("camera/create", &RendererROS::onCreateCamera, this))));
-  srvs_.push_back(ServiceServerPtr(new ros::ServiceServer(nh_->advertiseService("camera/destroy", &RendererROS::onDestroyCamera, this))));
-  srvs_.push_back(ServiceServerPtr(new ros::ServiceServer(nh_->advertiseService("scene/create", &RendererROS::onCreateScene, this))));
-  srvs_.push_back(ServiceServerPtr(new ros::ServiceServer(nh_->advertiseService("scene/destroy", &RendererROS::onDestroyScene, this))));
-
-  subs_.push_back(SubscriberPtr(new ros::Subscriber(nh_->subscribe("render_window/command", 0, &RendererROS::onRenderWindowCommand, this))));
+  render_window_server_.reset(new RenderWindowServer(renderer_, "render_window", *nh_));
+  scene_server_.reset(new SceneServer(renderer_, "scene", *nh_));
 
   renderer_->addRenderLoopListener(render_loop_listener_.get());
 }
@@ -181,142 +249,6 @@ RendererROS::RendererROS(render::IRenderer* renderer, const ros::NodeHandle& nh)
 RendererROS::~RendererROS()
 {
   renderer_->removeRenderLoopListener(render_loop_listener_.get());
-}
-
-bool RendererROS::onCreateRenderWindow(rviz_msgs::CreateRenderWindowRequest& req, rviz_msgs::CreateRenderWindowResponse& res)
-{
-  try
-  {
-    renderer_->createRenderWindow(req.name, req.parent_window, req.width, req.height);
-    res.success = true;
-  }
-  catch (std::exception& e)
-  {
-    res.success = false;
-    res.error_msg = e.what();
-  }
-
-  return true;
-}
-
-bool RendererROS::onDestroyRenderWindow(rviz_msgs::DestroyRenderWindowRequest& req, rviz_msgs::DestroyRenderWindowResponse& res)
-{
-  try
-  {
-    renderer_->destroyRenderWindow(req.name);
-    res.success = true;
-  }
-  catch (std::exception& e)
-  {
-    res.success = false;
-    res.error_msg = e.what();
-  }
-
-  return true;
-}
-
-void RendererROS::onRenderWindowCommand(const rviz_msgs::RenderWindowCommandConstPtr& msg)
-{
-  try
-  {
-    render::IRenderWindow* wnd = renderer_->getRenderWindow(msg->name);
-
-    switch (msg->type)
-    {
-    case rviz_msgs::RenderWindowCommand::RESIZED:
-      wnd->resized(msg->resized.width, msg->resized.height);
-      break;
-    case rviz_msgs::RenderWindowCommand::ATTACH_CAMERA:
-      wnd->attachCamera(msg->attach_camera.id);
-      break;
-    }
-  }
-  catch (std::exception& e)
-  {
-
-  }
-}
-
-bool RendererROS::onCreateCamera(rviz_msgs::CreateCameraRequest& req, rviz_msgs::CreateCameraResponse& res)
-{
-  try
-  {
-    render::IScene* scene = renderer_->getScene(req.scene_id);
-    if (!scene)
-    {
-      throw std::runtime_error("Could not find scene [" + UUID(req.scene_id).toString() + "]");
-    }
-
-    scene->createCamera(req.camera_id);
-    res.success = true;
-  }
-  catch (std::exception& e)
-  {
-    res.success = false;
-    res.error_msg = e.what();
-  }
-
-  return true;
-}
-
-bool RendererROS::onDestroyCamera(rviz_msgs::DestroyCameraRequest& req, rviz_msgs::DestroyCameraResponse& res)
-{
-  try
-  {
-    render::IScene* scene = renderer_->getScene(req.scene_id);
-    if (!scene)
-    {
-      throw std::runtime_error("Could not find scene [" + UUID(req.scene_id).toString() + "]");
-    }
-
-    scene->destroyCamera(req.camera_id);
-
-    res.success = true;
-  }
-  catch (std::exception& e)
-  {
-    res.success = false;
-    res.error_msg = e.what();
-  }
-
-  return true;
-}
-
-bool RendererROS::onCreateScene(rviz_msgs::CreateSceneRequest& req, rviz_msgs::CreateSceneResponse& res)
-{
-  try
-  {
-    render::IScene* scene = renderer_->createScene(req.id);
-    if (!scene)
-    {
-      throw std::runtime_error("Could not create scene [" + UUID(req.id).toString() + "]");
-    }
-
-    res.success = true;
-  }
-  catch (std::exception& e)
-  {
-    res.success = false;
-    res.error_msg = e.what();
-  }
-
-  return true;
-}
-
-bool RendererROS::onDestroyScene(rviz_msgs::DestroySceneRequest& req, rviz_msgs::DestroySceneResponse& res)
-{
-  try
-  {
-    renderer_->destroyScene(req.id);
-    res.success = true;
-  }
-  catch (std::exception& e)
-  {
-    res.success = false;
-    res.error_msg = e.what();
-  }
-
-  return true;
 }
 
 

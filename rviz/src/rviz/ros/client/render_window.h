@@ -31,10 +31,16 @@
 #define RVIZ_ROS_CLIENT_RENDER_WINDOW_H
 
 #include "../forwards.h"
+#include "object.h"
 
 #include <ros/types.h>
 
 #include <string>
+
+namespace rviz_interfaces
+{
+class RenderWindowProxy;
+}
 
 namespace rviz
 {
@@ -42,21 +48,22 @@ namespace ros_client
 {
 class Camera;
 
-class RenderWindow
+class RenderWindow : public Object
 {
 public:
-  RenderWindow(const std::string& name, const std::string& parent_window, uint32_t width, uint32_t height);
+  RenderWindow();
+  RenderWindow(const rviz_uuid::UUID& id);
   ~RenderWindow();
 
   void resized(uint32_t width, uint32_t height);
   void attachCamera(const Camera& cam);
-  void destroy();
 
 private:
-  std::string name_;
-  PublisherPtr pub_;
-  bool destroyed_;
+  rviz_interfaces::RenderWindowProxy* proxy_;
 };
+
+RenderWindow createRenderWindow(const std::string& parent_window, uint32_t width, uint32_t height);
+void destroyRenderWindow(const RenderWindow& wnd);
 
 } // namespace ros
 } // namespace rviz

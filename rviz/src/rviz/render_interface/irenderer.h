@@ -48,9 +48,9 @@ class ICamera;
 class IRenderer
 {
 public:
-  virtual IRenderWindow* createRenderWindow(const std::string& name, const std::string& parent_window, uint32_t width, uint32_t height) = 0;
-  virtual void destroyRenderWindow(const std::string& name) = 0;
-  virtual IRenderWindow* getRenderWindow(const std::string& name) = 0;
+  virtual IRenderWindow* createRenderWindow(const rviz_uuid::UUID& id, const std::string& parent_window, uint32_t width, uint32_t height) = 0;
+  virtual void destroyRenderWindow(const rviz_uuid::UUID& id) = 0;
+  virtual IRenderWindow* getRenderWindow(const rviz_uuid::UUID& id) = 0;
 
   virtual IScene* createScene(const rviz_uuid::UUID& id) = 0;
   virtual void destroyScene(const rviz_uuid::UUID& id) = 0;

@@ -1,6 +1,0 @@
-UUID scene_id
-UUID camera_id
----
-bool success
-string error_msg
-

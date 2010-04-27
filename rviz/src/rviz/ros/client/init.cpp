@@ -33,9 +33,6 @@
 
 #include <ros/ros.h>
 
-#include <rviz_msgs/CreateScene.h>
-#include <rviz_msgs/DestroyScene.h>
-
 using namespace rviz_uuid;
 
 namespace rviz
@@ -53,28 +50,6 @@ void init(const std::string& server_namespace)
 ros::NodeHandle& getNodeHandle()
 {
   return *g_node_handle;
-}
-
-Scene createScene()
-{
-  ros::ServiceClient client = getNodeHandle().serviceClient<rviz_msgs::CreateSceneRequest, rviz_msgs::CreateSceneResponse>("renderer/scene/create");
-
-  rviz_msgs::CreateScene srv;
-
-  UUID id = UUID::Generate();
-  srv.request.id = id;
-
-  if (!client || !client.call(srv))
-  {
-    throw std::runtime_error("Could not call service [" + client.getService() + "]");
-  }
-
-  if (!srv.response.success)
-  {
-    throw std::runtime_error("Failed to create camera [" + id.toString() + "]: " + srv.response.error_msg);
-  }
-
-  return Scene(id);
 }
 
 typedef std::map<std::string, rviz_interface_gen::InterfacePtr> M_Proxy;

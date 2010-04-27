@@ -1,6 +1,8 @@
 interface RenderWindow
 {
-	async resized(uint32 width, uint32 height);
-	attachCamera(rviz_msgs/UUID camera_id);
-	destroy();
+	async resized(rviz_msgs/UUID id, uint32 width, uint32 height);
+	attachCamera(rviz_msgs/UUID id, rviz_msgs/UUID camera_id);
+	
+	create(rviz_msgs/UUID id, string parent_window, uint32 width, uint32 height);
+	destroy(rviz_msgs/UUID id);
 }

@@ -37,6 +37,8 @@
 #include "math/quaternion.h"
 
 #include <rviz_interfaces/Camera.h>
+#include <rviz_interfaces/RenderWindow.h>
+#include <rviz_interfaces/Scene.h>
 
 #include <ros/package.h>
 #include <ros/time.h>
@@ -45,7 +47,6 @@
 
 #include <ros/time.h>
 #include <ros/ros.h>
-#include <rviz_msgs/CreateRenderWindow.h>
 
 #ifdef __WXGTK__
 #include <gdk/gdk.h>
@@ -107,12 +108,14 @@ public:
 
     ros::NodeHandle renderer_nh(private_nh_, "renderer");
     rviz::ros_client::addProxyInterface("camera", rviz_interface_gen::InterfacePtr(new rviz_interfaces::CameraProxy("camera", renderer_nh)));
+    rviz::ros_client::addProxyInterface("render_window", rviz_interface_gen::InterfacePtr(new rviz_interfaces::RenderWindowProxy("render_window", renderer_nh)));
+    rviz::ros_client::addProxyInterface("scene", rviz_interface_gen::InterfacePtr(new rviz_interfaces::SceneProxy("scene", renderer_nh)));
 
-    window_client_.reset(new ros_client::RenderWindow("primary", getOgreHandle(this), 800, 600));
+    render_window_ = ros_client::createRenderWindow(getOgreHandle(this), 800, 600);
 
     ros_client::Scene s = ros_client::createScene();
     ros_client::Camera c = s.createCamera();
-    window_client_->attachCamera(c);
+    render_window_.attachCamera(c);
 
     c.setAutoAspectRatio(true);
     c.setPosition(Vector3(10, 0, 10));
@@ -127,7 +130,7 @@ public:
 
   ~MyFrame()
   {
-    window_client_->destroy();
+    ros_client::destroyRenderWindow(render_window_);
 
     renderer_.stop();
 
@@ -136,7 +139,7 @@ public:
 
   void onSize(wxSizeEvent& evt)
   {
-    window_client_->resized(evt.GetSize().GetWidth(), evt.GetSize().GetHeight());
+    render_window_.resized(evt.GetSize().GetWidth(), evt.GetSize().GetHeight());
   }
 
   void onTimer(wxTimerEvent& evt)
@@ -178,7 +181,7 @@ private:
   render::ogre::Renderer renderer_;
   RendererROS renderer_ros_;
   ros_client::Camera camera_;
-  boost::shared_ptr<ros_client::RenderWindow> window_client_;
+  ros_client::RenderWindow render_window_;
 
   wxTimer timer_;
 

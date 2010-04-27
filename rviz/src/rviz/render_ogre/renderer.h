@@ -61,8 +61,8 @@ public:
   void start();
   void stop();
 
-  virtual IRenderWindow* createRenderWindow(const std::string& name, const std::string& parent_window, uint32_t width, uint32_t height);
-  virtual void destroyRenderWindow(const std::string& name);
+  virtual IRenderWindow* createRenderWindow(const rviz_uuid::UUID& id, const std::string& parent_window, uint32_t width, uint32_t height);
+  virtual void destroyRenderWindow(const rviz_uuid::UUID& id);
 
   virtual void addRenderLoopListener(IRenderLoopListener* listener);
   virtual void removeRenderLoopListener(IRenderLoopListener* listener);
@@ -71,7 +71,7 @@ public:
   virtual void destroyScene(const rviz_uuid::UUID& id);
   virtual IScene* getScene(const rviz_uuid::UUID& id);
 
-  virtual IRenderWindow* getRenderWindow(const std::string& name);
+  virtual IRenderWindow* getRenderWindow(const rviz_uuid::UUID& id);
 
   virtual ICamera* getCamera(const rviz_uuid::UUID& id);
 
@@ -91,7 +91,7 @@ private:
   V_RenderLoopListener render_loop_listeners_;
 
   typedef boost::shared_ptr<RenderWindow> RenderWindowPtr;
-  typedef std::map<std::string, RenderWindowPtr> M_RenderWindow;
+  typedef std::map<rviz_uuid::UUID, RenderWindowPtr> M_RenderWindow;
   M_RenderWindow render_windows_;
 
   typedef boost::shared_ptr<Scene> ScenePtr;

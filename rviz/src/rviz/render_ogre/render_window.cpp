@@ -44,17 +44,17 @@ namespace render
 namespace ogre
 {
 
-RenderWindow::RenderWindow(const std::string& name, Ogre::RenderWindow* wnd, Renderer* rend)
-: name_(name)
+RenderWindow::RenderWindow(const rviz_uuid::UUID& id, Ogre::RenderWindow* wnd, Renderer* rend)
+: id_(id)
 , render_window_(wnd)
 , renderer_(rend)
 , cam_(0)
 {
 }
 
-const std::string& RenderWindow::getName()
+const rviz_uuid::UUID& RenderWindow::getID()
 {
-  return name_;
+  return id_;
 }
 
 void RenderWindow::resized(uint32_t width, uint32_t height)

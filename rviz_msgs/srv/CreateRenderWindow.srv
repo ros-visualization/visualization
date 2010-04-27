@@ -1,7 +1,0 @@
-string name
-string parent_window
-uint32 width
-uint32 height
----
-bool success
-string error_msg

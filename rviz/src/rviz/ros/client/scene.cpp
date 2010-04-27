@@ -31,8 +31,7 @@
 #include "camera.h"
 #include "init.h"
 
-#include <ros/ros.h>
-#include <rviz_msgs/CreateCamera.h>
+#include <rviz_interfaces/Scene.h>
 
 using namespace rviz_uuid;
 
@@ -41,6 +40,20 @@ namespace rviz
 namespace ros_client
 {
 
+Scene createScene()
+{
+  rviz_interfaces::SceneProxy* proxy = getProxyInterface<rviz_interfaces::SceneProxy>("scene");
+  UUID id = UUID::Generate();
+  proxy->create(id);
+  return Scene(id);
+}
+
+void destroyScene(const Scene& scene)
+{
+  rviz_interfaces::SceneProxy* proxy = getProxyInterface<rviz_interfaces::SceneProxy>("scene");
+  proxy->destroy(scene.getID());
+}
+
 Scene::Scene()
 {
 }
@@ -48,29 +61,20 @@ Scene::Scene()
 Scene::Scene(const UUID& id)
 : Object(id)
 {
+  proxy_ = getProxyInterface<rviz_interfaces::SceneProxy>("scene");
 }
 
 Camera Scene::createCamera()
 {
-  ros::ServiceClient client = getNodeHandle().serviceClient<rviz_msgs::CreateCameraRequest, rviz_msgs::CreateCameraResponse>("renderer/camera/create");
-
-  rviz_msgs::CreateCamera srv;
-
   UUID id = UUID::Generate();
-  srv.request.scene_id = getID();
-  srv.request.camera_id = id;
-
-  if (!client || !client.call(srv))
-  {
-    throw std::runtime_error("Could not call service [" + client.getService() + "]");
-  }
-
-  if (!srv.response.success)
-  {
-    throw std::runtime_error("Failed to create camera [" + id.toString() + "]: " + srv.response.error_msg);
-  }
+  proxy_->createCamera(getID(), id);
 
   return Camera(id, getID());
+}
+
+void Scene::destroyCamera(const Camera& cam)
+{
+  proxy_->destroyCamera(getID(), cam.getID());
 }
 
 } // namespace ros_client

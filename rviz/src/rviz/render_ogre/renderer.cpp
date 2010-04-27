@@ -145,18 +145,22 @@ void Renderer::oneTimeInit()
   Ogre::ResourceGroupManager::getSingleton().initialiseAllResourceGroups();
 }
 
-IRenderWindow* Renderer::createRenderWindow(const std::string& name, const std::string& parent_window, uint32_t width, uint32_t height)
+IRenderWindow* Renderer::createRenderWindow(const rviz_uuid::UUID& id, const std::string& parent_window, uint32_t width, uint32_t height)
 {
-  if (render_windows_.count(name) > 0)
+  if (render_windows_.count(id) > 0)
   {
-    throw std::runtime_error("Render window of name [" + name + "] already exists");
+    std::stringstream ss;
+    ss << "Render window with id [" << id << "] already exists";
+    throw std::runtime_error(ss.str());
   }
 
   Ogre::Root* root = Ogre::Root::getSingletonPtr();
   Ogre::NameValuePairList params;
   params["parentWindowHandle"] = parent_window;
 
-  Ogre::RenderWindow* win = root->createRenderWindow(name, width, height, false, &params);
+  std::stringstream id_str;
+  id_str << id;
+  Ogre::RenderWindow* win = root->createRenderWindow(id_str.str(), width, height, false, &params);
 
   if (!first_window_created_)
   {
@@ -168,18 +172,20 @@ IRenderWindow* Renderer::createRenderWindow(const std::string& name, const std::
   win->setVisible(true);
   win->setAutoUpdated(true);
 
-  RenderWindowPtr ptr(new RenderWindow(name, win, this));
-  render_windows_[name] = ptr;
+  RenderWindowPtr ptr(new RenderWindow(id, win, this));
+  render_windows_[id] = ptr;
 
   return ptr.get();
 }
 
-void Renderer::destroyRenderWindow(const std::string& name)
+void Renderer::destroyRenderWindow(const rviz_uuid::UUID& id)
 {
-  M_RenderWindow::iterator it = render_windows_.find(name);
+  M_RenderWindow::iterator it = render_windows_.find(id);
   if (it == render_windows_.end())
   {
-    throw std::runtime_error("Tried to destroy render window [" + name + "] which does not exist");
+    std::stringstream ss;
+    ss << "Tried to destroy render window [" << id << "] which does not exist";
+    throw std::runtime_error(ss.str());
   }
 
   const RenderWindowPtr& win = it->second;
@@ -190,12 +196,14 @@ void Renderer::destroyRenderWindow(const std::string& name)
   root->getRenderSystem()->destroyRenderWindow(ogre_win->getName());
 }
 
-IRenderWindow* Renderer::getRenderWindow(const std::string& name)
+IRenderWindow* Renderer::getRenderWindow(const rviz_uuid::UUID& id)
 {
-  M_RenderWindow::iterator it = render_windows_.find(name);
+  M_RenderWindow::iterator it = render_windows_.find(id);
   if (it == render_windows_.end())
   {
-    throw std::runtime_error("Render window [" + name + "] does not exist");
+    std::stringstream ss;
+    ss << "Render window [" << id << "] does not exist";
+    throw std::runtime_error(ss.str());
   }
 
   return it->second.get();

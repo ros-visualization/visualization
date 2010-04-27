@@ -31,85 +31,51 @@
 #include "init.h"
 #include "camera.h"
 
-#include <ros/ros.h>
+#include <rviz_interfaces/RenderWindow.h>
 
-#include <rviz_msgs/RenderWindowCommand.h>
-#include <rviz_msgs/CreateRenderWindow.h>
-#include <rviz_msgs/DestroyRenderWindow.h>
+using namespace rviz_uuid;
 
 namespace rviz
 {
 namespace ros_client
 {
 
-RenderWindow::RenderWindow(const std::string& name, const std::string& parent_window, uint32_t width, uint32_t height)
-: name_(name)
-, destroyed_(false)
+RenderWindow createRenderWindow(const std::string& parent_window, uint32_t width, uint32_t height)
 {
-  ros::ServiceClient client = getNodeHandle().serviceClient<rviz_msgs::CreateRenderWindowRequest, rviz_msgs::CreateRenderWindowResponse>("renderer/render_window/create");
-  rviz_msgs::CreateRenderWindow srv;
-  srv.request.name = name;
-  srv.request.parent_window = parent_window;
-  srv.request.width = width;
-  srv.request.height = height;
-  if (!client || !client.call(srv))
-  {
-    throw std::runtime_error("Could not call service [" + client.getService() + "]");
-  }
+  rviz_interfaces::RenderWindowProxy* proxy = getProxyInterface<rviz_interfaces::RenderWindowProxy>("render_window");
+  UUID id = UUID::Generate();
+  proxy->create(id, parent_window, width, height);
+  return RenderWindow(id);
+}
 
-  if (!srv.response.success)
-  {
-    throw std::runtime_error("Failed to create render window [" + name + "]: " + srv.response.error_msg);
-  }
+void destroyRenderWindow(const RenderWindow& wnd)
+{
+  rviz_interfaces::RenderWindowProxy* proxy = getProxyInterface<rviz_interfaces::RenderWindowProxy>("render_window");
+  proxy->destroy(wnd.getID());
+}
 
-  pub_.reset(new ros::Publisher(getNodeHandle().advertise<rviz_msgs::RenderWindowCommand>("renderer/render_window/command", 1)));
+RenderWindow::RenderWindow()
+{
+}
+
+RenderWindow::RenderWindow(const rviz_uuid::UUID& id)
+: Object(id)
+{
+  proxy_ = getProxyInterface<rviz_interfaces::RenderWindowProxy>("render_window");
 }
 
 RenderWindow::~RenderWindow()
 {
-  destroy();
-}
-
-void RenderWindow::destroy()
-{
-  if (!destroyed_)
-  {
-    destroyed_ = true;
-
-    ros::ServiceClient client = getNodeHandle().serviceClient<rviz_msgs::DestroyRenderWindowRequest, rviz_msgs::DestroyRenderWindowResponse>("renderer/render_window/destroy");
-    rviz_msgs::DestroyRenderWindow srv;
-    srv.request.name = name_;
-    if (!client || !client.call(srv))
-    {
-      throw std::runtime_error("Could not call service [" + client.getService() + "]");
-    }
-
-    if (!srv.response.success)
-    {
-      throw std::runtime_error("Failed to destroy render window [" + name_ + "]: " + srv.response.error_msg);
-    }
-  }
 }
 
 void RenderWindow::resized(uint32_t width, uint32_t height)
 {
-  rviz_msgs::RenderWindowCommandPtr cmd(new rviz_msgs::RenderWindowCommand);
-  cmd->type = rviz_msgs::RenderWindowCommand::RESIZED;
-  cmd->name = name_;
-
-  cmd->resized.width = width;
-  cmd->resized.height = height;
-  pub_->publish(cmd);
+  proxy_->resized(getID(), width, height);
 }
 
 void RenderWindow::attachCamera(const Camera& cam)
 {
-  rviz_msgs::RenderWindowCommandPtr cmd(new rviz_msgs::RenderWindowCommand);
-  cmd->type = rviz_msgs::RenderWindowCommand::ATTACH_CAMERA;
-  cmd->name = name_;
-
-  cmd->attach_camera.id = cam.getID();
-  pub_->publish(cmd);
+  proxy_->attachCamera(getID(), cam.getID());
 }
 
 } // namespace ros
