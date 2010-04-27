@@ -72,7 +72,9 @@ def write_header_includes(hs, i, pkg):
     print >> hs
 
 def msg_to_cpp(type):
-    if (msgs.is_builtin(type)):
+    if (type == "string"):
+        return 'std::string'
+    elif (msgs.is_builtin(type)):
         return genmsg_cpp.msg_type_to_cpp(type)
     else:
         ns = type.split('/')[0]
@@ -96,7 +98,7 @@ def write_method_args(s, i, m):
             print >> s, ', ',
         
         cpp_type = msg_to_cpp(type)
-        if (msgs.is_valid_constant_type(type)):
+        if (msgs.is_valid_constant_type(type) and type != "string"):
             print >> s, '%s %s'%(cpp_type, name),
         else:
             print >> s, 'const %s& %s'%(cpp_type, name),

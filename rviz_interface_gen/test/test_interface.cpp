@@ -72,6 +72,11 @@ public:
     out_val_doubled = val * 2;
   }
 
+  virtual void withString(const std::string& str)
+  {
+
+  }
+
   bool async_call_done;
 };
 
