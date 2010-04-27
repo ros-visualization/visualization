@@ -13,6 +13,10 @@
   <depend package="rviz_uuid"/>
   <depend package="rviz_msgs"/>
   <depend package="std_msgs"/>
+  
+  <export>
+  	<cpp cflags="-I${prefix}/include" lflags="-lrviz_rpc -L${prefix}/lib -Wl,-rpath,${prefix}/lib"/>
+  </export>
 </package>
 
 

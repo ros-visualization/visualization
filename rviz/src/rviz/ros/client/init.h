@@ -34,38 +34,31 @@
 
 #include <vector>
 
+#include <rviz_interface_gen/interface.h>
+
 namespace rviz
 {
-
-namespace render_client_proxy_interface
-{
-class IProxy;
-typedef boost::shared_ptr<IProxy> IProxyPtr;
-}
 
 namespace ros_client
 {
 
-void initClient(const std::string& server_namespace);
+void init(const std::string& server_namespace);
+void shutdown();
 ros::NodeHandle& getNodeHandle();
 
 class Scene;
 Scene createScene();
 
-void addProxyInterface(const std::string& name, const render_client_proxy_interface::IProxyPtr& comm);
+void addProxyInterface(const std::string& name, const rviz_interface_gen::InterfacePtr& proxy);
 void removeProxyInterface(const std::string& name);
 
-render_client_proxy_interface::IProxy* getProxyInterface(const std::string& name);
+rviz_interface_gen::Interface* getProxyInterface(const std::string& name);
 
 template<typename T>
 T* getProxyInterface(const std::string& name)
 {
   return dynamic_cast<T*>(getProxyInterface(name));
 }
-
-typedef std::vector<PublisherPtr> V_Publisher;
-void waitForPub(const PublisherPtr& pub);
-void waitForPubs(const V_Publisher& pubs);
 
 } // namespace ros
 } // namespace rviz

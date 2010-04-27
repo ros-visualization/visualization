@@ -1,0 +1,21 @@
+<package>
+  <description brief="rviz_interfaces">
+
+     rviz_interfaces
+
+  </description>
+  <author>Josh Faust</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/rviz_interfaces</url>
+  <depend package="rviz_interface_gen"/>
+  <depend package="rviz_msgs"/>
+  <depend package="geometry_msgs"/>
+  <depend package="std_msgs"/>
+  
+  <export>
+  	<cpp cflags="-I${prefix}/include -I${prefix}/interface_gen/cpp/include" lflags="-lrviz_interfaces -L${prefix}/lib -Wl,-rpath,${prefix}/lib"/>
+  </export>
+</package>
+
+

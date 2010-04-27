@@ -31,6 +31,8 @@
     <depend package="resource_retriever"/>
     <depend package="rviz_msgs"/>
     <depend package="rviz_uuid"/>
+    <depend package="rviz_interfaces"/>
+    <depend package="rviz_interface_gen"/>
     <export> 
         <cpp cflags="-I${prefix}/src/" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lrviz"/>
         <python path="${prefix}/lib/"/>

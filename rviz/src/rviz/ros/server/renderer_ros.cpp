@@ -46,10 +46,11 @@
 
 #include <rviz_msgs/CreateCamera.h>
 #include <rviz_msgs/DestroyCamera.h>
-#include <rviz_msgs/CameraCommand.h>
 
 #include <rviz_msgs/CreateScene.h>
 #include <rviz_msgs/DestroyScene.h>
+
+#include <rviz_interfaces/Camera.h>
 
 using namespace rviz_uuid;
 
@@ -74,6 +75,87 @@ private:
   ros::CallbackQueue* queue_;
 };
 
+class CameraServer : public rviz_interfaces::CameraServer
+{
+public:
+  CameraServer(render::IRenderer* rend, const std::string& name, const ros::NodeHandle& nh)
+  : rviz_interfaces::CameraServer(name, nh)
+  , renderer_(rend)
+  {
+  }
+
+  render::ICamera* lookupCamera(const rviz_uuid::UUID& id)
+  {
+    render::ICamera* cam = renderer_->getCamera(id);
+    if (!cam)
+    {
+      std::stringstream ss;
+      ss << "Invalid camera [" << id << "]";
+      throw std::runtime_error(ss.str());
+    }
+
+    return cam;
+  }
+
+  virtual void setPosition(const rviz_msgs::UUID& id, const geometry_msgs::Vector3& pos)
+  {
+    lookupCamera(id)->setPosition(pos);
+  }
+
+  virtual void setOrientation(const rviz_msgs::UUID& id, const geometry_msgs::Quaternion& orient)
+  {
+    lookupCamera(id)->setOrientation(orient);
+  }
+
+  virtual void lookAt(const rviz_msgs::UUID& id, const geometry_msgs::Vector3& pos)
+  {
+    lookupCamera(id)->lookAt(pos);
+  }
+
+  virtual void move(const rviz_msgs::UUID& id, const geometry_msgs::Vector3& vec)
+  {
+    lookupCamera(id)->move(vec);
+  }
+
+  virtual void moveRelative(const rviz_msgs::UUID& id, const geometry_msgs::Vector3& vec)
+  {
+    lookupCamera(id)->moveRelative(vec);
+  }
+
+  virtual void rotate(const rviz_msgs::UUID& id, const geometry_msgs::Quaternion& quat)
+  {
+    lookupCamera(id)->rotate(quat);
+  }
+
+  virtual void setFOVY(const rviz_msgs::UUID& id, float fovy)
+  {
+    lookupCamera(id)->setFOVY(fovy);
+  }
+
+  virtual void setAspectRatio(const rviz_msgs::UUID& id, float aspect)
+  {
+    lookupCamera(id)->setAspectRatio(aspect);
+  }
+
+  virtual void setAutoAspectRatio(const rviz_msgs::UUID& id, uint8_t autoaspect)
+  {
+    lookupCamera(id)->setAutoAspectRatio(autoaspect);
+  }
+
+  virtual void setNearClipDistance(const rviz_msgs::UUID& id, float dist)
+  {
+    lookupCamera(id)->setNearClipDistance(dist);
+  }
+
+  virtual void setFarClipDistance(const rviz_msgs::UUID& id, float dist)
+  {
+    lookupCamera(id)->setFarClipDistance(dist);
+  }
+
+private:
+  render::IRenderer* renderer_;
+};
+
 RendererROS::RendererROS(render::IRenderer* renderer, const ros::NodeHandle& nh)
 : renderer_(renderer)
 , callback_queue_(new ros::CallbackQueue)
@@ -81,6 +163,8 @@ RendererROS::RendererROS(render::IRenderer* renderer, const ros::NodeHandle& nh)
 , render_loop_listener_(new RenderLoopListener(callback_queue_.get()))
 {
   nh_->setCallbackQueue(callback_queue_.get());
+  camera_server_.reset(new CameraServer(renderer_, "camera", *nh_));
+
   srvs_.push_back(ServiceServerPtr(new ros::ServiceServer(nh_->advertiseService("render_window/create", &RendererROS::onCreateRenderWindow, this))));
   srvs_.push_back(ServiceServerPtr(new ros::ServiceServer(nh_->advertiseService("render_window/destroy", &RendererROS::onDestroyRenderWindow, this))));
 
@@ -90,7 +174,6 @@ RendererROS::RendererROS(render::IRenderer* renderer, const ros::NodeHandle& nh)
   srvs_.push_back(ServiceServerPtr(new ros::ServiceServer(nh_->advertiseService("scene/destroy", &RendererROS::onDestroyScene, this))));
 
   subs_.push_back(SubscriberPtr(new ros::Subscriber(nh_->subscribe("render_window/command", 0, &RendererROS::onRenderWindowCommand, this))));
-  subs_.push_back(SubscriberPtr(new ros::Subscriber(nh_->subscribe("camera/command", 0, &RendererROS::onCameraCommand, this))));
 
   renderer_->addRenderLoopListener(render_loop_listener_.get());
 }
@@ -197,79 +280,6 @@ bool RendererROS::onDestroyCamera(rviz_msgs::DestroyCameraRequest& req, rviz_msg
   }
 
   return true;
-}
-
-void RendererROS::onCameraCommand(const rviz_msgs::CameraCommandConstPtr& cmd)
-{
-  try
-  {
-    render::ICamera* cam = renderer_->getCamera(cmd->id);
-    if (!cam)
-    {
-      return;
-    }
-
-    uint16_t flags = cmd->flags;
-    if (flags & rviz_msgs::CameraCommand::POSITION)
-    {
-      cam->setPosition(cmd->position);
-    }
-
-    if (flags & rviz_msgs::CameraCommand::ORIENTATION)
-    {
-      cam->setOrientation(cmd->orientation);
-    }
-
-    if (flags & rviz_msgs::CameraCommand::LOOK_AT)
-    {
-      cam->lookAt(cmd->look_at);
-    }
-
-    if (flags & rviz_msgs::CameraCommand::FOVY)
-    {
-      cam->setFOVY(cmd->fovy);
-    }
-
-    if (flags & rviz_msgs::CameraCommand::ASPECT_RATIO)
-    {
-      cam->setAspectRatio(cmd->aspect_ratio);
-    }
-
-    if (flags & rviz_msgs::CameraCommand::AUTO_ASPECT_RATIO)
-    {
-      cam->setAutoAspectRatio(cmd->auto_aspect_ratio);
-    }
-
-    if (flags & rviz_msgs::CameraCommand::NEAR_CLIP)
-    {
-      cam->setNearClipDistance(cmd->near_clip);
-    }
-
-    if (flags & rviz_msgs::CameraCommand::FAR_CLIP)
-    {
-      cam->setFarClipDistance(cmd->far_clip);
-    }
-
-    if (flags & rviz_msgs::CameraCommand::MOVE)
-    {
-      if (cmd->move.relative)
-      {
-        cam->moveRelative(cmd->move.vector);
-      }
-      else
-      {
-        cam->move(cmd->move.vector);
-      }
-    }
-
-    if (flags & rviz_msgs::CameraCommand::ROTATE)
-    {
-      cam->rotate(cmd->rotate);
-    }
-  }
-  catch (std::exception&)
-  {
-  }
 }
 
 bool RendererROS::onCreateScene(rviz_msgs::CreateSceneRequest& req, rviz_msgs::CreateSceneResponse& res)

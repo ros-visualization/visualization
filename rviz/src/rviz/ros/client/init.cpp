@@ -45,7 +45,7 @@ namespace ros_client
 
 static NodeHandlePtr g_node_handle;
 
-void initClient(const std::string& server_namespace)
+void init(const std::string& server_namespace)
 {
   g_node_handle.reset(new ros::NodeHandle(server_namespace));
 }
@@ -77,10 +77,10 @@ Scene createScene()
   return Scene(id);
 }
 
-typedef std::map<std::string, render_client_proxy_interface::IProxyPtr> M_Proxy;
+typedef std::map<std::string, rviz_interface_gen::InterfacePtr> M_Proxy;
 M_Proxy g_proxies;
 
-void addProxyInterface(const std::string& name, const render_client_proxy_interface::IProxyPtr& proxy)
+void addProxyInterface(const std::string& name, const rviz_interface_gen::InterfacePtr& proxy)
 {
   if (!g_proxies.insert(std::make_pair(name, proxy)).second)
   {
@@ -93,7 +93,7 @@ void removeProxyInterface(const std::string& name)
   g_proxies.erase(name);
 }
 
-render_client_proxy_interface::IProxy* getProxyInterface(const std::string& name)
+rviz_interface_gen::Interface* getProxyInterface(const std::string& name)
 {
   M_Proxy::iterator it = g_proxies.find(name);
   if (it == g_proxies.end())
@@ -104,35 +104,9 @@ render_client_proxy_interface::IProxy* getProxyInterface(const std::string& name
   return it->second.get();
 }
 
-void waitForPub(const PublisherPtr& pub)
+void shutdown()
 {
-  std::vector<PublisherPtr> pubs;
-  pubs.push_back(pub);
-  waitForPubs(pubs);
-}
-void waitForPubs(const V_Publisher& pubs)
-{
-  bool all_connected = false;
-  while (!all_connected)
-  {
-    all_connected = true;
-    V_Publisher::const_iterator it = pubs.begin();
-    V_Publisher::const_iterator end = pubs.end();
-    for (; it != end; ++it)
-    {
-      const PublisherPtr& pub = *it;
-      if (pub->getNumSubscribers() == 0)
-      {
-        all_connected = false;
-        break;
-      }
-    }
-
-    if (!all_connected)
-    {
-      ros::WallDuration(0.001).sleep();
-    }
-  }
+  g_proxies.clear();
 }
 
 } // namespace ros

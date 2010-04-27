@@ -30,6 +30,8 @@
 #ifndef RVIZ_INTERFACE_GEN_INTERFACE_H
 #define RVIZ_INTERFACE_GEN_INTERFACE_H
 
+#include <boost/shared_ptr.hpp>
+
 namespace rviz_interface_gen
 {
 
@@ -37,6 +39,8 @@ struct Interface
 {
   virtual ~Interface() {}
 };
+
+typedef boost::shared_ptr<Interface> InterfacePtr;
 
 }
 

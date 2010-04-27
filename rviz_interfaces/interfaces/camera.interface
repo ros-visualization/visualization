@@ -1,0 +1,14 @@
+interface Camera
+{
+	async setPosition(rviz_msgs/UUID id, geometry_msgs/Vector3 pos);
+	async setOrientation(rviz_msgs/UUID id, geometry_msgs/Quaternion orient);
+	async lookAt(rviz_msgs/UUID id, geometry_msgs/Vector3 pos);
+	async move(rviz_msgs/UUID id, geometry_msgs/Vector3 vec);
+	async moveRelative(rviz_msgs/UUID id, geometry_msgs/Vector3 vec);
+	async rotate(rviz_msgs/UUID id, geometry_msgs/Quaternion quat);
+	async setFOVY(rviz_msgs/UUID id, float32 fovy);
+	async setAspectRatio(rviz_msgs/UUID id, float32 aspect);
+	async setAutoAspectRatio(rviz_msgs/UUID id, bool autoaspect);
+	async setNearClipDistance(rviz_msgs/UUID id, float32 dist);
+	async setFarClipDistance(rviz_msgs/UUID id, float32 dist);
+}

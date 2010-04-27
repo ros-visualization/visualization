@@ -54,16 +54,21 @@ def write_header_includes(hs, i, pkg):
     print >> hs, '#include <rviz_interface_gen/interface.h>'
     print >> hs, '#include <ros/time.h>'
     print >> hs, '#include <string>'
+    
+    headers = []
     for m in i.methods:
-        for f in m.fields:
+        for f in m.fields + m.return_fields:
             (base_type, is_array, array_len) = msgs.parse_type(f[0])
             if (is_array):
                 raise Error("Arrays are not supported as parameter or return-values")
             
             if (not msgs.is_builtin(base_type)):
                 resolved = msgs.resolve_type(base_type, pkg)
-                print >> hs, '#include <%s.h>'%(resolved)
+                headers.append(resolved)
                 
+    headers = set(headers)
+    for h in headers:
+        print >> hs, '#include <%s.h>'%(h)
     print >> hs
 
 def msg_to_cpp(type):

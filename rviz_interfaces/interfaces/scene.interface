@@ -1,0 +1,4 @@
+interface Scene
+{
+	createCamera() returns (rviz_msgs/UUID camera_id);
+}

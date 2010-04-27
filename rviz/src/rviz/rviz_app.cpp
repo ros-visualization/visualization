@@ -33,9 +33,10 @@
 #include "ros/client/render_window.h"
 #include "ros/client/scene.h"
 #include "ros/client/camera.h"
-#include "ros/client/camera_proxy.h"
 #include "math/vector3.h"
 #include "math/quaternion.h"
+
+#include <rviz_interfaces/Camera.h>
 
 #include <ros/package.h>
 #include <ros/time.h>
@@ -102,9 +103,10 @@ public:
   , renderer_ros_(&renderer_, private_nh_)
   , timer_(this)
   {
-    rviz::ros_client::addProxyInterface("camera", rviz::render_client_proxy_interface::IProxyPtr(new rviz::ros_client::CameraProxy));
-
     renderer_.start();
+
+    ros::NodeHandle renderer_nh(private_nh_, "renderer");
+    rviz::ros_client::addProxyInterface("camera", rviz_interface_gen::InterfacePtr(new rviz_interfaces::CameraProxy("camera", renderer_nh)));
 
     window_client_.reset(new ros_client::RenderWindow("primary", getOgreHandle(this), 800, 600));
 
@@ -128,6 +130,8 @@ public:
     window_client_->destroy();
 
     renderer_.stop();
+
+    rviz::ros_client::shutdown();
   }
 
   void onSize(wxSizeEvent& evt)
@@ -204,7 +208,7 @@ public:
     }
 
     ros::init(argc, local_argv_, "rviz", ros::init_options::NoSigintHandler);
-    ros_client::initClient(ros::names::resolve("~"));
+    ros_client::init(ros::names::resolve("~"));
 
     wxFrame* frame = new MyFrame(NULL);
     SetTopWindow(frame);

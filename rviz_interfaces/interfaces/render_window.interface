@@ -1,0 +1,6 @@
+interface RenderWindow
+{
+	async resized(uint32 width, uint32 height);
+	attachCamera(rviz_msgs/UUID camera_id);
+	destroy();
+}

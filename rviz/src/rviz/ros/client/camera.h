@@ -32,15 +32,15 @@
 
 #include "object.h"
 
+namespace rviz_interfaces
+{
+class CameraProxy;
+}
+
 namespace rviz
 {
 class Vector3;
 class Quaternion;
-
-namespace render_client_proxy_interface
-{
-class ICameraProxy;
-}
 
 namespace ros_client
 {
@@ -69,7 +69,7 @@ public:
 
 private:
   rviz_uuid::UUID scene_id_;
-  render_client_proxy_interface::ICameraProxy* proxy_;
+  rviz_interfaces::CameraProxy* proxy_;
 };
 
 } // namespace ros_client

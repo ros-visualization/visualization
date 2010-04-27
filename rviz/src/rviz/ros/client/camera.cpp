@@ -31,7 +31,7 @@
 #include <rviz/math/vector3.h>
 #include <rviz/math/quaternion.h>
 
-#include <rviz/render_client_proxy_interface/icamera_proxy.h>
+#include <rviz_interfaces/Camera.h>
 
 #include "init.h"
 
@@ -50,7 +50,7 @@ Camera::Camera(const UUID& id, const UUID& scene_id)
 : Object(id)
 , scene_id_(scene_id)
 {
-  proxy_ = getProxyInterface<render_client_proxy_interface::ICameraProxy>("camera");
+  proxy_ = getProxyInterface<rviz_interfaces::CameraProxy>("camera");
 }
 
 void Camera::setPosition(const Vector3& pos)
@@ -110,7 +110,8 @@ void Camera::setFarClipDistance(float far_clip)
 
 void Camera::setTransform(const Vector3& pos, const Quaternion& orient)
 {
-  proxy_->setTransform(getID(), pos, orient);
+  proxy_->setPosition(getID(), pos);
+  proxy_->setOrientation(getID(), orient);
 }
 
 
