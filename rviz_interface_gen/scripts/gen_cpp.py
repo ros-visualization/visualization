@@ -51,6 +51,7 @@ def write_header_end(hs, i, pkg):
     print >> hs, '#endif // INTERFACE_%s_%s_H'%(pkg.upper(), i.name.upper())
     
 def write_header_includes(hs, i, pkg):
+    print >> hs, '#include <rviz_interface_gen/interface.h>'
     print >> hs, '#include <ros/time.h>'
     print >> hs, '#include <string>'
     for m in i.methods:
@@ -118,7 +119,7 @@ def write_header_method_declaration(hs, i, m, pure_virtual):
     print >> hs, ';'
 
 def write_header_interface_declaration(hs, i, pkg):
-    print >> hs, 'struct %s\n{'%(i.name)
+    print >> hs, 'struct %s : public rviz_interface_gen::Interface\n{'%(i.name)
     
     # Write virtual destructor
     print >> hs, '  virtual ~%s() {}'%(i.name)
