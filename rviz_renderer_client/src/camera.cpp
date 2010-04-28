@@ -39,6 +39,7 @@ using namespace rviz_math;
 using namespace rviz_renderer_client;
 
 Camera::Camera()
+: proxy_(0)
 {
 }
 

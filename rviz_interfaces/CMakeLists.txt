@@ -14,6 +14,7 @@ include(${rviz_interface_gen_PACKAGE_PATH}/cmake/interfacebuild.cmake)
 rviz_add_interface(interfaces/camera.interface)
 rviz_add_interface(interfaces/render_window.interface)
 rviz_add_interface(interfaces/scene.interface)
+rviz_add_interface(interfaces/simple_shape.interface)
 
 rosbuild_init()
 
@@ -32,5 +33,6 @@ include_directories(interface_gen/cpp/include)
 #common commands for building c++ executables and libraries
 rosbuild_add_library(${PROJECT_NAME} interface_gen/cpp/src/Camera.cpp
 								     interface_gen/cpp/src/Scene.cpp
-								     interface_gen/cpp/src/RenderWindow.cpp)
+								     interface_gen/cpp/src/RenderWindow.cpp
+								     interface_gen/cpp/src/SimpleShape.cpp)
 rosbuild_add_boost_directories()

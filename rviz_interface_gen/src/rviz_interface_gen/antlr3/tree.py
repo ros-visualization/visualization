@@ -41,7 +41,7 @@ This module contains all support classes for AST construction and tree parsers.
 import re
 
 from constants import UP, DOWN, EOF, INVALID_TOKEN_TYPE
-from recognizers import BaseRecognizer, RuleRetpe
+from recognizers import BaseRecognizer, RuleReturnScope
 from streams import IntStream
 from tokens import CommonToken, Token, INVALID_TOKEN
 from exceptions import MismatchedTreeNodeException, \

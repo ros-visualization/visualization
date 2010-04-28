@@ -27,62 +27,55 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef RVIZ_RENDER_OGRE_SCENE_H
-#define RVIZ_RENDER_OGRE_SCENE_H
+#include <rviz_renderer_ogre/simple_shape.h>
+#include <rviz_renderer_ogre/convert.h>
 
-#include <rviz_renderer_interface/iscene.h>
-#include <rviz_uuid/uuid.h>
-
-#include <map>
-
-#include <boost/shared_ptr.hpp>
-
-namespace Ogre
-{
-class SceneManager;
-}
-
-namespace rviz_renderer_interface
-{
-class ICamera;
-}
+#include <OGRE/OgreSceneManager.h>
+#include <OGRE/OgreEntity.h>
+#include <OGRE/OgreSceneNode.h>
 
 namespace rviz_renderer_ogre
 {
 
-class Camera;
-typedef boost::shared_ptr<Camera> CameraPtr;
-
-class SimpleShape;
-typedef boost::shared_ptr<SimpleShape> SimpleShapePtr;
-
-class Scene : public rviz_renderer_interface::IScene
+static const char* g_shape_meshes[] =
 {
-public:
-  Scene(const rviz_uuid::UUID& id, Ogre::SceneManager* scene_manager);
-  ~Scene();
-
-  virtual rviz_renderer_interface::ICamera* createCamera(const rviz_uuid::UUID& id);
-  virtual void destroyCamera(const rviz_uuid::UUID& id);
-  virtual rviz_renderer_interface::ICamera* getCamera(const rviz_uuid::UUID& id);
-  virtual rviz_renderer_interface::ISimpleShape* createSimpleShape(const rviz_uuid::UUID& id, rviz_renderer_interface::ISimpleShape::Type type);
-  virtual rviz_renderer_interface::ISimpleShape* getSimpleShape(const rviz_uuid::UUID& id);
-  virtual void destroySimpleShape(const rviz_uuid::UUID& id);
-
-  Ogre::SceneManager* getSceneManager() { return scene_manager_; }
-  const rviz_uuid::UUID& getID() { return id_; }
-
-private:
-  rviz_uuid::UUID id_;
-  Ogre::SceneManager* scene_manager_;
-
-  typedef std::map<rviz_uuid::UUID, CameraPtr> M_Camera;
-  M_Camera cameras_;
-
-  typedef std::map<rviz_uuid::UUID, SimpleShapePtr> M_SimpleShape;
-  M_SimpleShape simple_shapes_;
+    "cone.mesh",
+    "cube.mesh",
+    "cylinder.mesh",
+    "sphere.mesh"
 };
 
-} // namespace rviz_renderer_ogre
+SimpleShape::SimpleShape(Type type, Ogre::SceneManager* scene_manager)
+: scene_manager_(scene_manager)
+{
+  scene_node_ = scene_manager_->getRootSceneNode()->createChildSceneNode();
+  std::stringstream ss;
+  static size_t count = 0;
+  ss << "SimpleShape" << count++;
 
-#endif // RVIZ_RENDER_OGRE_SCENE_H
+  entity_ = scene_manager_->createEntity(ss.str(), g_shape_meshes[type]);
+  scene_node_->attachObject(entity_);
+}
+
+SimpleShape::~SimpleShape()
+{
+  scene_manager_->destroyEntity(entity_);
+  scene_manager_->destroySceneNode(scene_node_);
+}
+
+void SimpleShape::setPosition(const rviz_math::Vector3& pos)
+{
+  scene_node_->setPosition(convert(pos));
+}
+
+void SimpleShape::setOrientation(const rviz_math::Quaternion& orient)
+{
+  scene_node_->setOrientation(convert(orient));
+}
+
+void SimpleShape::setScale(const rviz_math::Vector3& scale)
+{
+  scene_node_->setScale(convert(scale));
+}
+
+} // namespace rviz_renderer_ogre

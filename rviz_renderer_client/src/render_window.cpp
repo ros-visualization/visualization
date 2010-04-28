@@ -51,6 +51,7 @@ void rviz_renderer_client::destroyRenderWindow(const RenderWindow& wnd)
 }
 
 RenderWindow::RenderWindow()
+: proxy_(0)
 {
 }
 

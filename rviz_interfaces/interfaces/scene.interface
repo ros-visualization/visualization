@@ -1,8 +1,11 @@
 interface Scene
 {
-	create(rviz_msgs/UUID id);
-	destroy(rviz_msgs/UUID id);
+	create(rviz_msgs/UUID scene_id);
+	destroy(rviz_msgs/UUID scene_id);
 
-	createCamera(rviz_msgs/UUID id, rviz_msgs/UUID camera_id);
-	destroyCamera(rviz_msgs/UUID id, rviz_msgs/UUID camera_id);
+	createCamera(rviz_msgs/UUID scene_id, rviz_msgs/UUID camera_id);
+	destroyCamera(rviz_msgs/UUID scene_id, rviz_msgs/UUID camera_id);
+	
+	async createSimpleShape(rviz_msgs/UUID scene_id, rviz_msgs/UUID shape_id, string type);
+	async destroySimpleShape(rviz_msgs/UUID scene_id, rviz_msgs/UUID shape_id);
 }

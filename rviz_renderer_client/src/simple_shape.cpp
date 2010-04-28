@@ -27,62 +27,59 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef RVIZ_RENDER_OGRE_SCENE_H
-#define RVIZ_RENDER_OGRE_SCENE_H
+#include <rviz_renderer_client/simple_shape.h>
+#include <rviz_renderer_client/init.h>
 
-#include <rviz_renderer_interface/iscene.h>
-#include <rviz_uuid/uuid.h>
+#include <rviz_math/vector3.h>
+#include <rviz_math/quaternion.h>
 
-#include <map>
+#include <rviz_interfaces/SimpleShape.h>
 
-#include <boost/shared_ptr.hpp>
+using namespace rviz_math;
 
-namespace Ogre
+namespace rviz_renderer_client
 {
-class SceneManager;
+
+SimpleShape::SimpleShape()
+: proxy_(0)
+{}
+
+SimpleShape::SimpleShape(const rviz_uuid::UUID& scene_id, const rviz_uuid::UUID& id)
+: Object(id)
+, scene_id_(scene_id)
+{
+  proxy_ = getProxyInterface<rviz_interfaces::SimpleShapeProxy>("simple_shape");
 }
 
-namespace rviz_renderer_interface
+void SimpleShape::setPosition(const rviz_math::Vector3& pos)
 {
-class ICamera;
+  proxy_->setPosition(scene_id_, getID(), pos);
 }
 
-namespace rviz_renderer_ogre
+void SimpleShape::setPosition(float x, float y, float z)
 {
+  proxy_->setPosition(scene_id_, getID(), Vector3(x, y, z));
+}
 
-class Camera;
-typedef boost::shared_ptr<Camera> CameraPtr;
-
-class SimpleShape;
-typedef boost::shared_ptr<SimpleShape> SimpleShapePtr;
-
-class Scene : public rviz_renderer_interface::IScene
+void SimpleShape::setOrientation(const rviz_math::Quaternion& orient)
 {
-public:
-  Scene(const rviz_uuid::UUID& id, Ogre::SceneManager* scene_manager);
-  ~Scene();
+  proxy_->setOrientation(scene_id_, getID(), orient);
+}
 
-  virtual rviz_renderer_interface::ICamera* createCamera(const rviz_uuid::UUID& id);
-  virtual void destroyCamera(const rviz_uuid::UUID& id);
-  virtual rviz_renderer_interface::ICamera* getCamera(const rviz_uuid::UUID& id);
-  virtual rviz_renderer_interface::ISimpleShape* createSimpleShape(const rviz_uuid::UUID& id, rviz_renderer_interface::ISimpleShape::Type type);
-  virtual rviz_renderer_interface::ISimpleShape* getSimpleShape(const rviz_uuid::UUID& id);
-  virtual void destroySimpleShape(const rviz_uuid::UUID& id);
+void SimpleShape::setOrientation(float x, float y, float z, float w)
+{
+  proxy_->setOrientation(scene_id_, getID(), Quaternion(x, y, z, w));
+}
 
-  Ogre::SceneManager* getSceneManager() { return scene_manager_; }
-  const rviz_uuid::UUID& getID() { return id_; }
+void SimpleShape::setScale(const rviz_math::Vector3& scale)
+{
+  proxy_->setScale(scene_id_, getID(), scale);
+}
 
-private:
-  rviz_uuid::UUID id_;
-  Ogre::SceneManager* scene_manager_;
+void SimpleShape::setScale(float x, float y, float z)
+{
+  proxy_->setScale(scene_id_, getID(), Vector3(x, y, z));
+}
 
-  typedef std::map<rviz_uuid::UUID, CameraPtr> M_Camera;
-  M_Camera cameras_;
 
-  typedef std::map<rviz_uuid::UUID, SimpleShapePtr> M_SimpleShape;
-  M_SimpleShape simple_shapes_;
-};
-
-} // namespace rviz_renderer_ogre
-
-#endif // RVIZ_RENDER_OGRE_SCENE_H
+}

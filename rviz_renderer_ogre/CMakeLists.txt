@@ -29,6 +29,7 @@ rosbuild_add_library(${PROJECT_NAME} src/camera.cpp
 									 src/convert.cpp
 									 src/render_window.cpp
 									 src/renderer.cpp
-									 src/scene.cpp)
+									 src/scene.cpp
+									 src/simple_shape.cpp)
 target_link_libraries(${PROJECT_NAME} ${OGRE_LIBRARIES})
 rosbuild_add_boost_directories()

@@ -31,6 +31,8 @@
 #ifndef RVIZ_RENDER_ISCENE_H
 #define RVIZ_RENDER_ISCENE_H
 
+#include "isimple_shape.h"
+
 namespace rviz_uuid
 {
 class UUID;
@@ -40,12 +42,16 @@ namespace rviz_renderer_interface
 {
 
 class ICamera;
+
 class IScene
 {
 public:
   virtual ICamera* createCamera(const rviz_uuid::UUID&) = 0;
   virtual void destroyCamera(const rviz_uuid::UUID&) = 0;
   virtual ICamera* getCamera(const rviz_uuid::UUID&) = 0;
+  virtual ISimpleShape* createSimpleShape(const rviz_uuid::UUID&, ISimpleShape::Type type) = 0;
+  virtual void destroySimpleShape(const rviz_uuid::UUID&) = 0;
+  virtual ISimpleShape* getSimpleShape(const rviz_uuid::UUID&) = 0;
 };
 
 } // namespace rviz_renderer_interface

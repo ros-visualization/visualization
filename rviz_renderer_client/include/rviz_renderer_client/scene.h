@@ -42,6 +42,7 @@ namespace rviz_renderer_client
 
 class RenderWindow;
 class Camera;
+class SimpleShape;
 
 class Scene : public Object
 {
@@ -51,6 +52,9 @@ public:
 
   Camera createCamera();
   void destroyCamera(const Camera& cam);
+
+  SimpleShape createSimpleShape(const std::string& type);
+  void destroySimpleShape(const SimpleShape& shape);
 
 private:
   rviz_interfaces::SceneProxy* proxy_;

@@ -53,6 +53,7 @@ namespace rviz_renderer_server
 class CameraServer;
 class RenderWindowServer;
 class SceneServer;
+class SimpleShapeServer;
 
 typedef boost::shared_ptr<ros::NodeHandle> NodeHandlePtr;
 typedef boost::shared_ptr<ros::CallbackQueue> CallbackQueuePtr;
@@ -72,6 +73,7 @@ private:
   boost::shared_ptr<CameraServer> camera_server_;
   boost::shared_ptr<RenderWindowServer> render_window_server_;
   boost::shared_ptr<SceneServer> scene_server_;
+  boost::shared_ptr<SimpleShapeServer> simple_shape_server_;
 
   NodeHandlePtr nh_;
 

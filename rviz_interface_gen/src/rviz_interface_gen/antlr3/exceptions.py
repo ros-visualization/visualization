@@ -113,8 +113,8 @@ class RecognitionException(Exception):
             self.index = input.index()
 
             # late import to avoid cyclic dependencies
-            from antlr3.streams import TokenStream, CharStream
-            from antlr3.tree import TreeNodeStream
+            from streams import TokenStream, CharStream
+            from tree import TreeNodeStream
 
             if isinstance(self.input, TokenStream):
                 self.token = self.input.LT(1)
@@ -134,8 +134,8 @@ class RecognitionException(Exception):
                     self.c = self.input.LA(1)
 
     def extractInformationFromTreeNodeStream(self, nodes):
-        from antlr3.tree import Tree, CommonTree
-        from antlr3.tokens import CommonToken
+        from tree import Tree, CommonTree
+        from tokens import CommonToken
         
         self.node = nodes.LT(1)
         adaptor = nodes.adaptor
@@ -177,8 +177,8 @@ class RecognitionException(Exception):
     def getUnexpectedType(self):
         """Return the token type or char of the unexpected input element"""
 
-        from antlr3.streams import TokenStream
-        from antlr3.tree import TreeNodeStream
+        from streams import TokenStream
+        from tree import TreeNodeStream
 
         if isinstance(self.input, TokenStream):
             return self.token.type

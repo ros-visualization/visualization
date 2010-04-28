@@ -27,31 +27,34 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef RVIZ_ROS_FORWARDS_H
-#define RVIZ_ROS_FORWARDS_H
+#ifndef RVIZ_RENDERER_INTERFACE_ISIMPLE_SHAPE_H
+#define RVIZ_RENDERER_INTERFACE_ISIMPLE_SHAPE_H
 
-#include <boost/shared_ptr.hpp>
-
-namespace ros
+namespace rviz_math
 {
-class ServiceServer;
-class ServiceClient;
-class Publisher;
-class Subscriber;
-class NodeHandle;
-class CallbackQueue;
+class Vector3;
+class Quaternion;
 }
 
-namespace rviz
+namespace rviz_renderer_interface
 {
-typedef boost::shared_ptr<ros::ServiceServer> ServiceServerPtr;
-typedef boost::shared_ptr<ros::ServiceClient> ServiceClientPtr;
-typedef boost::shared_ptr<ros::Publisher> PublisherPtr;
-typedef boost::shared_ptr<ros::Subscriber> SubscriberPtr;
-typedef boost::shared_ptr<ros::NodeHandle> NodeHandlePtr;
-typedef boost::shared_ptr<ros::CallbackQueue> CallbackQueuePtr;
 
-} // namespace rviz
+class ISimpleShape
+{
+public:
+  enum Type
+  {
+    Cone,
+    Cube,
+    Cylinder,
+    Sphere
+  };
 
+  virtual void setPosition(const rviz_math::Vector3& pos) = 0;
+  virtual void setOrientation(const rviz_math::Quaternion& orient) = 0;
+  virtual void setScale(const rviz_math::Vector3& scale) = 0;
+};
 
-#endif // RVIZ_ROS_FORWARDS_H
+}
+
+#endif // RVIZ_RENDERER_INTERFACE_ISIMPLE_SHAPE_H

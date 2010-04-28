@@ -27,62 +27,37 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef RVIZ_RENDER_OGRE_SCENE_H
-#define RVIZ_RENDER_OGRE_SCENE_H
+#ifndef RVIZ_RENDERER_OGRE_SIMPLE_SHAPE_H
+#define RVIZ_RENDERER_OGRE_SIMPLE_SHAPE_H
 
-#include <rviz_renderer_interface/iscene.h>
-#include <rviz_uuid/uuid.h>
-
-#include <map>
-
-#include <boost/shared_ptr.hpp>
+#include <rviz_renderer_interface/isimple_shape.h>
 
 namespace Ogre
 {
 class SceneManager;
-}
-
-namespace rviz_renderer_interface
-{
-class ICamera;
+class Entity;
+class SceneNode;
 }
 
 namespace rviz_renderer_ogre
 {
 
-class Camera;
-typedef boost::shared_ptr<Camera> CameraPtr;
-
-class SimpleShape;
-typedef boost::shared_ptr<SimpleShape> SimpleShapePtr;
-
-class Scene : public rviz_renderer_interface::IScene
+class SimpleShape : public rviz_renderer_interface::ISimpleShape
 {
 public:
-  Scene(const rviz_uuid::UUID& id, Ogre::SceneManager* scene_manager);
-  ~Scene();
+  SimpleShape(Type type, Ogre::SceneManager* scene_manager);
+  ~SimpleShape();
 
-  virtual rviz_renderer_interface::ICamera* createCamera(const rviz_uuid::UUID& id);
-  virtual void destroyCamera(const rviz_uuid::UUID& id);
-  virtual rviz_renderer_interface::ICamera* getCamera(const rviz_uuid::UUID& id);
-  virtual rviz_renderer_interface::ISimpleShape* createSimpleShape(const rviz_uuid::UUID& id, rviz_renderer_interface::ISimpleShape::Type type);
-  virtual rviz_renderer_interface::ISimpleShape* getSimpleShape(const rviz_uuid::UUID& id);
-  virtual void destroySimpleShape(const rviz_uuid::UUID& id);
-
-  Ogre::SceneManager* getSceneManager() { return scene_manager_; }
-  const rviz_uuid::UUID& getID() { return id_; }
+  virtual void setPosition(const rviz_math::Vector3& pos);
+  virtual void setOrientation(const rviz_math::Quaternion& orient);
+  virtual void setScale(const rviz_math::Vector3& scale);
 
 private:
-  rviz_uuid::UUID id_;
   Ogre::SceneManager* scene_manager_;
-
-  typedef std::map<rviz_uuid::UUID, CameraPtr> M_Camera;
-  M_Camera cameras_;
-
-  typedef std::map<rviz_uuid::UUID, SimpleShapePtr> M_SimpleShape;
-  M_SimpleShape simple_shapes_;
+  Ogre::Entity* entity_;
+  Ogre::SceneNode* scene_node_;
 };
 
 } // namespace rviz_renderer_ogre
 
-#endif // RVIZ_RENDER_OGRE_SCENE_H
+#endif // RVIZ_RENDERER_OGRE_SIMPLE_SHAPE_H

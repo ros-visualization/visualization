@@ -72,8 +72,6 @@ void Renderer::stop()
 {
   running_ = false;
   render_thread_.join();
-
-  delete Ogre::Root::getSingletonPtr();
 }
 
 void Renderer::init()
@@ -294,6 +292,7 @@ void Renderer::renderThread()
     std::for_each(render_loop_listeners_.begin(), render_loop_listeners_.end(), boost::bind(&IRenderLoopListener::postRender, _1, this));
   }
 
+  scenes_.clear();
   delete Ogre::Root::getSingletonPtr();
 }
 

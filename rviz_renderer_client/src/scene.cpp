@@ -30,6 +30,7 @@
 #include "rviz_renderer_client/scene.h"
 #include "rviz_renderer_client/camera.h"
 #include "rviz_renderer_client/init.h"
+#include "rviz_renderer_client/simple_shape.h"
 
 #include <rviz_interfaces/Scene.h>
 
@@ -51,6 +52,7 @@ void rviz_renderer_client::destroyScene(const Scene& scene)
 }
 
 Scene::Scene()
+: proxy_(0)
 {
 }
 
@@ -71,4 +73,16 @@ Camera Scene::createCamera()
 void Scene::destroyCamera(const Camera& cam)
 {
   proxy_->destroyCamera(getID(), cam.getID());
+}
+
+SimpleShape Scene::createSimpleShape(const std::string& type)
+{
+  UUID id = UUID::Generate();
+  proxy_->createSimpleShape(getID(), id, type);
+  return SimpleShape(getID(), id);
+}
+
+void Scene::destroySimpleShape(const SimpleShape& shape)
+{
+  proxy_->destroySimpleShape(getID(), shape.getID());
 }

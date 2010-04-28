@@ -29,6 +29,7 @@
 
 #include "rviz_renderer_ogre/scene.h"
 #include "rviz_renderer_ogre/camera.h"
+#include "rviz_renderer_ogre/simple_shape.h"
 
 #include <OGRE/OgreSceneManager.h>
 #include <OGRE/OgreCamera.h>
@@ -47,14 +48,13 @@ Scene::Scene(const UUID& id, Ogre::SceneManager* scene_manager)
 : id_(id)
 , scene_manager_(scene_manager)
 {
-  Ogre::Entity* ent = scene_manager_->createEntity("blah", "sphere.mesh");
-  Ogre::SceneNode* node = scene_manager_->getRootSceneNode()->createChildSceneNode();
-  node->attachObject(ent);
 }
 
 Scene::~Scene()
 {
-  //Ogre::Root::getSingleton().destroySceneManager(scene_manager_);
+  cameras_.clear();
+  simple_shapes_.clear();
+  Ogre::Root::getSingleton().destroySceneManager(scene_manager_);
 }
 
 ICamera* Scene::createCamera(const UUID& id)
@@ -88,6 +88,26 @@ ICamera* Scene::getCamera(const UUID& id)
   {
     return 0;
   }
+
+  return it->second.get();
+}
+
+ISimpleShape* Scene::createSimpleShape(const rviz_uuid::UUID& id, ISimpleShape::Type type)
+{
+  SimpleShapePtr shape(new SimpleShape(type, scene_manager_));
+  simple_shapes_[id] = shape;
+  return shape.get();
+}
+
+void Scene::destroySimpleShape(const rviz_uuid::UUID& id)
+{
+  simple_shapes_.erase(id);
+}
+
+ISimpleShape* Scene::getSimpleShape(const rviz_uuid::UUID& id)
+{
+  M_SimpleShape::iterator it = simple_shapes_.find(id);
+  ROS_ASSERT(it != simple_shapes_.end());
 
   return it->second.get();
 }

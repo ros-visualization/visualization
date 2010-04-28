@@ -22,4 +22,5 @@ include_directories(include)
 rosbuild_add_library(${PROJECT_NAME} src/init.cpp
 									 src/camera.cpp
 									 src/render_window.cpp
-									 src/scene.cpp)
+									 src/scene.cpp
+									 src/simple_shape.cpp)
