@@ -1,0 +1,18 @@
+<package>
+  <description brief="rviz_math">
+
+     rviz_math
+
+  </description>
+  <author>Josh Faust</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/rviz_math</url>
+  <depend package="geometry_msgs"/>
+
+  <export>
+  	<cpp cflags="-I${prefix}/include" lflags="-lrviz_math -L${prefix}/lib -Wl,-rpath,${prefix}/lib"/>
+  </export>
+</package>
+
+

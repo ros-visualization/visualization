@@ -1,0 +1,21 @@
+<package>
+  <description brief="rviz_renderer_ogre">
+
+     rviz_renderer_ogre
+
+  </description>
+  <author>Josh Faust</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/rviz_renderer_ogre</url>
+  <depend package="ogre"/>
+  <depend package="rviz_uuid"/>
+  <depend package="rviz_renderer_interface"/>
+  <depend package="rviz_math"/>
+  
+  <export>
+  	<cpp cflags="-I${prefix}/include" lflags="-lrviz_renderer_ogre -L${prefix}/lib -Wl,-rpath,${prefix}/lib"/>
+  </export>
+</package>
+
+

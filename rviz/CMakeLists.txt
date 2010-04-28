@@ -20,10 +20,6 @@ include_directories( ${wxWidgets_INCLUDE_DIRS} )
 find_package(PythonLibs REQUIRED)
 include_directories(${PYTHON_INCLUDE_PATH})
 
-pkg_check_modules(OGRE OGRE)
-include_directories( ${OGRE_INCLUDE_DIRS} )
-link_directories( ${OGRE_LIBRARY_DIRS} )
-
 # We need GTK2 and OpenGL for the wx render window
 pkg_check_modules(GTK2 gtk+-2.0)
 

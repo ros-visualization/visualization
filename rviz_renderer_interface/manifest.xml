@@ -1,0 +1,19 @@
+<package>
+  <description brief="rviz_renderer_interface">
+
+     rviz_renderer_interface
+
+  </description>
+  <author>Josh Faust</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/rviz_renderer_interface</url>
+  <depend package="rviz_uuid"/>
+  <depend package="rviz_math"/>
+  
+  <export>
+    <cpp cflags="-I${prefix}/include"/>
+  </export>
+</package>
+
+

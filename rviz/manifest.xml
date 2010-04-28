@@ -33,6 +33,11 @@
     <depend package="rviz_uuid"/>
     <depend package="rviz_interfaces"/>
     <depend package="rviz_interface_gen"/>
+    <depend package="rviz_math"/>
+    <depend package="rviz_renderer_interface"/>
+    <depend package="rviz_renderer_ogre"/>
+    <depend package="rviz_renderer_server"/>
+    <depend package="rviz_renderer_client"/>
     <export> 
         <cpp cflags="-I${prefix}/src/" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lrviz"/>
         <python path="${prefix}/lib/"/>

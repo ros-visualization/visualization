@@ -27,14 +27,14 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "render_ogre/renderer.h"
-#include "ros/server/renderer_ros.h"
-#include "ros/client/init.h"
-#include "ros/client/render_window.h"
-#include "ros/client/scene.h"
-#include "ros/client/camera.h"
-#include "math/vector3.h"
-#include "math/quaternion.h"
+#include <rviz_renderer_ogre/renderer.h>
+#include <rviz_renderer_server/server.h>
+#include "rviz_renderer_client/init.h"
+#include "rviz_renderer_client/render_window.h"
+#include "rviz_renderer_client/scene.h"
+#include "rviz_renderer_client/camera.h"
+#include "rviz_math/vector3.h"
+#include "rviz_math/quaternion.h"
 
 #include <rviz_interfaces/Camera.h>
 #include <rviz_interfaces/RenderWindow.h>
@@ -60,7 +60,7 @@
 #include <ApplicationServices/ApplicationServices.h>
 #endif
 
-using namespace rviz;
+using namespace rviz_math;
 
 std::string getOgreHandle(wxWindow* wx_wind)
 {
@@ -101,20 +101,20 @@ public:
   : wxFrame(parent, -1, _("rviz"), wxDefaultPosition, wxSize(800,600), wxDEFAULT_FRAME_STYLE)
   , private_nh_("~")
   , renderer_(ros::package::getPath(ROS_PACKAGE_NAME), true)
-  , renderer_ros_(&renderer_, private_nh_)
+  , renderer_server_(&renderer_, private_nh_)
   , timer_(this)
   {
     renderer_.start();
 
     ros::NodeHandle renderer_nh(private_nh_, "renderer");
-    rviz::ros_client::addProxyInterface("camera", rviz_interface_gen::InterfacePtr(new rviz_interfaces::CameraProxy("camera", renderer_nh)));
-    rviz::ros_client::addProxyInterface("render_window", rviz_interface_gen::InterfacePtr(new rviz_interfaces::RenderWindowProxy("render_window", renderer_nh)));
-    rviz::ros_client::addProxyInterface("scene", rviz_interface_gen::InterfacePtr(new rviz_interfaces::SceneProxy("scene", renderer_nh)));
+    rviz_renderer_client::addProxyInterface("camera", rviz_interface_gen::InterfacePtr(new rviz_interfaces::CameraProxy("camera", renderer_nh)));
+    rviz_renderer_client::addProxyInterface("render_window", rviz_interface_gen::InterfacePtr(new rviz_interfaces::RenderWindowProxy("render_window", renderer_nh)));
+    rviz_renderer_client::addProxyInterface("scene", rviz_interface_gen::InterfacePtr(new rviz_interfaces::SceneProxy("scene", renderer_nh)));
 
-    render_window_ = ros_client::createRenderWindow(getOgreHandle(this), 800, 600);
+    render_window_ = rviz_renderer_client::createRenderWindow(getOgreHandle(this), 800, 600);
 
-    ros_client::Scene s = ros_client::createScene();
-    ros_client::Camera c = s.createCamera();
+    rviz_renderer_client::Scene s = rviz_renderer_client::createScene();
+    rviz_renderer_client::Camera c = s.createCamera();
     render_window_.attachCamera(c);
 
     c.setAutoAspectRatio(true);
@@ -130,11 +130,11 @@ public:
 
   ~MyFrame()
   {
-    ros_client::destroyRenderWindow(render_window_);
+    rviz_renderer_client::destroyRenderWindow(render_window_);
 
     renderer_.stop();
 
-    rviz::ros_client::shutdown();
+    rviz_renderer_client::shutdown();
   }
 
   void onSize(wxSizeEvent& evt)
@@ -178,10 +178,10 @@ public:
 
 private:
   ros::NodeHandle private_nh_;
-  render::ogre::Renderer renderer_;
-  RendererROS renderer_ros_;
-  ros_client::Camera camera_;
-  ros_client::RenderWindow render_window_;
+  rviz_renderer_ogre::Renderer renderer_;
+  rviz_renderer_server::Server renderer_server_;
+  rviz_renderer_client::Camera camera_;
+  rviz_renderer_client::RenderWindow render_window_;
 
   wxTimer timer_;
 
@@ -211,7 +211,7 @@ public:
     }
 
     ros::init(argc, local_argv_, "rviz", ros::init_options::NoSigintHandler);
-    ros_client::init(ros::names::resolve("~"));
+    rviz_renderer_client::init(ros::names::resolve("~"));
 
     wxFrame* frame = new MyFrame(NULL);
     SetTopWindow(frame);
