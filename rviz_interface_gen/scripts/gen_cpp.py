@@ -126,10 +126,10 @@ def write_header_method_declaration(hs, i, m, pure_virtual):
     print >> hs, ';'
 
 def write_header_interface_declaration(hs, i, pkg):
-    print >> hs, 'struct %s : public rviz_interface_gen::Interface\n{'%(i.name)
+    print >> hs, 'struct I%s : public rviz_interface_gen::Interface\n{'%(i.name)
     
     # Write virtual destructor
-    print >> hs, '  virtual ~%s() {}'%(i.name)
+    print >> hs, '  virtual ~I%s() {}'%(i.name)
     
     for m in i.methods:
         write_header_method_declaration(hs, i, m, True)
@@ -137,7 +137,7 @@ def write_header_interface_declaration(hs, i, pkg):
     print >> hs, '};\n'
     
 def write_header_proxy_declaration(hs, i, pkg):
-    print >> hs, 'struct %sProxy : public %s\n{'%(i.name, i.name)
+    print >> hs, 'struct %sProxy : public I%s\n{'%(i.name, i.name)
     
     print >> hs, '  %sProxy(const std::string& name, const ros::NodeHandle& nh);'%(i.name)
     
@@ -152,7 +152,7 @@ def write_header_proxy_declaration(hs, i, pkg):
     print >> hs, '};\n'
     
 def write_header_server_declaration(hs, i, pkg):
-    print >> hs, 'struct %sServer : public %s\n{'%(i.name, i.name)
+    print >> hs, 'struct %sServer : public I%s\n{'%(i.name, i.name)
     
     print >> hs, '  %sServer(const std::string& name, const ros::NodeHandle& nh);'%(i.name)
         

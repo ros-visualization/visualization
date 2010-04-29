@@ -43,6 +43,7 @@ namespace rviz_renderer_client
 class RenderWindow;
 class Camera;
 class SimpleShape;
+class TransformNode;
 
 class Scene : public Object
 {
@@ -53,8 +54,13 @@ public:
   Camera createCamera();
   void destroyCamera(const Camera& cam);
 
-  SimpleShape createSimpleShape(const std::string& type);
+  SimpleShape createSimpleShape(const std::string& type, const TransformNode& node);
   void destroySimpleShape(const SimpleShape& shape);
+
+  TransformNode createTransformNode();
+  TransformNode createTransformNode(const TransformNode& parent);
+  TransformNode createTransformNode(const rviz_uuid::UUID& parent);
+  void destroyTransformNode(const TransformNode& node);
 
 private:
   rviz_interfaces::SceneProxy* proxy_;

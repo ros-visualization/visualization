@@ -27,24 +27,44 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef RVIZ_IRENDER_LOOP_LISTENER_H
-#define RVIZ_IRENDER_LOOP_LISTENER_H
+#ifndef RVIZ_RENDERER_CLIENT_TRANSFORM_NODE_H
+#define RVIZ_RENDERER_CLIENT_TRANSFORM_NODE_H
 
-#include <string>
+#include "object.h"
 
-namespace rviz_renderer_interface
+namespace rviz_interfaces
+{
+class TransformNodeProxy;
+}
+
+namespace rviz_math
+{
+class Vector3;
+class Quaternion;
+}
+
+namespace rviz_renderer_client
 {
 
-class IRenderer;
-
-class IRenderLoopListener
+class TransformNode : public Object
 {
 public:
-  virtual void preRender(IRenderer* renderer) {};
-  virtual void postRender(IRenderer* renderer) {};
+  TransformNode();
+  TransformNode(const rviz_uuid::UUID& scene_id, const rviz_uuid::UUID& id);
+
+  void setPosition(const rviz_math::Vector3& pos);
+  void setPosition(float x, float y, float z);
+  void setOrientation(const rviz_math::Quaternion& orient);
+  void setOrientation(float x, float y, float z, float w);
+  void setScale(const rviz_math::Vector3& scale);
+  void setScale(float x, float y, float z);
+
+private:
+  rviz_uuid::UUID scene_id_;
+  rviz_interfaces::TransformNodeProxy* proxy_;
 };
 
-} // namespace rviz_renderer_interface
+}
 
-#endif // RVIZ_IRENDER_LISTENER_H
+#endif // RVIZ_RENDERER_CLIENT_TRANSFORM_NODE_H
 

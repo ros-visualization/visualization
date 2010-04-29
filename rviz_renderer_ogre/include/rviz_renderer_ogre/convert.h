@@ -34,8 +34,6 @@
 #include <OGRE/OgreQuaternion.h>
 #include <OGRE/OgreMatrix3.h>
 
-#include <boost/function.hpp>
-
 #include <rviz_math/vector3.h>
 #include <rviz_math/quaternion.h>
 

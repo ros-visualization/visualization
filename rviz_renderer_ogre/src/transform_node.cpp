@@ -27,39 +27,48 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef RVIZ_IRENDERER_H
-#define RVIZ_IRENDERER_H
+#include <rviz_renderer_ogre/transform_node.h>
+#include <rviz_renderer_ogre/convert.h>
 
-namespace rviz_uuid
+#include <OGRE/OgreSceneManager.h>
+#include <OGRE/OgreEntity.h>
+#include <OGRE/OgreSceneNode.h>
+
+namespace rviz_renderer_ogre
 {
-class UUID;
+
+TransformNode::TransformNode(Ogre::SceneManager* scene_manager, TransformNode* parent)
+: scene_manager_(scene_manager)
+{
+  if (!parent)
+  {
+    scene_node_ = scene_manager_->getRootSceneNode()->createChildSceneNode();
+  }
+  else
+  {
+    scene_node_ = parent->getOgreSceneNode()->createChildSceneNode();
+  }
 }
 
-namespace rviz_renderer_interface
+TransformNode::~TransformNode()
 {
+  scene_manager_->destroySceneNode(scene_node_);
+}
 
-class IRenderLoopListener;
-class IRenderWindow;
-class IScene;
-class ICamera;
-
-class IRenderer
+void TransformNode::setPosition(const rviz_math::Vector3& pos)
 {
-public:
-  virtual IRenderWindow* createRenderWindow(const rviz_uuid::UUID& id, const std::string& parent_window, uint32_t width, uint32_t height) = 0;
-  virtual void destroyRenderWindow(const rviz_uuid::UUID& id) = 0;
-  virtual IRenderWindow* getRenderWindow(const rviz_uuid::UUID& id) = 0;
+  scene_node_->setPosition(convert(pos));
+}
 
-  virtual IScene* createScene(const rviz_uuid::UUID& id) = 0;
-  virtual void destroyScene(const rviz_uuid::UUID& id) = 0;
-  virtual IScene* getScene(const rviz_uuid::UUID& id) = 0;
+void TransformNode::setOrientation(const rviz_math::Quaternion& orient)
+{
+  scene_node_->setOrientation(convert(orient));
+}
 
-  virtual ICamera* getCamera(const rviz_uuid::UUID& id) = 0;
+void TransformNode::setScale(const rviz_math::Vector3& scale)
+{
+  scene_node_->setScale(convert(scale));
+}
 
-  virtual void addRenderLoopListener(IRenderLoopListener* listener) = 0;
-  virtual void removeRenderLoopListener(IRenderLoopListener* listener) = 0;
-};
+} // namespace rviz_renderer_ogre
 
-} // namespace rviz_renderer_interface
-
-#endif // RVIZ_IRENDERER_H

@@ -28,12 +28,13 @@
  */
 
 #include <rviz_renderer_ogre/renderer.h>
-#include <rviz_renderer_server/server.h>
+#include <rviz_renderer_ogre/server.h>
 #include "rviz_renderer_client/init.h"
 #include "rviz_renderer_client/render_window.h"
 #include "rviz_renderer_client/scene.h"
 #include "rviz_renderer_client/camera.h"
 #include "rviz_renderer_client/simple_shape.h"
+#include "rviz_renderer_client/transform_node.h"
 #include "rviz_math/vector3.h"
 #include "rviz_math/quaternion.h"
 
@@ -41,6 +42,7 @@
 #include <rviz_interfaces/RenderWindow.h>
 #include <rviz_interfaces/Scene.h>
 #include <rviz_interfaces/SimpleShape.h>
+#include <rviz_interfaces/TransformNode.h>
 
 #include <ros/package.h>
 #include <ros/time.h>
@@ -102,7 +104,7 @@ public:
   MyFrame(wxWindow* parent)
   : wxFrame(parent, -1, _("rviz"), wxDefaultPosition, wxSize(800,600), wxDEFAULT_FRAME_STYLE)
   , private_nh_("~")
-  , renderer_(ros::package::getPath(ROS_PACKAGE_NAME), true)
+  , renderer_(true)
   , renderer_server_(&renderer_, private_nh_)
   , timer_(this)
   {
@@ -113,6 +115,7 @@ public:
     rviz_renderer_client::addProxyInterface("render_window", rviz_interface_gen::InterfacePtr(new rviz_interfaces::RenderWindowProxy("render_window", renderer_nh)));
     rviz_renderer_client::addProxyInterface("scene", rviz_interface_gen::InterfacePtr(new rviz_interfaces::SceneProxy("scene", renderer_nh)));
     rviz_renderer_client::addProxyInterface("simple_shape", rviz_interface_gen::InterfacePtr(new rviz_interfaces::SimpleShapeProxy("simple_shape", renderer_nh)));
+    rviz_renderer_client::addProxyInterface("transform_node", rviz_interface_gen::InterfacePtr(new rviz_interfaces::TransformNodeProxy("transform_node", renderer_nh)));
 
     render_window_ = rviz_renderer_client::createRenderWindow(getOgreHandle(this), 800, 600);
 
@@ -125,10 +128,19 @@ public:
     c.lookAt(Vector3(0, 0, 0));
     camera_ = c;
 
-    s.createSimpleShape("sphere");
-    s.createSimpleShape("cube").setPosition(2, 0, 0);
-    s.createSimpleShape("cylinder").setPosition(-2, 0, 0);
-    s.createSimpleShape("cone").setPosition(-4, 0, 0);
+    s.createSimpleShape("sphere", s.createTransformNode());
+
+    rviz_renderer_client::TransformNode n = s.createTransformNode();
+    n.setPosition(2, 0, 0);
+    s.createSimpleShape("cube", n);
+
+    n = s.createTransformNode();
+    n.setPosition(-2, 0, 0);
+    s.createSimpleShape("cylinder", n);
+
+    n = s.createTransformNode();
+    n.setPosition(-4, 0, 0);
+    s.createSimpleShape("cone", n);
 
     Connect(wxEVT_SIZE, wxSizeEventHandler(MyFrame::onSize));
     Connect(wxEVT_TIMER, wxTimerEventHandler(MyFrame::onTimer));
@@ -187,7 +199,7 @@ public:
 private:
   ros::NodeHandle private_nh_;
   rviz_renderer_ogre::Renderer renderer_;
-  rviz_renderer_server::Server renderer_server_;
+  rviz_renderer_ogre::Server renderer_server_;
   rviz_renderer_client::Camera camera_;
   rviz_renderer_client::RenderWindow render_window_;
 

@@ -51,35 +51,5 @@ SimpleShape::SimpleShape(const rviz_uuid::UUID& scene_id, const rviz_uuid::UUID&
   proxy_ = getProxyInterface<rviz_interfaces::SimpleShapeProxy>("simple_shape");
 }
 
-void SimpleShape::setPosition(const rviz_math::Vector3& pos)
-{
-  proxy_->setPosition(scene_id_, getID(), pos);
-}
-
-void SimpleShape::setPosition(float x, float y, float z)
-{
-  proxy_->setPosition(scene_id_, getID(), Vector3(x, y, z));
-}
-
-void SimpleShape::setOrientation(const rviz_math::Quaternion& orient)
-{
-  proxy_->setOrientation(scene_id_, getID(), orient);
-}
-
-void SimpleShape::setOrientation(float x, float y, float z, float w)
-{
-  proxy_->setOrientation(scene_id_, getID(), Quaternion(x, y, z, w));
-}
-
-void SimpleShape::setScale(const rviz_math::Vector3& scale)
-{
-  proxy_->setScale(scene_id_, getID(), scale);
-}
-
-void SimpleShape::setScale(float x, float y, float z)
-{
-  proxy_->setScale(scene_id_, getID(), Vector3(x, y, z));
-}
-
 
 }

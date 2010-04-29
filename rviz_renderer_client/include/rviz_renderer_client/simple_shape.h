@@ -52,13 +52,6 @@ public:
   SimpleShape();
   SimpleShape(const rviz_uuid::UUID& scene_id, const rviz_uuid::UUID& id);
 
-  void setPosition(const rviz_math::Vector3& pos);
-  void setPosition(float x, float y, float z);
-  void setOrientation(const rviz_math::Quaternion& orient);
-  void setOrientation(float x, float y, float z, float w);
-  void setScale(const rviz_math::Vector3& scale);
-  void setScale(float x, float y, float z);
-
 private:
   rviz_uuid::UUID scene_id_;
   rviz_interfaces::SimpleShapeProxy* proxy_;

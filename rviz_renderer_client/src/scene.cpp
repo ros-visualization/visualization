@@ -31,6 +31,7 @@
 #include "rviz_renderer_client/camera.h"
 #include "rviz_renderer_client/init.h"
 #include "rviz_renderer_client/simple_shape.h"
+#include "rviz_renderer_client/transform_node.h"
 
 #include <rviz_interfaces/Scene.h>
 
@@ -75,14 +76,36 @@ void Scene::destroyCamera(const Camera& cam)
   proxy_->destroyCamera(getID(), cam.getID());
 }
 
-SimpleShape Scene::createSimpleShape(const std::string& type)
+SimpleShape Scene::createSimpleShape(const std::string& type, const TransformNode& node)
 {
   UUID id = UUID::Generate();
-  proxy_->createSimpleShape(getID(), id, type);
+  proxy_->createSimpleShape(getID(), id, type, node.getID());
   return SimpleShape(getID(), id);
 }
 
 void Scene::destroySimpleShape(const SimpleShape& shape)
 {
   proxy_->destroySimpleShape(getID(), shape.getID());
+}
+
+TransformNode Scene::createTransformNode()
+{
+  return createTransformNode(UUID::Null);
+}
+
+TransformNode Scene::createTransformNode(const TransformNode& parent)
+{
+  return createTransformNode(parent.getID());
+}
+
+TransformNode Scene::createTransformNode(const UUID& parent)
+{
+  UUID id = UUID::Generate();
+  proxy_->createTransformNode(getID(), id, parent);
+  return TransformNode(getID(), id);
+}
+
+void Scene::destroyTransformNode(const TransformNode& node)
+{
+  proxy_->destroyTransformNode(getID(), node.getID());
 }

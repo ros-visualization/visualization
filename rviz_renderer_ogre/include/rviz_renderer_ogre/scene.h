@@ -30,21 +30,17 @@
 #ifndef RVIZ_RENDER_OGRE_SCENE_H
 #define RVIZ_RENDER_OGRE_SCENE_H
 
-#include <rviz_renderer_interface/iscene.h>
 #include <rviz_uuid/uuid.h>
 
 #include <map>
 
 #include <boost/shared_ptr.hpp>
 
+#include "simple_shape.h"
+
 namespace Ogre
 {
 class SceneManager;
-}
-
-namespace rviz_renderer_interface
-{
-class ICamera;
 }
 
 namespace rviz_renderer_ogre
@@ -56,18 +52,25 @@ typedef boost::shared_ptr<Camera> CameraPtr;
 class SimpleShape;
 typedef boost::shared_ptr<SimpleShape> SimpleShapePtr;
 
-class Scene : public rviz_renderer_interface::IScene
+class TransformNode;
+typedef boost::shared_ptr<TransformNode> TransformNodePtr;
+
+class Scene
 {
 public:
   Scene(const rviz_uuid::UUID& id, Ogre::SceneManager* scene_manager);
   ~Scene();
 
-  virtual rviz_renderer_interface::ICamera* createCamera(const rviz_uuid::UUID& id);
-  virtual void destroyCamera(const rviz_uuid::UUID& id);
-  virtual rviz_renderer_interface::ICamera* getCamera(const rviz_uuid::UUID& id);
-  virtual rviz_renderer_interface::ISimpleShape* createSimpleShape(const rviz_uuid::UUID& id, rviz_renderer_interface::ISimpleShape::Type type);
-  virtual rviz_renderer_interface::ISimpleShape* getSimpleShape(const rviz_uuid::UUID& id);
-  virtual void destroySimpleShape(const rviz_uuid::UUID& id);
+  Camera* createCamera(const rviz_uuid::UUID& id);
+  void destroyCamera(const rviz_uuid::UUID& id);
+  Camera* getCamera(const rviz_uuid::UUID& id);
+  SimpleShape* createSimpleShape(const rviz_uuid::UUID& id, SimpleShape::Type type, const rviz_uuid::UUID& node_id);
+  SimpleShape* getSimpleShape(const rviz_uuid::UUID& id);
+  void destroySimpleShape(const rviz_uuid::UUID& id);
+
+  TransformNode* createTransformNode(const rviz_uuid::UUID& id, const rviz_uuid::UUID& parent);
+  void destroyTransformNode(const rviz_uuid::UUID& id);
+  TransformNode* getTransformNode(const rviz_uuid::UUID& id);
 
   Ogre::SceneManager* getSceneManager() { return scene_manager_; }
   const rviz_uuid::UUID& getID() { return id_; }
@@ -81,6 +84,9 @@ private:
 
   typedef std::map<rviz_uuid::UUID, SimpleShapePtr> M_SimpleShape;
   M_SimpleShape simple_shapes_;
+
+  typedef std::map<rviz_uuid::UUID, TransformNodePtr> M_TransformNode;
+  M_TransformNode transform_nodes_;;
 };
 
 } // namespace rviz_renderer_ogre

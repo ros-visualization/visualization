@@ -30,34 +30,38 @@
 #ifndef RVIZ_RENDER_OGRE_CAMERA_H
 #define RVIZ_RENDER_OGRE_CAMERA_H
 
-#include <rviz_renderer_interface/icamera.h>
-
 namespace Ogre
 {
 class Camera;
 }
 
+namespace rviz_math
+{
+class Vector3;
+class Quaternion;
+}
+
 namespace rviz_renderer_ogre
 {
 
-class Camera : public rviz_renderer_interface::ICamera
+class Camera
 {
 public:
   Camera(Ogre::Camera* cam);
 
   Ogre::Camera* getOgreCamera() { return cam_; }
 
-  virtual void setPosition(const rviz_math::Vector3&);
-  virtual void setOrientation(const rviz_math::Quaternion&);
-  virtual void lookAt(const rviz_math::Vector3&);
-  virtual void move(const rviz_math::Vector3&);
-  virtual void moveRelative(const rviz_math::Vector3&) ;
-  virtual void rotate(const rviz_math::Quaternion&);
-  virtual void setFOVY(float fovy);
-  virtual void setAspectRatio(float aspect);
-  virtual void setAutoAspectRatio(bool autoratio);
-  virtual void setNearClipDistance(float dist);
-  virtual void setFarClipDistance(float dist);
+   void setPosition(const rviz_math::Vector3&);
+   void setOrientation(const rviz_math::Quaternion&);
+   void lookAt(const rviz_math::Vector3&);
+   void move(const rviz_math::Vector3&);
+   void moveRelative(const rviz_math::Vector3&) ;
+   void rotate(const rviz_math::Quaternion&);
+   void setFOVY(float fovy);
+   void setAspectRatio(float aspect);
+   void setAutoAspectRatio(bool autoratio);
+   void setNearClipDistance(float dist);
+   void setFarClipDistance(float dist);
 
 private:
   Ogre::Camera* cam_;

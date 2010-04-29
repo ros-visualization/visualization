@@ -33,7 +33,6 @@
 #include <OGRE/OgreCamera.h>
 
 using namespace rviz_math;
-using namespace rviz_renderer_interface;
 
 namespace rviz_renderer_ogre
 {

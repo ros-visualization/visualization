@@ -27,12 +27,12 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <rviz_renderer_server/server.h>
-#include <rviz_renderer_interface/irenderer.h>
-#include <rviz_renderer_interface/irender_window.h>
-#include <rviz_renderer_interface/iscene.h>
-#include <rviz_renderer_interface/icamera.h>
-#include <rviz_renderer_interface/irender_loop_listener.h>
+#include <rviz_renderer_ogre/server.h>
+#include <rviz_renderer_ogre/renderer.h>
+#include <rviz_renderer_ogre/render_window.h>
+#include <rviz_renderer_ogre/scene.h>
+#include <rviz_renderer_ogre/transform_node.h>
+#include <rviz_renderer_ogre/camera.h>
 #include <rviz_uuid/uuid.h>
 #include <rviz_math/vector3.h>
 #include <rviz_math/quaternion.h>
@@ -44,42 +44,25 @@
 #include <rviz_interfaces/RenderWindow.h>
 #include <rviz_interfaces/Scene.h>
 #include <rviz_interfaces/SimpleShape.h>
+#include <rviz_interfaces/TransformNode.h>
 
 using namespace rviz_uuid;
 
-namespace rviz_renderer_server
+namespace rviz_renderer_ogre
 {
-
-class Server::RenderLoopListener : public rviz_renderer_interface::IRenderLoopListener
-{
-public:
-  RenderLoopListener(ros::CallbackQueue* queue)
-  : queue_(queue)
-  {
-
-  }
-
-  virtual void postRender(rviz_renderer_interface::IRenderer* renderer)
-  {
-    queue_->callAvailable();
-  }
-
-private:
-  ros::CallbackQueue* queue_;
-};
 
 class CameraServer : public rviz_interfaces::CameraServer
 {
 public:
-  CameraServer(rviz_renderer_interface::IRenderer* rend, const std::string& name, const ros::NodeHandle& nh)
+  CameraServer(Renderer* rend, const std::string& name, const ros::NodeHandle& nh)
   : rviz_interfaces::CameraServer(name, nh)
   , renderer_(rend)
   {
   }
 
-  rviz_renderer_interface::ICamera* lookupCamera(const rviz_uuid::UUID& id)
+  Camera* lookupCamera(const rviz_uuid::UUID& id)
   {
-    rviz_renderer_interface::ICamera* cam = renderer_->getCamera(id);
+    Camera* cam = renderer_->getCamera(id);
     if (!cam)
     {
       std::stringstream ss;
@@ -146,13 +129,13 @@ public:
   }
 
 private:
-  rviz_renderer_interface::IRenderer* renderer_;
+  Renderer* renderer_;
 };
 
 class RenderWindowServer : public rviz_interfaces::RenderWindowServer
 {
 public:
-  RenderWindowServer(rviz_renderer_interface::IRenderer* rend, const std::string& name, const ros::NodeHandle& nh)
+  RenderWindowServer(Renderer* rend, const std::string& name, const ros::NodeHandle& nh)
   : rviz_interfaces::RenderWindowServer(name, nh)
   , renderer_(rend)
   {
@@ -160,13 +143,13 @@ public:
 
   virtual void resized(const rviz_msgs::UUID& id, uint32_t width, uint32_t height)
   {
-    rviz_renderer_interface::IRenderWindow* wnd = renderer_->getRenderWindow(id);
+    RenderWindow* wnd = renderer_->getRenderWindow(id);
     wnd->resized(width, height);
   }
 
   virtual void attachCamera(const rviz_msgs::UUID& id, const rviz_msgs::UUID& camera_id)
   {
-    rviz_renderer_interface::IRenderWindow* wnd = renderer_->getRenderWindow(id);
+    RenderWindow* wnd = renderer_->getRenderWindow(id);
     wnd->attachCamera(camera_id);
   }
 
@@ -181,13 +164,13 @@ public:
   }
 
 private:
-  rviz_renderer_interface::IRenderer* renderer_;
+  Renderer* renderer_;
 };
 
 class SceneServer : public rviz_interfaces::SceneServer
 {
 public:
-  SceneServer(rviz_renderer_interface::IRenderer* rend, const std::string& name, const ros::NodeHandle& nh)
+  SceneServer(Renderer* rend, const std::string& name, const ros::NodeHandle& nh)
   : rviz_interfaces::SceneServer(name, nh)
   , renderer_(rend)
   {
@@ -195,7 +178,7 @@ public:
 
   virtual void create(const rviz_msgs::UUID& id)
   {
-    rviz_renderer_interface::IScene* scene = renderer_->createScene(id);
+    Scene* scene = renderer_->createScene(id);
     if (!scene)
     {
       throw std::runtime_error("Could not create scene [" + UUID(id).toString() + "]");
@@ -209,7 +192,7 @@ public:
 
   virtual void createCamera(const rviz_msgs::UUID& id, const rviz_msgs::UUID& camera_id)
   {
-    rviz_renderer_interface::IScene* scene = renderer_->getScene(id);
+    Scene* scene = renderer_->getScene(id);
     if (!scene)
     {
       throw std::runtime_error("Scene [" + UUID(id).toString() + "] does not exist");
@@ -220,7 +203,7 @@ public:
 
   virtual void destroyCamera(const rviz_msgs::UUID& id, const rviz_msgs::UUID& camera_id)
   {
-    rviz_renderer_interface::IScene* scene = renderer_->getScene(id);
+    Scene* scene = renderer_->getScene(id);
     if (!scene)
     {
       throw std::runtime_error("Scene [" + UUID(id).toString() + "] does not exist");
@@ -229,42 +212,42 @@ public:
     scene->destroyCamera(camera_id);
   }
 
-  virtual void createSimpleShape(const rviz_msgs::UUID& scene_id, const rviz_msgs::UUID& shape_id, const std::string& type)
+  virtual void createSimpleShape(const rviz_msgs::UUID& scene_id, const rviz_msgs::UUID& shape_id, const std::string& type, const rviz_msgs::UUID& node_id)
   {
-    rviz_renderer_interface::ISimpleShape::Type t;
+    SimpleShape::Type t;
     if (type == "cone")
     {
-      t = rviz_renderer_interface::ISimpleShape::Cone;
+      t = SimpleShape::Cone;
     }
     else if (type == "cube")
     {
-      t = rviz_renderer_interface::ISimpleShape::Cube;
+      t = SimpleShape::Cube;
     }
     else if (type == "cylinder")
     {
-      t = rviz_renderer_interface::ISimpleShape::Cylinder;
+      t = SimpleShape::Cylinder;
     }
     else if (type == "sphere")
     {
-      t = rviz_renderer_interface::ISimpleShape::Sphere;
+      t = SimpleShape::Sphere;
     }
     else
     {
       throw std::runtime_error("Unrecognized simple shape [" + type + "]");
     }
 
-    rviz_renderer_interface::IScene* scene = renderer_->getScene(scene_id);
+    Scene* scene = renderer_->getScene(scene_id);
     if (!scene)
     {
       throw std::runtime_error("Scene [" + UUID(scene_id).toString() + "] does not exist");
     }
 
-    scene->createSimpleShape(shape_id, t);
+    scene->createSimpleShape(shape_id, t, node_id);
   }
 
   virtual void destroySimpleShape(const rviz_msgs::UUID& scene_id, const rviz_msgs::UUID& shape_id)
   {
-    rviz_renderer_interface::IScene* scene = renderer_->getScene(scene_id);
+    Scene* scene = renderer_->getScene(scene_id);
     if (!scene)
     {
       throw std::runtime_error("Scene [" + UUID(scene_id).toString() + "] does not exist");
@@ -273,63 +256,99 @@ public:
     scene->destroySimpleShape(shape_id);
   }
 
+  virtual void createTransformNode(const rviz_msgs::UUID& scene_id, const rviz_msgs::UUID& node_id, const rviz_msgs::UUID& parent_id)
+  {
+    Scene* scene = renderer_->getScene(scene_id);
+    if (!scene)
+    {
+      throw std::runtime_error("Scene [" + UUID(scene_id).toString() + "] does not exist");
+    }
+
+    scene->createTransformNode(node_id, parent_id);
+  }
+
+  virtual void destroyTransformNode(const rviz_msgs::UUID& scene_id, const rviz_msgs::UUID& node_id)
+  {
+    Scene* scene = renderer_->getScene(scene_id);
+    if (!scene)
+    {
+      throw std::runtime_error("Scene [" + UUID(scene_id).toString() + "] does not exist");
+    }
+
+    scene->destroyTransformNode(node_id);
+  }
+
 private:
-  rviz_renderer_interface::IRenderer* renderer_;
+  Renderer* renderer_;
 };
 
 class SimpleShapeServer : public rviz_interfaces::SimpleShapeServer
 {
 public:
-  SimpleShapeServer(rviz_renderer_interface::IRenderer* rend, const std::string& name, const ros::NodeHandle& nh)
+  SimpleShapeServer(Renderer* rend, const std::string& name, const ros::NodeHandle& nh)
   : rviz_interfaces::SimpleShapeServer(name, nh)
+  , renderer_(rend)
+  {
+  }
+
+  virtual void setType(const rviz_msgs::UUID& id, const std::string& type)
+  {
+
+  }
+
+private:
+  Renderer* renderer_;
+};
+
+class TransformNodeServer : public rviz_interfaces::TransformNodeServer
+{
+public:
+  TransformNodeServer(Renderer* rend, const std::string& name, const ros::NodeHandle& nh)
+  : rviz_interfaces::TransformNodeServer(name, nh)
   , renderer_(rend)
   {
   }
 
   virtual void setPosition(const rviz_msgs::UUID& scene_id, const rviz_msgs::UUID& id, const geometry_msgs::Vector3& pos)
   {
-    rviz_renderer_interface::IScene* scene = renderer_->getScene(scene_id);
-    rviz_renderer_interface::ISimpleShape* shape = scene->getSimpleShape(id);
-    shape->setPosition(pos);
+    Scene* scene = renderer_->getScene(scene_id);
+    TransformNode* node = scene->getTransformNode(id);
+    node->setPosition(pos);
   }
 
   virtual void setOrientation(const rviz_msgs::UUID& scene_id, const rviz_msgs::UUID& id, const geometry_msgs::Quaternion& orient)
   {
-    rviz_renderer_interface::IScene* scene = renderer_->getScene(scene_id);
-    rviz_renderer_interface::ISimpleShape* shape = scene->getSimpleShape(id);
-    shape->setOrientation(orient);
+    Scene* scene = renderer_->getScene(scene_id);
+    TransformNode* node = scene->getTransformNode(id);
+    node->setOrientation(orient);
   }
 
   virtual void setScale(const rviz_msgs::UUID& scene_id, const rviz_msgs::UUID& id, const geometry_msgs::Vector3& scale)
   {
-    rviz_renderer_interface::IScene* scene = renderer_->getScene(scene_id);
-    rviz_renderer_interface::ISimpleShape* shape = scene->getSimpleShape(id);
-    shape->setScale(scale);
+    Scene* scene = renderer_->getScene(scene_id);
+    TransformNode* node = scene->getTransformNode(id);
+    node->setScale(scale);
   }
 
 private:
-  rviz_renderer_interface::IRenderer* renderer_;
+  Renderer* renderer_;
 };
 
-Server::Server(rviz_renderer_interface::IRenderer* renderer, const ros::NodeHandle& nh)
+Server::Server(Renderer* renderer, const ros::NodeHandle& nh)
 : renderer_(renderer)
-, callback_queue_(new ros::CallbackQueue)
 , nh_(new ros::NodeHandle(nh, "renderer"))
-, render_loop_listener_(new RenderLoopListener(callback_queue_.get()))
 {
-  nh_->setCallbackQueue(callback_queue_.get());
+  nh_->setCallbackQueue(renderer_->getServerThreadCallbackQueue());
   camera_server_.reset(new CameraServer(renderer_, "camera", *nh_));
   render_window_server_.reset(new RenderWindowServer(renderer_, "render_window", *nh_));
   scene_server_.reset(new SceneServer(renderer_, "scene", *nh_));
   simple_shape_server_.reset(new SimpleShapeServer(renderer_, "simple_shape", *nh_));
-
-  renderer_->addRenderLoopListener(render_loop_listener_.get());
+  transform_node_server_.reset(new TransformNodeServer(renderer_, "transform_node", *nh_));
 }
 
 Server::~Server()
 {
-  renderer_->removeRenderLoopListener(render_loop_listener_.get());
 }
 
 
-} // namespace rviz_renderer_server
+} // namespace rviz_renderer_ogre

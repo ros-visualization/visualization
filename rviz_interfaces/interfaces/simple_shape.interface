@@ -1,6 +1,4 @@
 interface SimpleShape
 {
-	async setPosition(rviz_msgs/UUID scene_id, rviz_msgs/UUID id, geometry_msgs/Vector3 pos);
-	async setOrientation(rviz_msgs/UUID scene_id, rviz_msgs/UUID id, geometry_msgs/Quaternion orient);
-	async setScale(rviz_msgs/UUID scene_id, rviz_msgs/UUID id, geometry_msgs/Vector3 scale);
+	async setType(rviz_msgs/UUID shape_id, string type);
 }

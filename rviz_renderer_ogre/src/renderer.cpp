@@ -32,8 +32,6 @@
 #include "rviz_renderer_ogre/scene.h"
 #include "rviz_renderer_ogre/camera.h"
 
-#include <rviz_renderer_interface/irender_loop_listener.h>
-
 #include <OGRE/OgreRoot.h>
 #include <OGRE/OgreRenderSystem.h>
 #include <OGRE/OgreRenderWindow.h>
@@ -42,18 +40,19 @@
 #include <OGRE/OgreSceneManager.h>
 
 #include <ros/console.h>
+#include <ros/package.h>
+#include <ros/callback_queue.h>
 
 using namespace rviz_uuid;
-using namespace rviz_renderer_interface;
 
 namespace rviz_renderer_ogre
 {
 
-Renderer::Renderer(const std::string& root_path, bool enable_ogre_log)
+Renderer::Renderer(bool enable_ogre_log)
 : running_(true)
 , first_window_created_(false)
-, root_path_(root_path)
 , enable_ogre_log_(enable_ogre_log)
+, callback_queue_(new ros::CallbackQueue)
 {
 }
 
@@ -132,15 +131,16 @@ void Renderer::init()
 
 void Renderer::oneTimeInit()
 {
-  Ogre::ResourceGroupManager::getSingleton().addResourceLocation( root_path_ + "/ogre_media/textures", "FileSystem", ROS_PACKAGE_NAME );
-  Ogre::ResourceGroupManager::getSingleton().addResourceLocation( root_path_ + "/ogre_media/fonts", "FileSystem", ROS_PACKAGE_NAME );
-  Ogre::ResourceGroupManager::getSingleton().addResourceLocation( root_path_ + "/ogre_media/models", "FileSystem", ROS_PACKAGE_NAME );
-  Ogre::ResourceGroupManager::getSingleton().addResourceLocation( root_path_ + "/ogre_media/materials/programs", "FileSystem", ROS_PACKAGE_NAME );
-  Ogre::ResourceGroupManager::getSingleton().addResourceLocation( root_path_ + "/ogre_media/materials/scripts", "FileSystem", ROS_PACKAGE_NAME );
+  std::string pkg_path = ros::package::getPath(ROS_PACKAGE_NAME);
+  Ogre::ResourceGroupManager::getSingleton().addResourceLocation( pkg_path + "/media/textures", "FileSystem", ROS_PACKAGE_NAME );
+  Ogre::ResourceGroupManager::getSingleton().addResourceLocation( pkg_path + "/media/fonts", "FileSystem", ROS_PACKAGE_NAME );
+  Ogre::ResourceGroupManager::getSingleton().addResourceLocation( pkg_path + "/media/models", "FileSystem", ROS_PACKAGE_NAME );
+  Ogre::ResourceGroupManager::getSingleton().addResourceLocation( pkg_path + "/media/materials/programs", "FileSystem", ROS_PACKAGE_NAME );
+  Ogre::ResourceGroupManager::getSingleton().addResourceLocation( pkg_path + "/media/materials/scripts", "FileSystem", ROS_PACKAGE_NAME );
   Ogre::ResourceGroupManager::getSingleton().initialiseAllResourceGroups();
 }
 
-IRenderWindow* Renderer::createRenderWindow(const rviz_uuid::UUID& id, const std::string& parent_window, uint32_t width, uint32_t height)
+RenderWindow* Renderer::createRenderWindow(const rviz_uuid::UUID& id, const std::string& parent_window, uint32_t width, uint32_t height)
 {
   if (render_windows_.count(id) > 0)
   {
@@ -191,7 +191,7 @@ void Renderer::destroyRenderWindow(const rviz_uuid::UUID& id)
   root->getRenderSystem()->destroyRenderWindow(ogre_win->getName());
 }
 
-IRenderWindow* Renderer::getRenderWindow(const rviz_uuid::UUID& id)
+RenderWindow* Renderer::getRenderWindow(const rviz_uuid::UUID& id)
 {
   M_RenderWindow::iterator it = render_windows_.find(id);
   if (it == render_windows_.end())
@@ -204,21 +204,7 @@ IRenderWindow* Renderer::getRenderWindow(const rviz_uuid::UUID& id)
   return it->second.get();
 }
 
-void Renderer::addRenderLoopListener(IRenderLoopListener* listener)
-{
-  render_loop_listeners_.push_back(listener);
-}
-
-void Renderer::removeRenderLoopListener(IRenderLoopListener* listener)
-{
-  V_RenderLoopListener::iterator it = std::find(render_loop_listeners_.begin(), render_loop_listeners_.end(), listener);
-  if (it != render_loop_listeners_.end())
-  {
-    render_loop_listeners_.erase(it);
-  }
-}
-
-IScene* Renderer::createScene(const UUID& id)
+Scene* Renderer::createScene(const UUID& id)
 {
   if (scenes_.count(id) > 0)
   {
@@ -249,7 +235,7 @@ void Renderer::destroyScene(const UUID& id)
   root->destroySceneManager(scene->getSceneManager());
 }
 
-IScene* Renderer::getScene(const UUID& id)
+Scene* Renderer::getScene(const UUID& id)
 {
   M_Scene::iterator it = scenes_.find(id);
   if (it == scenes_.end())
@@ -262,14 +248,14 @@ IScene* Renderer::getScene(const UUID& id)
   return it->second.get();
 }
 
-ICamera* Renderer::getCamera(const UUID& id)
+Camera* Renderer::getCamera(const UUID& id)
 {
   M_Scene::iterator it = scenes_.begin();
   M_Scene::iterator end = scenes_.end();
   for (; it != end; ++it)
   {
     const ScenePtr& scene = it->second;
-    ICamera* cam = scene->getCamera(id);
+    Camera* cam = scene->getCamera(id);
     if (cam)
     {
       return cam;
@@ -285,11 +271,9 @@ void Renderer::renderThread()
 
   while (running_)
   {
-    std::for_each(render_loop_listeners_.begin(), render_loop_listeners_.end(), boost::bind(&IRenderLoopListener::preRender, _1, this));
-
     Ogre::Root::getSingleton().renderOneFrame();
 
-    std::for_each(render_loop_listeners_.begin(), render_loop_listeners_.end(), boost::bind(&IRenderLoopListener::postRender, _1, this));
+    callback_queue_->callAvailable();
   }
 
   scenes_.clear();

@@ -46,6 +46,7 @@ namespace rviz_uuid
 class UUID
 {
 public:
+  static UUID Null;
   static UUID Generate();
 
   UUID();
@@ -58,6 +59,8 @@ public:
   bool operator==(const UUID& rhs) const;
 
   std::string toString() const;
+
+  bool isNull() const;
 
 private:
   boost::array<uint8_t, 16> data_;

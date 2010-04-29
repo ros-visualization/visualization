@@ -28,7 +28,7 @@
  */
 
 #include <rviz_renderer_ogre/simple_shape.h>
-#include <rviz_renderer_ogre/convert.h>
+#include <rviz_renderer_ogre/transform_node.h>
 
 #include <OGRE/OgreSceneManager.h>
 #include <OGRE/OgreEntity.h>
@@ -45,37 +45,20 @@ static const char* g_shape_meshes[] =
     "sphere.mesh"
 };
 
-SimpleShape::SimpleShape(Type type, Ogre::SceneManager* scene_manager)
+SimpleShape::SimpleShape(Ogre::SceneManager* scene_manager, Type type, TransformNode* node)
 : scene_manager_(scene_manager)
 {
-  scene_node_ = scene_manager_->getRootSceneNode()->createChildSceneNode();
   std::stringstream ss;
   static size_t count = 0;
   ss << "SimpleShape" << count++;
 
   entity_ = scene_manager_->createEntity(ss.str(), g_shape_meshes[type]);
-  scene_node_->attachObject(entity_);
+  node->getOgreSceneNode()->attachObject(entity_);
 }
 
 SimpleShape::~SimpleShape()
 {
   scene_manager_->destroyEntity(entity_);
-  scene_manager_->destroySceneNode(scene_node_);
-}
-
-void SimpleShape::setPosition(const rviz_math::Vector3& pos)
-{
-  scene_node_->setPosition(convert(pos));
-}
-
-void SimpleShape::setOrientation(const rviz_math::Quaternion& orient)
-{
-  scene_node_->setOrientation(convert(orient));
-}
-
-void SimpleShape::setScale(const rviz_math::Vector3& scale)
-{
-  scene_node_->setScale(convert(scale));
 }
 
 } // namespace rviz_renderer_ogre

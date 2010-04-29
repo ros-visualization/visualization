@@ -30,6 +30,7 @@
 #include "rviz_renderer_ogre/scene.h"
 #include "rviz_renderer_ogre/camera.h"
 #include "rviz_renderer_ogre/simple_shape.h"
+#include "rviz_renderer_ogre/transform_node.h"
 
 #include <OGRE/OgreSceneManager.h>
 #include <OGRE/OgreCamera.h>
@@ -39,7 +40,6 @@
 #include <ros/assert.h>
 
 using namespace rviz_uuid;
-using namespace rviz_renderer_interface;
 
 namespace rviz_renderer_ogre
 {
@@ -54,10 +54,11 @@ Scene::~Scene()
 {
   cameras_.clear();
   simple_shapes_.clear();
+  transform_nodes_.clear();
   Ogre::Root::getSingleton().destroySceneManager(scene_manager_);
 }
 
-ICamera* Scene::createCamera(const UUID& id)
+Camera* Scene::createCamera(const UUID& id)
 {
   Ogre::Camera* ogre_cam = scene_manager_->createCamera(id.toString());
   ogre_cam->setPosition(0, 10, 10);
@@ -81,7 +82,7 @@ void Scene::destroyCamera(const UUID& id)
   cameras_.erase(it);
 }
 
-ICamera* Scene::getCamera(const UUID& id)
+Camera* Scene::getCamera(const UUID& id)
 {
   M_Camera::iterator it = cameras_.find(id);
   if (it == cameras_.end())
@@ -92,9 +93,10 @@ ICamera* Scene::getCamera(const UUID& id)
   return it->second.get();
 }
 
-ISimpleShape* Scene::createSimpleShape(const rviz_uuid::UUID& id, ISimpleShape::Type type)
+SimpleShape* Scene::createSimpleShape(const rviz_uuid::UUID& id, SimpleShape::Type type, const rviz_uuid::UUID& node_id)
 {
-  SimpleShapePtr shape(new SimpleShape(type, scene_manager_));
+  TransformNode* node = getTransformNode(node_id);
+  SimpleShapePtr shape(new SimpleShape(scene_manager_, type, node));
   simple_shapes_[id] = shape;
   return shape.get();
 }
@@ -104,10 +106,37 @@ void Scene::destroySimpleShape(const rviz_uuid::UUID& id)
   simple_shapes_.erase(id);
 }
 
-ISimpleShape* Scene::getSimpleShape(const rviz_uuid::UUID& id)
+SimpleShape* Scene::getSimpleShape(const rviz_uuid::UUID& id)
 {
   M_SimpleShape::iterator it = simple_shapes_.find(id);
   ROS_ASSERT(it != simple_shapes_.end());
+
+  return it->second.get();
+}
+
+TransformNode* Scene::createTransformNode(const rviz_uuid::UUID& id, const rviz_uuid::UUID& parent)
+{
+  TransformNode* parent_node = 0;
+  if (!parent.isNull())
+  {
+    parent_node = getTransformNode(parent);
+  }
+
+  TransformNodePtr node(new TransformNode(scene_manager_, parent_node));
+  transform_nodes_[id] = node;
+
+  return node.get();
+}
+
+void Scene::destroyTransformNode(const rviz_uuid::UUID& id)
+{
+  transform_nodes_.erase(id);
+}
+
+TransformNode* Scene::getTransformNode(const rviz_uuid::UUID& id)
+{
+  M_TransformNode::iterator it = transform_nodes_.find(id);
+  ROS_ASSERT(it != transform_nodes_.end());
 
   return it->second.get();
 }

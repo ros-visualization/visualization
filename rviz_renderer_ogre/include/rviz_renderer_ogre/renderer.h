@@ -37,12 +37,11 @@
 #include <boost/thread/thread.hpp>
 #include <boost/thread/mutex.hpp>
 
-#include <rviz_renderer_interface/irenderer.h>
 #include <rviz_uuid/uuid.h>
 
-namespace rviz_renderer_interface
+namespace ros
 {
-class IRenderLoopListener;
+class CallbackQueue;
 }
 
 namespace rviz_renderer_ogre
@@ -52,28 +51,27 @@ class RenderWindow;
 class Scene;
 class Camera;
 
-class Renderer : public rviz_renderer_interface::IRenderer
+class Renderer
 {
 public:
-  Renderer(const std::string& root_path, bool enable_ogre_log);
+  Renderer(bool enable_ogre_log);
   ~Renderer();
 
   void start();
   void stop();
 
-  virtual rviz_renderer_interface::IRenderWindow* createRenderWindow(const rviz_uuid::UUID& id, const std::string& parent_window, uint32_t width, uint32_t height);
-  virtual void destroyRenderWindow(const rviz_uuid::UUID& id);
+   RenderWindow* createRenderWindow(const rviz_uuid::UUID& id, const std::string& parent_window, uint32_t width, uint32_t height);
+   void destroyRenderWindow(const rviz_uuid::UUID& id);
 
-  virtual void addRenderLoopListener(rviz_renderer_interface::IRenderLoopListener* listener);
-  virtual void removeRenderLoopListener(rviz_renderer_interface::IRenderLoopListener* listener);
+   Scene* createScene(const rviz_uuid::UUID& id);
+   void destroyScene(const rviz_uuid::UUID& id);
+   Scene* getScene(const rviz_uuid::UUID& id);
 
-  virtual rviz_renderer_interface::IScene* createScene(const rviz_uuid::UUID& id);
-  virtual void destroyScene(const rviz_uuid::UUID& id);
-  virtual rviz_renderer_interface::IScene* getScene(const rviz_uuid::UUID& id);
+   RenderWindow* getRenderWindow(const rviz_uuid::UUID& id);
 
-  virtual rviz_renderer_interface::IRenderWindow* getRenderWindow(const rviz_uuid::UUID& id);
+   Camera* getCamera(const rviz_uuid::UUID& id);
 
-  virtual rviz_renderer_interface::ICamera* getCamera(const rviz_uuid::UUID& id);
+   ros::CallbackQueue* getServerThreadCallbackQueue() { return callback_queue_.get(); }
 
 private:
   void init();
@@ -84,11 +82,7 @@ private:
   boost::thread render_thread_;
   bool running_;
   bool first_window_created_;
-  std::string root_path_;
   bool enable_ogre_log_;
-
-  typedef std::vector<rviz_renderer_interface::IRenderLoopListener*> V_RenderLoopListener;
-  V_RenderLoopListener render_loop_listeners_;
 
   typedef boost::shared_ptr<RenderWindow> RenderWindowPtr;
   typedef std::map<rviz_uuid::UUID, RenderWindowPtr> M_RenderWindow;
@@ -97,6 +91,9 @@ private:
   typedef boost::shared_ptr<Scene> ScenePtr;
   typedef std::map<rviz_uuid::UUID, ScenePtr> M_Scene;
   M_Scene scenes_;
+
+  typedef boost::shared_ptr<ros::CallbackQueue> CallbackQueuePtr;
+  CallbackQueuePtr callback_queue_;
 };
 
 } // namespace rviz_renderer_ogre

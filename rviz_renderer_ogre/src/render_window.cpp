@@ -36,7 +36,6 @@
 #include <ros/assert.h>
 
 using namespace rviz_uuid;
-using namespace rviz_renderer_interface;
 
 namespace rviz_renderer_ogre
 {
@@ -71,7 +70,7 @@ void RenderWindow::attachCamera(const UUID& id)
     render_window_->removeAllViewports();
   }
 
-  Camera* cam = static_cast<Camera*>(renderer_->getCamera(id));
+  Camera* cam = renderer_->getCamera(id);
   ROS_ASSERT(cam);
   render_window_->addViewport(cam->getOgreCamera());
 }

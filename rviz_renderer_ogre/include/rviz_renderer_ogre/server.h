@@ -27,29 +27,52 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef RVIZ_IRENDER_WINDOW_H
-#define RVIZ_IRENDER_WINDOW_H
+#ifndef RVIZ_RENDERER_OGRE_SERVER_H
+#define RVIZ_RENDERER_OGRE_SERVER_H
 
-#include <string>
+#include <vector>
+
 #include <ros/types.h>
 
-namespace rviz_uuid
+#include <boost/shared_ptr.hpp>
+
+namespace ros
 {
-class UUID;
+class NodeHandle;
 }
 
-namespace rviz_renderer_interface
+namespace rviz_renderer_ogre
 {
 
-class IRenderWindow
+class Renderer;
+class CameraServer;
+class RenderWindowServer;
+class SceneServer;
+class SimpleShapeServer;
+class TransformNodeServer;
+
+typedef boost::shared_ptr<ros::NodeHandle> NodeHandlePtr;
+
+class Server
 {
 public:
-  virtual const rviz_uuid::UUID& getID() = 0;
-  virtual void resized(uint32_t width, uint32_t height) = 0;
-  virtual void attachCamera(const rviz_uuid::UUID& cam_id) = 0;
+  Server(Renderer* renderer, const ros::NodeHandle& nh);
+  ~Server();
+
+private:
+
+  Renderer* renderer_;
+
+  boost::shared_ptr<CameraServer> camera_server_;
+  boost::shared_ptr<RenderWindowServer> render_window_server_;
+  boost::shared_ptr<SceneServer> scene_server_;
+  boost::shared_ptr<SimpleShapeServer> simple_shape_server_;
+  boost::shared_ptr<TransformNodeServer> transform_node_server_;
+
+  NodeHandlePtr nh_;
 };
 
-} // namespace rviz_renderer_interface
+} // namespace rviz_renderer_ogre
 
-#endif // RVIZ_IRENDER_WINDOW_H
 
+#endif // RVIZ_RENDERER_OGRE_SERVER_H

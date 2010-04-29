@@ -30,8 +30,6 @@
 #ifndef RVIZ_RENDERER_OGRE_SIMPLE_SHAPE_H
 #define RVIZ_RENDERER_OGRE_SIMPLE_SHAPE_H
 
-#include <rviz_renderer_interface/isimple_shape.h>
-
 namespace Ogre
 {
 class SceneManager;
@@ -39,23 +37,34 @@ class Entity;
 class SceneNode;
 }
 
+namespace rviz_math
+{
+class Vector3;
+class Quaternion;
+}
+
 namespace rviz_renderer_ogre
 {
 
-class SimpleShape : public rviz_renderer_interface::ISimpleShape
+class TransformNode;
+
+class SimpleShape
 {
 public:
-  SimpleShape(Type type, Ogre::SceneManager* scene_manager);
-  ~SimpleShape();
+  enum Type
+  {
+    Cone,
+    Cube,
+    Cylinder,
+    Sphere
+  };
 
-  virtual void setPosition(const rviz_math::Vector3& pos);
-  virtual void setOrientation(const rviz_math::Quaternion& orient);
-  virtual void setScale(const rviz_math::Vector3& scale);
+  SimpleShape(Ogre::SceneManager* scene_manager, Type type, TransformNode* node);
+  ~SimpleShape();
 
 private:
   Ogre::SceneManager* scene_manager_;
   Ogre::Entity* entity_;
-  Ogre::SceneNode* scene_node_;
 };
 
 } // namespace rviz_renderer_ogre

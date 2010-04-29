@@ -27,8 +27,14 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef RVIZ_RENDER_ICAMERA_H
-#define RVIZ_RENDER_ICAMERA_H
+#ifndef RVIZ_RENDERER_OGRE_TRANSFORM_NODE_H
+#define RVIZ_RENDERER_OGRE_TRANSFORM_NODE_H
+
+namespace Ogre
+{
+class SceneManager;
+class SceneNode;
+}
 
 namespace rviz_math
 {
@@ -36,25 +42,27 @@ class Vector3;
 class Quaternion;
 }
 
-namespace rviz_renderer_interface
+namespace rviz_renderer_ogre
 {
 
-class ICamera
+class TransformNode
 {
 public:
-  virtual void setPosition(const rviz_math::Vector3&) = 0;
-  virtual void setOrientation(const rviz_math::Quaternion&) = 0;
-  virtual void lookAt(const rviz_math::Vector3&) = 0;
-  virtual void move(const rviz_math::Vector3&) = 0;
-  virtual void moveRelative(const rviz_math::Vector3&) = 0;
-  virtual void rotate(const rviz_math::Quaternion&) = 0;
-  virtual void setFOVY(float fovy) = 0;
-  virtual void setAspectRatio(float aspect) = 0;
-  virtual void setAutoAspectRatio(bool autoratio) = 0;
-  virtual void setNearClipDistance(float dist) = 0;
-  virtual void setFarClipDistance(float dist) = 0;
+  TransformNode(Ogre::SceneManager* scene_manager, TransformNode* parent);
+  ~TransformNode();
+
+  virtual void setPosition(const rviz_math::Vector3& pos);
+  virtual void setOrientation(const rviz_math::Quaternion& orient);
+  virtual void setScale(const rviz_math::Vector3& scale);
+
+  Ogre::SceneNode* getOgreSceneNode() { return scene_node_; }
+
+private:
+  Ogre::SceneNode* scene_node_;
+  Ogre::SceneManager* scene_manager_;
 };
 
-} // namespace rviz_renderer_interface
+} // namespace rviz_renderer_ogre
 
-#endif // RVIZ_RENDER_ICAMERA_H
+#endif // RVIZ_RENDERER_OGRE_TRANSFORM_NODE_H
+

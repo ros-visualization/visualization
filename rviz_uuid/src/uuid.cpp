@@ -41,6 +41,8 @@ namespace rviz_uuid
 ROS_STATIC_ASSERT(sizeof(uuid_t) == 16);
 ROS_STATIC_ASSERT(sizeof(UUID) == sizeof(uuid_t));
 
+UUID UUID::Null;
+
 UUID UUID::Generate()
 {
   uuid_t native;
@@ -60,6 +62,11 @@ UUID::UUID()
 UUID::UUID(const rviz_msgs::UUID& rhs)
 {
   *this = rhs;
+}
+
+bool UUID::isNull() const
+{
+  return *this == Null;
 }
 
 bool UUID::operator<(const UUID& rhs) const
