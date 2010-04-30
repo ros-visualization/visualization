@@ -31,6 +31,13 @@
 #include "rviz_renderer_client/scene.h"
 #include <rviz_uuid/uuid.h>
 
+#include <rviz_interfaces/Camera.h>
+#include <rviz_interfaces/RenderWindow.h>
+#include <rviz_interfaces/Scene.h>
+#include <rviz_interfaces/SimpleShape.h>
+#include <rviz_interfaces/TransformNode.h>
+#include <rviz_interfaces/SimpleColorMaterial.h>
+
 #include <ros/ros.h>
 
 using namespace rviz_uuid;
@@ -41,6 +48,13 @@ static ros::NodeHandlePtr g_node_handle;
 void rviz_renderer_client::init(const std::string& server_namespace)
 {
   g_node_handle.reset(new ros::NodeHandle(server_namespace));
+
+  rviz_renderer_client::addProxyInterface("camera", rviz_interface_gen::InterfacePtr(new rviz_interfaces::CameraProxy("camera", *g_node_handle)));
+  rviz_renderer_client::addProxyInterface("render_window", rviz_interface_gen::InterfacePtr(new rviz_interfaces::RenderWindowProxy("render_window", *g_node_handle)));
+  rviz_renderer_client::addProxyInterface("scene", rviz_interface_gen::InterfacePtr(new rviz_interfaces::SceneProxy("scene", *g_node_handle)));
+  rviz_renderer_client::addProxyInterface("simple_shape", rviz_interface_gen::InterfacePtr(new rviz_interfaces::SimpleShapeProxy("simple_shape", *g_node_handle)));
+  rviz_renderer_client::addProxyInterface("transform_node", rviz_interface_gen::InterfacePtr(new rviz_interfaces::TransformNodeProxy("transform_node", *g_node_handle)));
+  rviz_renderer_client::addProxyInterface("simple_color_material", rviz_interface_gen::InterfacePtr(new rviz_interfaces::SimpleColorMaterialProxy("simple_color_material", *g_node_handle)));
 }
 
 ros::NodeHandle& rviz_renderer_client::getNodeHandle()
@@ -78,6 +92,7 @@ rviz_interface_gen::Interface* rviz_renderer_client::getProxyInterface(const std
 void rviz_renderer_client::shutdown()
 {
   g_proxies.clear();
+  g_node_handle.reset();
 }
 
 

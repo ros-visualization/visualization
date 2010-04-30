@@ -46,11 +46,15 @@ class Quaternion;
 namespace rviz_renderer_client
 {
 
+class Material;
+
 class SimpleShape : public Object
 {
 public:
   SimpleShape();
   SimpleShape(const rviz_uuid::UUID& scene_id, const rviz_uuid::UUID& id);
+
+  void setMaterial(const Material& mat);
 
 private:
   rviz_uuid::UUID scene_id_;

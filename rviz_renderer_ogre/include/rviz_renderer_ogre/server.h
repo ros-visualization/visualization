@@ -50,6 +50,7 @@ class RenderWindowServer;
 class SceneServer;
 class SimpleShapeServer;
 class TransformNodeServer;
+class SimpleColorMaterialServer;
 
 typedef boost::shared_ptr<ros::NodeHandle> NodeHandlePtr;
 
@@ -68,6 +69,7 @@ private:
   boost::shared_ptr<SceneServer> scene_server_;
   boost::shared_ptr<SimpleShapeServer> simple_shape_server_;
   boost::shared_ptr<TransformNodeServer> transform_node_server_;
+  boost::shared_ptr<SimpleColorMaterialServer> simple_color_material_server_;
 
   NodeHandlePtr nh_;
 };

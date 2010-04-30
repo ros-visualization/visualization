@@ -32,6 +32,9 @@ rosbuild_add_library(${PROJECT_NAME} src/camera.cpp
 									 src/scene.cpp
 									 src/transform_node.cpp
 									 src/simple_shape.cpp
-									 src/server.cpp)
+									 src/material.cpp
+									 src/simple_color_material.cpp
+									 src/server.cpp
+									 src/init.cpp)
 target_link_libraries(${PROJECT_NAME} ${OGRE_LIBRARIES})
 rosbuild_add_boost_directories()

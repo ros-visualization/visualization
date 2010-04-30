@@ -27,34 +27,37 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <rviz_renderer_client/simple_shape.h>
-#include <rviz_renderer_client/init.h>
-#include <rviz_renderer_client/material.h>
+#include <rviz_renderer_ogre/init.h>
+#include <rviz_renderer_ogre/renderer.h>
+#include <rviz_renderer_ogre/server.h>
 
-#include <rviz_math/vector3.h>
-#include <rviz_math/quaternion.h>
+#include <ros/ros.h>
 
-#include <rviz_interfaces/SimpleShape.h>
-
-using namespace rviz_math;
-
-namespace rviz_renderer_client
+namespace rviz_renderer_ogre
 {
-
-SimpleShape::SimpleShape()
-: proxy_(0)
-{}
-
-SimpleShape::SimpleShape(const rviz_uuid::UUID& scene_id, const rviz_uuid::UUID& id)
-: Object(id)
-, scene_id_(scene_id)
-{
-  proxy_ = getProxyInterface<rviz_interfaces::SimpleShapeProxy>("simple_shape");
+Renderer* g_renderer = 0;
+Server* g_server = 0;
 }
 
-void SimpleShape::setMaterial(const Material& mat)
+using namespace rviz_renderer_ogre;
+
+void rviz_renderer_ogre::init(bool enable_ogre_log, const std::string& ns)
 {
-  proxy_->setMaterial(scene_id_, getID(), mat.getID());
+  g_renderer = new Renderer(enable_ogre_log);
+  g_server = new Server(g_renderer, ros::NodeHandle(ns));
+
+  g_renderer->start();
 }
 
-} // namespace rviz_render_client
+void rviz_renderer_ogre::shutdown()
+{
+  g_renderer->stop();
+
+  delete g_server;
+  delete g_renderer;
+}
+
+Renderer* rviz_renderer_ogre::getRenderer()
+{
+  return g_renderer;
+}

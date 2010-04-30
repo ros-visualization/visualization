@@ -20,8 +20,10 @@ include_directories(include)
 
 #common commands for building c++ executables and libraries
 rosbuild_add_library(${PROJECT_NAME} src/init.cpp
+									 src/color.cpp
 									 src/camera.cpp
 									 src/render_window.cpp
 									 src/scene.cpp
 									 src/simple_shape.cpp
-									 src/transform_node.cpp)
+									 src/transform_node.cpp
+									 src/simple_color_material.cpp)

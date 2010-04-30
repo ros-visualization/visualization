@@ -27,34 +27,34 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <rviz_renderer_client/simple_shape.h>
-#include <rviz_renderer_client/init.h>
-#include <rviz_renderer_client/material.h>
+#ifndef RVIZ_RENDERER_OGRE_MATERIAL_H
+#define RVIZ_RENDERER_OGRE_MATERIAL_H
 
-#include <rviz_math/vector3.h>
-#include <rviz_math/quaternion.h>
+#include <OGRE/OgreMaterial.h>
+#include <vector>
 
-#include <rviz_interfaces/SimpleShape.h>
-
-using namespace rviz_math;
-
-namespace rviz_renderer_client
+namespace rviz_renderer_ogre
 {
 
-SimpleShape::SimpleShape()
-: proxy_(0)
-{}
+class Renderable;
 
-SimpleShape::SimpleShape(const rviz_uuid::UUID& scene_id, const rviz_uuid::UUID& id)
-: Object(id)
-, scene_id_(scene_id)
+class Material
 {
-  proxy_ = getProxyInterface<rviz_interfaces::SimpleShapeProxy>("simple_shape");
+public:
+  virtual const Ogre::MaterialPtr& getOgreMaterial() { return material_; }
+  virtual void attachRenderable(Renderable* rend);
+  virtual void detachRenderable(Renderable* rend);
+
+protected:
+  virtual void onRenderableAttached(Renderable* rend) = 0;
+  virtual void onRenderableDetached(Renderable* rend) = 0;
+
+  Ogre::MaterialPtr material_;
+
+  typedef std::vector<Renderable*> V_Renderable;
+  V_Renderable rends_;
+};
+
 }
 
-void SimpleShape::setMaterial(const Material& mat)
-{
-  proxy_->setMaterial(scene_id_, getID(), mat.getID());
-}
-
-} // namespace rviz_render_client
+#endif // RVIZ_RENDERER_OGRE_MATERIAL_H

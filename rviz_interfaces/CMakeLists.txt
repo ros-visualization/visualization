@@ -16,6 +16,7 @@ rviz_add_interface(interfaces/render_window.interface)
 rviz_add_interface(interfaces/scene.interface)
 rviz_add_interface(interfaces/simple_shape.interface)
 rviz_add_interface(interfaces/transform_node.interface)
+rviz_add_interface(interfaces/simple_color_material.interface)
 
 rosbuild_init()
 
@@ -36,5 +37,6 @@ rosbuild_add_library(${PROJECT_NAME} interface_gen/cpp/src/Camera.cpp
 								     interface_gen/cpp/src/Scene.cpp
 								     interface_gen/cpp/src/RenderWindow.cpp
 								     interface_gen/cpp/src/SimpleShape.cpp
-								     interface_gen/cpp/src/TransformNode.cpp)
+								     interface_gen/cpp/src/TransformNode.cpp
+								     interface_gen/cpp/src/SimpleColorMaterial.cpp)
 rosbuild_add_boost_directories()

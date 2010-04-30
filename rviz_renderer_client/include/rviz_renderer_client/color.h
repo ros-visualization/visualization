@@ -27,34 +27,52 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <rviz_renderer_client/simple_shape.h>
-#include <rviz_renderer_client/init.h>
-#include <rviz_renderer_client/material.h>
+#ifndef RVIZ_RENDERER_CLIENT_COLOR_H
+#define RVIZ_RENDERER_CLIENT_COLOR_H
 
-#include <rviz_math/vector3.h>
-#include <rviz_math/quaternion.h>
+#include <ros/message_forward.h>
 
-#include <rviz_interfaces/SimpleShape.h>
-
-using namespace rviz_math;
+namespace std_msgs
+{
+ROS_DECLARE_MESSAGE(ColorRGBA);
+}
 
 namespace rviz_renderer_client
 {
 
-SimpleShape::SimpleShape()
-: proxy_(0)
-{}
-
-SimpleShape::SimpleShape(const rviz_uuid::UUID& scene_id, const rviz_uuid::UUID& id)
-: Object(id)
-, scene_id_(scene_id)
+class Color
 {
-  proxy_ = getProxyInterface<rviz_interfaces::SimpleShapeProxy>("simple_shape");
+public:
+  Color()
+  : r(0.0)
+  , g(0.0)
+  , b(0.0)
+  , a(1.0)
+  {}
+
+  Color(float r, float g, float b)
+  : r(r)
+  , g(g)
+  , b(b)
+  , a(1.0)
+  {}
+
+  Color(float r, float g, float b, float a)
+  : r(r)
+  , g(g)
+  , b(b)
+  , a(a)
+  {}
+
+  Color(const std_msgs::ColorRGBA& c);
+  operator std_msgs::ColorRGBA() const;
+
+  float r;
+  float g;
+  float b;
+  float a;
+};
+
 }
 
-void SimpleShape::setMaterial(const Material& mat)
-{
-  proxy_->setMaterial(scene_id_, getID(), mat.getID());
-}
-
-} // namespace rviz_render_client
+#endif // RVIZ_RENDERER_CLIENT_COLOR_H

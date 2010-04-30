@@ -1,0 +1,25 @@
+vertex_program rviz/SimpleColorVP cg
+{
+  source simple_color.cg
+  entry_point simpleColorVP_main
+  profiles vp20 vs_2_0 arbvp1 vs_1_1
+  
+  default_params
+  {
+    param_named_auto worldviewproj worldviewproj_matrix
+    param_named_auto inv_worldviewproj inverse_worldviewproj_matrix
+  }
+}
+
+fragment_program rviz/SimpleColorFP cg
+{
+  source simple_color.cg
+  entry_point simpleColorFP_main
+  profiles arbfp1 ps_2_0 fp20 fp30 fp40
+  
+  default_params
+  {
+    param_named_auto camera_pos camera_position_object_space
+    param_named_auto color custom 0
+  }
+}

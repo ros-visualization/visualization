@@ -50,6 +50,8 @@ namespace rviz_renderer_ogre
 class RenderWindow;
 class Scene;
 class Camera;
+class Material;
+typedef boost::shared_ptr<Material> MaterialPtr;
 
 class Renderer
 {
@@ -73,6 +75,10 @@ public:
 
    ros::CallbackQueue* getServerThreadCallbackQueue() { return callback_queue_.get(); }
 
+   void addMaterial(const rviz_uuid::UUID& id, const MaterialPtr& mat);
+   void removeMaterial(const rviz_uuid::UUID& id);
+   Material* getMaterial(const rviz_uuid::UUID& id);
+
 private:
   void init();
   void renderThread();
@@ -94,6 +100,9 @@ private:
 
   typedef boost::shared_ptr<ros::CallbackQueue> CallbackQueuePtr;
   CallbackQueuePtr callback_queue_;
+
+  typedef std::map<rviz_uuid::UUID, MaterialPtr> M_Material;
+  M_Material materials_;
 };
 
 } // namespace rviz_renderer_ogre

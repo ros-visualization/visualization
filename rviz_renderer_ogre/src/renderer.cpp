@@ -265,6 +265,29 @@ Camera* Renderer::getCamera(const UUID& id)
   return 0;
 }
 
+void Renderer::addMaterial(const rviz_uuid::UUID& id, const MaterialPtr& mat)
+{
+  materials_[id] = mat;
+}
+
+void Renderer::removeMaterial(const rviz_uuid::UUID& id)
+{
+  materials_.erase(id);
+}
+
+Material* Renderer::getMaterial(const rviz_uuid::UUID& id)
+{
+  M_Material::iterator it = materials_.find(id);
+  if (it == materials_.end())
+  {
+    std::stringstream ss;
+    ss << "Material [" << id << "] does not exist";
+    throw std::runtime_error(ss.str());
+  }
+
+  return it->second.get();
+}
+
 void Renderer::renderThread()
 {
   init();
@@ -277,6 +300,7 @@ void Renderer::renderThread()
   }
 
   scenes_.clear();
+  materials_.clear();
   delete Ogre::Root::getSingletonPtr();
 }
 

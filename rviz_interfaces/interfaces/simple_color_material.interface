@@ -1,0 +1,7 @@
+interface SimpleColorMaterial
+{
+	create(rviz_msgs/UUID id);
+	destroy(rviz_msgs/UUID id);
+	
+	setColor(rviz_msgs/UUID id, std_msgs/ColorRGBA color);
+}

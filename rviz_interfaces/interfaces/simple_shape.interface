@@ -1,4 +1,5 @@
 interface SimpleShape
 {
-	async setType(rviz_msgs/UUID shape_id, string type);
+	async setType(rviz_msgs/UUID scene_id, rviz_msgs/UUID shape_id, string type);
+	async setMaterial(rviz_msgs/UUID scene_id, rviz_msgs/UUID shape_id, rviz_msgs/UUID material_id);
 }

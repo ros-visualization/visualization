@@ -27,34 +27,55 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <rviz_renderer_client/simple_shape.h>
+#include <rviz_renderer_client/simple_color_material.h>
 #include <rviz_renderer_client/init.h>
-#include <rviz_renderer_client/material.h>
+#include <rviz_renderer_client/color.h>
 
 #include <rviz_math/vector3.h>
 #include <rviz_math/quaternion.h>
 
-#include <rviz_interfaces/SimpleShape.h>
+#include <rviz_interfaces/SimpleColorMaterial.h>
 
 using namespace rviz_math;
+using namespace rviz_interfaces;
+using namespace rviz_uuid;
 
 namespace rviz_renderer_client
 {
 
-SimpleShape::SimpleShape()
+SimpleColorMaterial::SimpleColorMaterial()
 : proxy_(0)
 {}
 
-SimpleShape::SimpleShape(const rviz_uuid::UUID& scene_id, const rviz_uuid::UUID& id)
-: Object(id)
-, scene_id_(scene_id)
+SimpleColorMaterial::SimpleColorMaterial(const rviz_uuid::UUID& id)
+: Material(id)
 {
-  proxy_ = getProxyInterface<rviz_interfaces::SimpleShapeProxy>("simple_shape");
+  proxy_ = getProxyInterface<SimpleColorMaterialProxy>("simple_color_material");
 }
 
-void SimpleShape::setMaterial(const Material& mat)
+void SimpleColorMaterial::setColor(const Color& c)
 {
-  proxy_->setMaterial(scene_id_, getID(), mat.getID());
+  proxy_->setColor(getID(), c);
 }
 
-} // namespace rviz_render_client
+void SimpleColorMaterial::setColor(float r, float g, float b, float a)
+{
+  proxy_->setColor(getID(), Color(r, g, b, a));
+}
+
+SimpleColorMaterial createSimpleColorMaterial()
+{
+  rviz_interfaces::SimpleColorMaterialProxy* proxy = getProxyInterface<rviz_interfaces::SimpleColorMaterialProxy>("simple_color_material");
+  UUID id = UUID::Generate();
+  proxy->create(id);
+  return SimpleColorMaterial(id);
+}
+
+void destroySimpleColorMaterial(const SimpleColorMaterial& mat)
+{
+  rviz_interfaces::SimpleColorMaterialProxy* proxy = getProxyInterface<rviz_interfaces::SimpleColorMaterialProxy>("simple_color_material");
+  proxy->destroy(mat.getID());
+}
+
+}
+

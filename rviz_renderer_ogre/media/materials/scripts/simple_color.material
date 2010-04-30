@@ -1,0 +1,36 @@
+material rviz/SimpleColor
+{
+  technique
+  {
+    pass
+    {
+      vertex_program_ref rviz/SimpleColorVP
+      {
+      }
+
+      fragment_program_ref rviz/SimpleColorFP
+      {
+      }
+    }
+  }
+}
+
+material rviz/SimpleColorWithAlpha
+{
+  technique
+  {
+    pass
+    {
+      scene_blend alpha_blend
+      depth_write off
+      
+      vertex_program_ref rviz/SimpleColorVP
+      {
+      }
+
+      fragment_program_ref rviz/SimpleColorFP
+      {
+      }
+    }
+  }
+}

@@ -27,34 +27,25 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <rviz_renderer_client/simple_shape.h>
-#include <rviz_renderer_client/init.h>
-#include <rviz_renderer_client/material.h>
+#ifndef RVIZ_RENDERER_CLIENT_MATERIAL_H
+#define RVIZ_RENDERER_CLIENT_MATERIAL_H
 
-#include <rviz_math/vector3.h>
-#include <rviz_math/quaternion.h>
-
-#include <rviz_interfaces/SimpleShape.h>
-
-using namespace rviz_math;
+#include "object.h"
 
 namespace rviz_renderer_client
 {
 
-SimpleShape::SimpleShape()
-: proxy_(0)
-{}
-
-SimpleShape::SimpleShape(const rviz_uuid::UUID& scene_id, const rviz_uuid::UUID& id)
-: Object(id)
-, scene_id_(scene_id)
+class Material : public Object
 {
-  proxy_ = getProxyInterface<rviz_interfaces::SimpleShapeProxy>("simple_shape");
+public:
+  Material() {}
+
+  Material(const rviz_uuid::UUID& id)
+  : Object(id)
+  {}
+};
+
 }
 
-void SimpleShape::setMaterial(const Material& mat)
-{
-  proxy_->setMaterial(scene_id_, getID(), mat.getID());
-}
+#endif // RVIZ_RENDERER_CLIENT_MATERIAL_H
 
-} // namespace rviz_render_client

@@ -27,34 +27,28 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <rviz_renderer_client/simple_shape.h>
-#include <rviz_renderer_client/init.h>
-#include <rviz_renderer_client/material.h>
-
-#include <rviz_math/vector3.h>
-#include <rviz_math/quaternion.h>
-
-#include <rviz_interfaces/SimpleShape.h>
-
-using namespace rviz_math;
+#include <rviz_renderer_client/color.h>
+#include <std_msgs/ColorRGBA.h>
 
 namespace rviz_renderer_client
 {
 
-SimpleShape::SimpleShape()
-: proxy_(0)
-{}
-
-SimpleShape::SimpleShape(const rviz_uuid::UUID& scene_id, const rviz_uuid::UUID& id)
-: Object(id)
-, scene_id_(scene_id)
+Color::Color(const std_msgs::ColorRGBA& c)
+: r(c.r)
+, g(c.g)
+, b(c.b)
+, a(c.a)
 {
-  proxy_ = getProxyInterface<rviz_interfaces::SimpleShapeProxy>("simple_shape");
 }
 
-void SimpleShape::setMaterial(const Material& mat)
+Color::operator std_msgs::ColorRGBA() const
 {
-  proxy_->setMaterial(scene_id_, getID(), mat.getID());
+  std_msgs::ColorRGBA c;
+  c.r = r;
+  c.g = g;
+  c.b = b;
+  c.a = a;
+  return c;
 }
 
-} // namespace rviz_render_client
+} // namespace rviz_renderer_client

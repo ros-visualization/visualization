@@ -27,34 +27,34 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <rviz_renderer_client/simple_shape.h>
-#include <rviz_renderer_client/init.h>
-#include <rviz_renderer_client/material.h>
+#ifndef RVIZ_RENDERER_OGRE_SIMPLE_COLOR_MATERIAL_H
+#define RVIZ_RENDERER_OGRE_SIMPLE_COLOR_MATERIAL_H
 
-#include <rviz_math/vector3.h>
-#include <rviz_math/quaternion.h>
+#include "material.h"
 
-#include <rviz_interfaces/SimpleShape.h>
+#include <OGRE/OgreColourValue.h>
 
-using namespace rviz_math;
-
-namespace rviz_renderer_client
+namespace rviz_renderer_ogre
 {
 
-SimpleShape::SimpleShape()
-: proxy_(0)
-{}
-
-SimpleShape::SimpleShape(const rviz_uuid::UUID& scene_id, const rviz_uuid::UUID& id)
-: Object(id)
-, scene_id_(scene_id)
+class SimpleColorMaterial : public Material
 {
-  proxy_ = getProxyInterface<rviz_interfaces::SimpleShapeProxy>("simple_shape");
+public:
+  SimpleColorMaterial();
+
+  void setColor(const Ogre::ColourValue& color);
+
+protected:
+  virtual void onRenderableAttached(Renderable* rend);
+  virtual void onRenderableDetached(Renderable* rend);
+
+  void getMaterial(bool transparent);
+
+  Ogre::ColourValue color_;
+  bool transparent_;
+};
+
 }
 
-void SimpleShape::setMaterial(const Material& mat)
-{
-  proxy_->setMaterial(scene_id_, getID(), mat.getID());
-}
+#endif // RVIZ_RENDERER_OGRE_MATERIAL_H
 
-} // namespace rviz_render_client

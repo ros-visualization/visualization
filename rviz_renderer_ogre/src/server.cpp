@@ -33,6 +33,7 @@
 #include <rviz_renderer_ogre/scene.h>
 #include <rviz_renderer_ogre/transform_node.h>
 #include <rviz_renderer_ogre/camera.h>
+#include <rviz_renderer_ogre/simple_color_material.h>
 #include <rviz_uuid/uuid.h>
 #include <rviz_math/vector3.h>
 #include <rviz_math/quaternion.h>
@@ -45,6 +46,7 @@
 #include <rviz_interfaces/Scene.h>
 #include <rviz_interfaces/SimpleShape.h>
 #include <rviz_interfaces/TransformNode.h>
+#include <rviz_interfaces/SimpleColorMaterial.h>
 
 using namespace rviz_uuid;
 
@@ -253,6 +255,13 @@ public:
       throw std::runtime_error("Scene [" + UUID(scene_id).toString() + "] does not exist");
     }
 
+    SimpleShape* shape = scene->getSimpleShape(shape_id);
+    Material* mat = shape->getMaterial();
+    if (mat)
+    {
+      mat->detachRenderable(shape);
+    }
+
     scene->destroySimpleShape(shape_id);
   }
 
@@ -291,9 +300,18 @@ public:
   {
   }
 
-  virtual void setType(const rviz_msgs::UUID& id, const std::string& type)
+  virtual void setType(const rviz_msgs::UUID& scene_id, const rviz_msgs::UUID& shape_id, const std::string& type)
   {
 
+  }
+
+  virtual void setMaterial(const rviz_msgs::UUID& scene_id, const rviz_msgs::UUID& shape_id, const rviz_msgs::UUID& material_id)
+  {
+    Scene* scene = renderer_->getScene(scene_id);
+    SimpleShape* shape = scene->getSimpleShape(shape_id);
+    Material* mat = renderer_->getMaterial(material_id);
+    shape->setMaterial(mat);
+    mat->attachRenderable(shape);
   }
 
 private:
@@ -334,9 +352,47 @@ private:
   Renderer* renderer_;
 };
 
+class SimpleColorMaterialServer : public rviz_interfaces::SimpleColorMaterialServer
+{
+public:
+  SimpleColorMaterialServer(Renderer* rend, const std::string& name, const ros::NodeHandle& nh)
+  : rviz_interfaces::SimpleColorMaterialServer(name, nh)
+  , renderer_(rend)
+  {
+  }
+
+  virtual void create(const rviz_msgs::UUID& id)
+  {
+    SimpleColorMaterial* mat = new SimpleColorMaterial();
+    renderer_->addMaterial(id, MaterialPtr(mat));
+  }
+
+  virtual void destroy(const rviz_msgs::UUID& id)
+  {
+    renderer_->removeMaterial(id);
+  }
+
+  virtual void setColor(const rviz_msgs::UUID& id, const std_msgs::ColorRGBA& col)
+  {
+    SimpleColorMaterial* mat = dynamic_cast<SimpleColorMaterial*>(renderer_->getMaterial(id));
+    if (!mat)
+    {
+      std::stringstream ss;
+      ss << "SimpleColorMaterial [" << id << "] does not exist!";
+      throw std::runtime_error(ss.str());
+    }
+
+    mat->setColor(Ogre::ColourValue(col.r, col.g, col.b, col.a));
+  }
+
+private:
+  Renderer* renderer_;
+};
+
+
 Server::Server(Renderer* renderer, const ros::NodeHandle& nh)
 : renderer_(renderer)
-, nh_(new ros::NodeHandle(nh, "renderer"))
+, nh_(new ros::NodeHandle(nh))
 {
   nh_->setCallbackQueue(renderer_->getServerThreadCallbackQueue());
   camera_server_.reset(new CameraServer(renderer_, "camera", *nh_));
@@ -344,6 +400,7 @@ Server::Server(Renderer* renderer, const ros::NodeHandle& nh)
   scene_server_.reset(new SceneServer(renderer_, "scene", *nh_));
   simple_shape_server_.reset(new SimpleShapeServer(renderer_, "simple_shape", *nh_));
   transform_node_server_.reset(new TransformNodeServer(renderer_, "transform_node", *nh_));
+  simple_color_material_server_.reset(new SimpleColorMaterialServer(renderer_, "simple_color_material", *nh_));
 }
 
 Server::~Server()

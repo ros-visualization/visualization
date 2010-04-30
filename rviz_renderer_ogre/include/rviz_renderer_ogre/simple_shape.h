@@ -30,6 +30,8 @@
 #ifndef RVIZ_RENDERER_OGRE_SIMPLE_SHAPE_H
 #define RVIZ_RENDERER_OGRE_SIMPLE_SHAPE_H
 
+#include "renderable.h"
+
 namespace Ogre
 {
 class SceneManager;
@@ -48,7 +50,7 @@ namespace rviz_renderer_ogre
 
 class TransformNode;
 
-class SimpleShape
+class SimpleShape : public Renderable
 {
 public:
   enum Type
@@ -62,9 +64,15 @@ public:
   SimpleShape(Ogre::SceneManager* scene_manager, Type type, TransformNode* node);
   ~SimpleShape();
 
+  virtual Material* getMaterial();
+  virtual void setMaterial(Material* mat);
+  virtual void getOgreRenderables(V_OgreRenderable& rends);
+
 private:
   Ogre::SceneManager* scene_manager_;
   Ogre::Entity* entity_;
+
+  Material* material_;
 };
 
 } // namespace rviz_renderer_ogre

@@ -29,10 +29,14 @@
 
 #include <rviz_renderer_ogre/simple_shape.h>
 #include <rviz_renderer_ogre/transform_node.h>
+#include <rviz_renderer_ogre/material.h>
 
 #include <OGRE/OgreSceneManager.h>
 #include <OGRE/OgreEntity.h>
+#include <OGRE/OgreSubEntity.h>
 #include <OGRE/OgreSceneNode.h>
+
+#include <ros/types.h>
 
 namespace rviz_renderer_ogre
 {
@@ -47,6 +51,7 @@ static const char* g_shape_meshes[] =
 
 SimpleShape::SimpleShape(Ogre::SceneManager* scene_manager, Type type, TransformNode* node)
 : scene_manager_(scene_manager)
+, material_(0)
 {
   std::stringstream ss;
   static size_t count = 0;
@@ -59,6 +64,31 @@ SimpleShape::SimpleShape(Ogre::SceneManager* scene_manager, Type type, Transform
 SimpleShape::~SimpleShape()
 {
   scene_manager_->destroyEntity(entity_);
+}
+
+Material* SimpleShape::getMaterial()
+{
+  return material_;
+}
+
+void SimpleShape::setMaterial(Material* mat)
+{
+  material_ = mat;
+
+  for (uint32_t i = 0; i < entity_->getNumSubEntities(); ++i)
+  {
+    Ogre::SubEntity* sub = entity_->getSubEntity(i);
+    sub->setMaterial(mat->getOgreMaterial());
+  }
+}
+
+void SimpleShape::getOgreRenderables(V_OgreRenderable& rends)
+{
+  for (uint32_t i = 0; i < entity_->getNumSubEntities(); ++i)
+  {
+    Ogre::SubEntity* sub = entity_->getSubEntity(i);
+    rends.push_back(sub);
+  }
 }
 
 } // namespace rviz_renderer_ogre
