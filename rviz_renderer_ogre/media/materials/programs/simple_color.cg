@@ -2,22 +2,19 @@ struct VPOutput
 {
   float4 position : POSITION;
   float4 color : COLOR;
-  float3 pos_in_tex : TEXCOORD0;
-  float3 norm_in_tex : TEXCOORD1;
+  float3 norm_in_tex : TEXCOORD0;
 };
 
 VPOutput simpleColorVP_main(float4 position : POSITION, 
                             float4 color : COLOR,
                             float3 normal : NORMAL, 
                                            
-                            uniform float4x4 worldviewproj,
-                            uniform float4x4 inv_worldviewproj)
+                            uniform float4x4 worldviewproj)
 {
   VPOutput OUT;
   OUT.position = mul(worldviewproj, position);
   OUT.color = color;
   OUT.norm_in_tex = normal;
-  OUT.pos_in_tex = position;
   return OUT;
 }
 
@@ -26,12 +23,11 @@ struct FPOutput
   float4 color : COLOR;
 };
 
-FPOutput simpleColorFP_main(float3 pos : TEXCOORD0,
-                            float3 norm : TEXCOORD1, 
+FPOutput simpleColorFP_main(float3 norm : TEXCOORD0, 
 						                uniform float4 color,
 						                uniform float4 camera_pos)
 {
-  float3 dir = normalize(camera_pos.xyz - pos);
+  float3 dir = normalize(camera_pos.xyz);
   float d = dot(norm, dir);
 
   float3 min_color = max(color.rgb - float3(0.7, 0.7, 0.7), float3(0.0, 0.0, 0.0));

@@ -7,7 +7,6 @@ vertex_program rviz/SimpleColorVP cg
   default_params
   {
     param_named_auto worldviewproj worldviewproj_matrix
-    param_named_auto inv_worldviewproj inverse_worldviewproj_matrix
   }
 }
 
