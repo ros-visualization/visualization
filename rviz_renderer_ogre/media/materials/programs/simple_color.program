@@ -18,7 +18,9 @@ fragment_program rviz/SimpleColorFP cg
   
   default_params
   {
-    param_named_auto camera_pos camera_position_object_space
+    param_named_auto view_dir view_direction
+    param_named_auto view_side view_side_vector
+    param_named_auto view_up view_up_vector
     param_named_auto color custom 0
   }
 }

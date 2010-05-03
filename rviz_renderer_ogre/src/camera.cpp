@@ -44,17 +44,17 @@ Camera::Camera(Ogre::Camera* cam)
 
 void Camera::setPosition(const Vector3& v)
 {
-  cam_->setPosition(fromRobot(v));
+  cam_->setPosition(convert(v));
 }
 
 void Camera::setOrientation(const Quaternion& q)
 {
-  cam_->setOrientation(fromRobot(q));
+  cam_->setOrientation(convert(q));
 }
 
 void Camera::lookAt(const Vector3& v)
 {
-  cam_->lookAt(fromRobot(v));
+  cam_->lookAt(convert(v));
 }
 
 void Camera::setFOVY(float fovy)
@@ -84,17 +84,22 @@ void Camera::setFarClipDistance(float dist)
 
 void Camera::move(const Vector3& v)
 {
-  cam_->move(fromRobot(v));
+  cam_->move(convert(v));
 }
 
 void Camera::moveRelative(const Vector3& v)
 {
-  cam_->moveRelative(fromRobot(v));
+  cam_->moveRelative(convert(v));
 }
 
 void Camera::rotate(const Quaternion& q)
 {
-  cam_->rotate(fromRobot(q));
+  cam_->rotate(convert(q));
+}
+
+void Camera::rotateRelative(const Quaternion& q)
+{
+  cam_->setOrientation(cam_->getOrientation() * convert(q));
 }
 
 } // namespace rviz_renderer_ogre

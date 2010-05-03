@@ -38,6 +38,10 @@
 #include "rviz_math/vector3.h"
 #include "rviz_math/quaternion.h"
 
+// TODO: remove use of these
+#include <OGRE/OgreQuaternion.h>
+#include <OGRE/OgreVector3.h>
+
 #include <ros/package.h>
 #include <ros/time.h>
 
@@ -98,6 +102,11 @@ public:
   MyFrame(wxWindow* parent)
   : wxFrame(parent, -1, _("rviz"), wxDefaultPosition, wxSize(800,600), wxDEFAULT_FRAME_STYLE)
   , private_nh_("~")
+  , left_mouse_down_( false )
+  , middle_mouse_down_( false )
+  , right_mouse_down_( false )
+  , mouse_x_( 0 )
+  , mouse_y_( 0 )
   , timer_(this)
   {
     render_window_ = rviz_renderer_client::createRenderWindow(getOgreHandle(this), 800, 600);
@@ -107,13 +116,13 @@ public:
     render_window_.attachCamera(c);
 
     c.setAutoAspectRatio(true);
-    c.setPosition(Vector3(10, 0, 10));
+    c.setPosition(Vector3(0, 10, 10));
     c.lookAt(Vector3(0, 0, 0));
     camera_ = c;
 
     rviz_renderer_client::SimpleShape shape = s.createSimpleShape("sphere", s.createTransformNode());
     rviz_renderer_client::SimpleColorMaterial mat = rviz_renderer_client::createSimpleColorMaterial();
-    mat.setColor(0.0, 1.0, 1.0, 0.5);
+    mat.setColor(1.0, 1.0, 1.0, 1.0);
     shape.setMaterial(mat);
 
     rviz_renderer_client::TransformNode n = s.createTransformNode();
@@ -139,6 +148,15 @@ public:
 
     Connect(wxEVT_SIZE, wxSizeEventHandler(MyFrame::onSize));
     Connect(wxEVT_TIMER, wxTimerEventHandler(MyFrame::onTimer));
+
+    Connect( wxEVT_LEFT_DOWN, wxMouseEventHandler( MyFrame::onMouseEvents ), NULL, this );
+    Connect( wxEVT_MIDDLE_DOWN, wxMouseEventHandler( MyFrame::onMouseEvents ), NULL, this );
+    Connect( wxEVT_RIGHT_DOWN, wxMouseEventHandler( MyFrame::onMouseEvents ), NULL, this );
+    Connect( wxEVT_MOTION, wxMouseEventHandler( MyFrame::onMouseEvents ), NULL, this );
+    Connect( wxEVT_LEFT_UP, wxMouseEventHandler( MyFrame::onMouseEvents ), NULL, this );
+    Connect( wxEVT_MIDDLE_UP, wxMouseEventHandler( MyFrame::onMouseEvents ), NULL, this );
+    Connect( wxEVT_RIGHT_UP, wxMouseEventHandler( MyFrame::onMouseEvents ), NULL, this );
+    Connect( wxEVT_MOUSEWHEEL, wxMouseEventHandler( MyFrame::onMouseEvents ), NULL, this );
 
     timer_.Start(16);
   }
@@ -171,29 +189,110 @@ public:
     const float factor = 0.01;
     if (wxGetKeyState(WXK_UP))
     {
-      camera_.moveRelative(Vector3(dt * factor, 0.0, 0.0));
+      camera_.moveRelative(Vector3(0.0, 0.0, -dt * factor));
     }
 
     if (wxGetKeyState(WXK_DOWN))
     {
-      camera_.moveRelative(Vector3(-dt * factor, 0.0, 0.0));
+      camera_.moveRelative(Vector3(0.0, 0.0, dt * factor));
     }
 
     if (wxGetKeyState(WXK_LEFT))
     {
-      camera_.moveRelative(Vector3(0.0, dt * factor, 0.0));
+      camera_.moveRelative(Vector3(-dt * factor, 0.0, 0.0));
     }
 
     if (wxGetKeyState(WXK_RIGHT))
     {
-      camera_.moveRelative(Vector3(0.0, -dt * factor, 0.0));
+      camera_.moveRelative(Vector3(dt * factor, 0.0, 0.0));
     }
-}
+  }
+
+  void onMouseEvents( wxMouseEvent& event )
+  {
+   int lastX = mouse_x_;
+   int lastY = mouse_y_;
+
+   mouse_x_ = event.GetX();
+   mouse_y_ = event.GetY();
+
+   if ( event.LeftDown() )
+   {
+     left_mouse_down_ = true;
+     middle_mouse_down_ = false;
+     right_mouse_down_ = false;
+   }
+   else if ( event.MiddleDown() )
+   {
+     left_mouse_down_ = false;
+     middle_mouse_down_ = true;
+     right_mouse_down_ = false;
+   }
+   else if ( event.RightDown() )
+   {
+     left_mouse_down_ = false;
+     middle_mouse_down_ = false;
+     right_mouse_down_ = true;
+   }
+   else if ( event.LeftUp() )
+   {
+     left_mouse_down_ = false;
+   }
+   else if ( event.MiddleUp() )
+   {
+     middle_mouse_down_ = false;
+   }
+   else if ( event.RightUp() )
+   {
+     right_mouse_down_ = false;
+   }
+   else if ( event.Dragging() )
+   {
+     int32_t diff_x = mouse_x_ - lastX;
+     int32_t diff_y = mouse_y_ - lastY;
+
+     bool handled = false;
+     if ( left_mouse_down_ )
+     {
+       Ogre::Quaternion quat, quat2, combined;
+       quat.FromAngleAxis(Ogre::Radian(-diff_y * 0.002), Ogre::Vector3::UNIT_X);
+       quat2.FromAngleAxis(Ogre::Radian(-diff_x * 0.002), Ogre::Vector3::UNIT_Y);
+       combined = quat * quat2;
+       camera_.rotateRelative(rviz_math::Quaternion(combined.x, combined.y, combined.z, combined.w));
+
+       handled = true;
+     }
+     else if ( middle_mouse_down_ )
+     {
+       camera_.moveRelative(rviz_math::Vector3(diff_x * 0.01, -diff_y * 0.01, 0.0));
+
+       handled = true;
+     }
+     else if ( right_mouse_down_ )
+     {
+       camera_.moveRelative(rviz_math::Vector3(0.0, 0.0, diff_y * 0.01));
+
+       handled = true;
+     }
+   }
+
+   if ( event.GetWheelRotation() != 0 )
+   {
+     //camera_->scrollWheel( event.GetWheelRotation(), event.CmdDown(), event.AltDown(), event.ShiftDown() );
+   }
+  }
 
 private:
   ros::NodeHandle private_nh_;
   rviz_renderer_client::Camera camera_;
   rviz_renderer_client::RenderWindow render_window_;
+
+  // Mouse handling
+  bool left_mouse_down_;
+  bool middle_mouse_down_;
+  bool right_mouse_down_;
+  int mouse_x_;
+  int mouse_y_;
 
   wxTimer timer_;
 

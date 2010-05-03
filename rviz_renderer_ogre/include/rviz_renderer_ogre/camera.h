@@ -57,6 +57,7 @@ public:
    void move(const rviz_math::Vector3&);
    void moveRelative(const rviz_math::Vector3&) ;
    void rotate(const rviz_math::Quaternion&);
+   void rotateRelative(const rviz_math::Quaternion&);
    void setFOVY(float fovy);
    void setAspectRatio(float aspect);
    void setAutoAspectRatio(bool autoratio);

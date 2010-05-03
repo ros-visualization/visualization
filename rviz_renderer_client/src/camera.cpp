@@ -80,6 +80,11 @@ void Camera::rotate(const Quaternion& q)
   proxy_->rotate(getID(), q);
 }
 
+void Camera::rotateRelative(const Quaternion& q)
+{
+  proxy_->rotateRelative(getID(), q);
+}
+
 void Camera::setFOVY(float fovy)
 {
   proxy_->setFOVY(getID(), fovy);

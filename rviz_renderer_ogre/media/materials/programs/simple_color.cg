@@ -25,15 +25,26 @@ struct FPOutput
 
 FPOutput simpleColorFP_main(float3 norm : TEXCOORD0, 
 						                uniform float4 color,
-						                uniform float4 camera_pos)
+						                uniform float4 view_dir,
+						                uniform float4 view_side,
+						                uniform float4 view_up)
 {
-  float3 dir = normalize(camera_pos.xyz);
-  float d = dot(norm, dir);
-
-  float3 min_color = max(color.rgb - float3(0.7, 0.7, 0.7), float3(0.0, 0.0, 0.0));
-  
+  float3x3 view_mat = float3x3(view_side.xyz, view_up.xyz, view_dir.xyz);
+  float3 light_vec = mul(view_mat, normalize(float3(1.0, 1.0, -1.0)));
+  float3 dir = light_vec;
+  float ldotn = dot(dir, norm);
+  float b = 0.4;
+  float y = 0.4;
+  float alpha = 0.2;
+  float beta = 0.6;
+  float3 kcool = float3(0.0, 0.0, b) + alpha * color.rgb;
+  float3 kwarm = float3(y, y, 0.0) + beta * color.rgb;
+  float one_plus_ldotn_div_2 = (1 + ldotn)/2.0;
+  float3 I = (one_plus_ldotn_div_2 * kwarm) + (1 - one_plus_ldotn_div_2) * kcool;  
 
   FPOutput OUT;
-  OUT.color = float4(max(color.rgb * d, min_color), color.a);
+  OUT.color = float4(I, color.a);
+  //OUT.color = float4(ldotn, ldotn, ldotn, 1.0);
+  //OUT.color = color;
   return OUT;
 }

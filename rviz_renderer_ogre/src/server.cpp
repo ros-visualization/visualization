@@ -105,6 +105,11 @@ public:
     lookupCamera(id)->rotate(quat);
   }
 
+  virtual void rotateRelative(const rviz_msgs::UUID& id, const geometry_msgs::Quaternion& quat)
+  {
+    lookupCamera(id)->rotateRelative(quat);
+  }
+
   virtual void setFOVY(const rviz_msgs::UUID& id, float fovy)
   {
     lookupCamera(id)->setFOVY(fovy);

@@ -54,19 +54,20 @@ public:
 
   const rviz_uuid::UUID& getSceneID() { return scene_id_; }
 
-  virtual void setPosition(const rviz_math::Vector3& pos);
-  virtual void setOrientation(const rviz_math::Quaternion& orient);
-  virtual void lookAt(const rviz_math::Vector3& point);
-  virtual void move(const rviz_math::Vector3& v);
-  virtual void moveRelative(const rviz_math::Vector3& v);
-  virtual void rotate(const rviz_math::Quaternion& q);
-  virtual void setFOVY(float fovy);
-  virtual void setAspectRatio(float aspect);
-  virtual void setAutoAspectRatio(bool autoaspect);
-  virtual void setNearClipDistance(float near_clip);
-  virtual void setFarClipDistance(float far_clip);
+  void setPosition(const rviz_math::Vector3& pos);
+  void setOrientation(const rviz_math::Quaternion& orient);
+  void lookAt(const rviz_math::Vector3& point);
+  void move(const rviz_math::Vector3& v);
+  void moveRelative(const rviz_math::Vector3& v);
+  void rotate(const rviz_math::Quaternion& q);
+  void rotateRelative(const rviz_math::Quaternion& q);
+  void setFOVY(float fovy);
+  void setAspectRatio(float aspect);
+  void setAutoAspectRatio(bool autoaspect);
+  void setNearClipDistance(float near_clip);
+  void setFarClipDistance(float far_clip);
 
-  virtual void setTransform(const rviz_math::Vector3& pos, const rviz_math::Quaternion& orient);
+  void setTransform(const rviz_math::Vector3& pos, const rviz_math::Quaternion& orient);
 
 private:
   rviz_uuid::UUID scene_id_;
