@@ -3,17 +3,13 @@ float4 deferredGooch98FP_main(
         float3 in_proj: TEXCOORD1,
 
         uniform sampler tex0: register(s0),
-        uniform sampler tex1: register(s1), 
-        uniform float4 view_dir,
-        uniform float4 view_side,
-        uniform float4 view_up) : COLOR 
+        uniform sampler tex1: register(s1)) : COLOR 
 {
   float4 a0 = tex2D(tex0, in_color_uv); // Attribute 0: Diffuse color
   float4 a1 = tex2D(tex1, in_color_uv); // Attribute 1: Normal+depth
   
-  float3x3 view_mat = float3x3(view_side.xyz, view_up.xyz, view_dir.xyz);
-  float3 light_vec = mul(view_mat, normalize(float3(1.0, 1.0, -1.0)));
-  float3 dir = light_vec;
+  float3 light_vec = float3(1.0, 1.0, 1.0);
+  float3 dir = normalize(light_vec);
   float ldotn = dot(dir, a1.xyz);
   float b = 0.4;
   float y = 0.4;

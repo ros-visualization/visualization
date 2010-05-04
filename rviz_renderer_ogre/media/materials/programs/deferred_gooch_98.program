@@ -6,8 +6,5 @@ fragment_program DeferredGooch98FP cg
   
   default_params
   {
-    param_named_auto view_dir view_direction
-    param_named_auto view_side view_side_vector
-    param_named_auto view_up view_up_vector
   }
 }

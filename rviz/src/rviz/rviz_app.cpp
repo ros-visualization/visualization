@@ -184,9 +184,10 @@ public:
 
     ros::WallTime cur = ros::WallTime::now();
     ros::WallDuration diff = cur - last_update_;
+    last_update_ = cur;
     double dt = diff.toSec();
 
-    const float factor = 0.01;
+    const float factor = 1;
     if (wxGetKeyState(WXK_UP))
     {
       camera_.moveRelative(Vector3(0.0, 0.0, -dt * factor));
