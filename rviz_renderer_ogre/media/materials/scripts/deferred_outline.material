@@ -1,0 +1,37 @@
+material DeferredShading/Outline
+{
+  technique
+  {
+    pass
+    {
+      lighting off
+      depth_write off
+      depth_check off
+      cull_hardware none
+      cull_software none
+      alpha_rejection greater_equal 128
+      
+      vertex_program_ref DeferredVP
+      {
+      }
+
+      fragment_program_ref DeferredOutlineFP
+      {
+      }
+      
+      texture_unit
+      {
+        tex_address_mode clamp
+        filtering none
+      }
+      
+      texture_unit
+      {
+        tex_coord_set 1
+        tex_address_mode clamp
+        filtering none
+      }
+    }
+  }
+}
+

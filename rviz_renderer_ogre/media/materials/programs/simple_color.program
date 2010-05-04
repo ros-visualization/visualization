@@ -24,3 +24,29 @@ fragment_program rviz/SimpleColorFP cg
     param_named_auto color custom 0
   }
 }
+
+vertex_program rviz/SimpleColorGBufferVP cg
+{
+  source simple_color.cg
+  entry_point simpleColorGBufferVP_main
+  profiles vp20 vs_2_0 arbvp1 vs_1_1
+  
+  default_params
+  {
+    param_named_auto worldviewproj worldviewproj_matrix
+    param_named_auto worldview worldview_matrix
+  }
+}
+
+fragment_program rviz/SimpleColorGBufferFP cg
+{
+  source simple_color.cg
+  entry_point simpleColorGBufferFP_main
+  profiles arbfp1 ps_2_0 fp20 fp30 fp40
+  
+  default_params
+  {
+    param_named_auto in_color custom 0
+    param_named_auto in_far_clip far_clip_distance
+  }
+}

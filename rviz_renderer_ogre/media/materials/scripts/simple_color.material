@@ -2,13 +2,15 @@ material rviz/SimpleColor
 {
   technique
   {
+    scheme GBuffer
+  
     pass
     {
-      vertex_program_ref rviz/SimpleColorVP
+      vertex_program_ref rviz/SimpleColorGBufferVP
       {
       }
 
-      fragment_program_ref rviz/SimpleColorFP
+      fragment_program_ref rviz/SimpleColorGBufferFP
       {
       }
     }

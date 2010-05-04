@@ -1,0 +1,13 @@
+fragment_program DeferredOutlineFP cg
+{
+  source deferred_outline.cg
+  entry_point fp_main
+  profiles arbfp1 ps_2_0 fp20 fp30 fp40
+  
+  default_params
+  {
+    param_named_auto viewport_size viewport_size
+    //param_named_auto near_clip_dist 
+  }
+}
+

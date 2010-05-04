@@ -1,0 +1,26 @@
+void vp_main(        
+        float4 pos: POSITION,
+        
+        out float4 out_pos: POSITION,
+        out float2 out_tex: TEXCOORD0,
+        
+        out float3 out_ray : TEXCOORD1,
+        
+        uniform float3 farCorner,
+        uniform float flip
+        )
+{
+  // Clean up inaccuracies
+  pos.xy = sign(pos.xy);
+  
+  out_pos = float4(pos.xy, 0, 1);
+  out_pos.y *= flip;
+  
+  // Image-space
+  out_tex.x = 0.5 * (1 + pos.x);
+  out_tex.y = 0.5 * (1 - pos.y);
+  
+  // This ray will be interpolated and will be the ray from the camera
+  // to the far clip plane, per pixel
+  out_ray = farCorner * float3(pos.xy, 1);
+}

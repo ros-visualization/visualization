@@ -32,6 +32,7 @@
 #include "rviz_renderer_ogre/renderer.h"
 
 #include <OGRE/OgreRenderWindow.h>
+#include <OGRE/OgreCompositorManager.h>
 
 #include <ros/assert.h>
 
@@ -72,7 +73,12 @@ void RenderWindow::attachCamera(const UUID& id)
 
   Camera* cam = renderer_->getCamera(id);
   ROS_ASSERT(cam);
-  render_window_->addViewport(cam->getOgreCamera());
+  Ogre::Viewport* vp = render_window_->addViewport(cam->getOgreCamera());
+  ROS_ASSERT(Ogre::CompositorManager::getSingleton().addCompositor(vp, "DeferredShading/GBuffer"));
+  ROS_ASSERT(Ogre::CompositorManager::getSingleton().addCompositor(vp, "DeferredShading/Gooch98"));
+
+  Ogre::CompositorManager::getSingleton().setCompositorEnabled(vp, "DeferredShading/GBuffer", true);
+  Ogre::CompositorManager::getSingleton().setCompositorEnabled(vp, "DeferredShading/Gooch98", true);
 }
 
 } // namespace rviz_renderer_ogre

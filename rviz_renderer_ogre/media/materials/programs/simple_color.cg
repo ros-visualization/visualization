@@ -2,7 +2,7 @@ struct VPOutput
 {
   float4 position : POSITION;
   float4 color : COLOR;
-  float3 norm_in_tex : TEXCOORD0;
+  float3 normal : TEXCOORD0;
 };
 
 VPOutput simpleColorVP_main(float4 position : POSITION, 
@@ -14,20 +14,17 @@ VPOutput simpleColorVP_main(float4 position : POSITION,
   VPOutput OUT;
   OUT.position = mul(worldviewproj, position);
   OUT.color = color;
-  OUT.norm_in_tex = normal;
+  OUT.normal = normal;
   return OUT;
 }
 
-struct FPOutput
-{
-  float4 color : COLOR;
-};
-
-FPOutput simpleColorFP_main(float3 norm : TEXCOORD0, 
-						                uniform float4 color,
-						                uniform float4 view_dir,
-						                uniform float4 view_side,
-						                uniform float4 view_up)
+void simpleColorFP_main(float3 norm : TEXCOORD0, 
+                        out float4 out_color : COLOR0,
+                        out float4 out_color2 : COLOR1,
+				                uniform float4 color,
+				                uniform float4 view_dir,
+				                uniform float4 view_side,
+				                uniform float4 view_up)
 {
   float3x3 view_mat = float3x3(view_side.xyz, view_up.xyz, view_dir.xyz);
   float3 light_vec = mul(view_mat, normalize(float3(1.0, 1.0, -1.0)));
@@ -42,9 +39,42 @@ FPOutput simpleColorFP_main(float3 norm : TEXCOORD0,
   float one_plus_ldotn_div_2 = (1 + ldotn)/2.0;
   float3 I = (one_plus_ldotn_div_2 * kwarm) + (1 - one_plus_ldotn_div_2) * kcool;  
 
-  FPOutput OUT;
-  OUT.color = float4(I, color.a);
-  //OUT.color = float4(ldotn, ldotn, ldotn, 1.0);
-  //OUT.color = color;
-  return OUT;
+  out_color = float4(I, color.a);
 }
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+// GBuffer programs
+///////////////////////////////////////////////////////////////////////////////////////////////////
+
+void simpleColorGBufferVP_main(float4 in_position : POSITION, 
+                                   float3 in_normal : NORMAL, 
+                                   
+                                   out float4 out_position : POSITION,
+                                   out float3 out_normal : TEXCOORD0,
+                                   out float3 out_view_pos : TEXCOORD1,
+                                                 
+                                   uniform float4x4 worldviewproj,
+                                   uniform float4x4 worldview)
+{
+  out_position = mul(worldviewproj, in_position);
+  out_normal = mul(worldview, float4(in_normal, 0.0)).xyz;
+  out_view_pos = mul(worldview, in_position).xyz;
+}
+
+void simpleColorGBufferFP_main(float3 in_normal : TEXCOORD0,
+                               float3 in_view_pos : TEXCOORD1,
+                               
+                               out float4 out_color0 : COLOR0,
+                               out float4 out_color1 : COLOR1,
+                               
+                               uniform float4 in_color,
+                               uniform float in_far_clip)
+{
+  out_color0 = float4(in_color.rgb, 0.0);
+  out_color1.rgb = in_normal;
+  
+  float depth = length(in_view_pos) / in_far_clip;
+  out_color1.a = depth;
+}
+
+

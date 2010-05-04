@@ -1,0 +1,12 @@
+vertex_program DeferredVP cg
+{
+  source deferred_vp.cg
+  entry_point vp_main
+  profiles vp20 vs_2_0 arbvp1 vs_1_1
+  
+  default_params
+  {
+    param_named_auto flip render_target_flipping
+    param_named farCorner float3 1 1 1
+  }
+}

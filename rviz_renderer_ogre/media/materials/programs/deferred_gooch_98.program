@@ -1,0 +1,13 @@
+fragment_program DeferredGooch98FP cg
+{
+  source deferred_gooch_98.cg
+  entry_point deferredGooch98FP_main
+  profiles arbfp1 ps_2_0 fp20 fp30 fp40
+  
+  default_params
+  {
+    param_named_auto view_dir view_direction
+    param_named_auto view_side view_side_vector
+    param_named_auto view_up view_up_vector
+  }
+}

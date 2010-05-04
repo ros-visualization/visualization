@@ -137,6 +137,7 @@ void Renderer::oneTimeInit()
   Ogre::ResourceGroupManager::getSingleton().addResourceLocation( pkg_path + "/media/models", "FileSystem", ROS_PACKAGE_NAME );
   Ogre::ResourceGroupManager::getSingleton().addResourceLocation( pkg_path + "/media/materials/programs", "FileSystem", ROS_PACKAGE_NAME );
   Ogre::ResourceGroupManager::getSingleton().addResourceLocation( pkg_path + "/media/materials/scripts", "FileSystem", ROS_PACKAGE_NAME );
+  Ogre::ResourceGroupManager::getSingleton().addResourceLocation( pkg_path + "/media/compositors", "FileSystem", ROS_PACKAGE_NAME );
   Ogre::ResourceGroupManager::getSingleton().initialiseAllResourceGroups();
 }
 

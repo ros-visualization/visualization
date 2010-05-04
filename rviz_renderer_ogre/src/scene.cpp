@@ -64,6 +64,7 @@ Camera* Scene::createCamera(const UUID& id)
   ogre_cam->setPosition(0, 10, 10);
   ogre_cam->lookAt(0, 0, 0);
   ogre_cam->setNearClipDistance(0.01);
+  ogre_cam->setFarClipDistance(1000.0);
 
   CameraPtr cam(new Camera(ogre_cam));
   cameras_[id] = cam;
