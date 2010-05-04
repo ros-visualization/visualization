@@ -116,7 +116,7 @@ public:
     render_window_.attachCamera(c);
 
     c.setAutoAspectRatio(true);
-    c.setPosition(Vector3(0, 10, 10));
+    c.setPosition(Vector3(0, 0, 10));
     c.lookAt(Vector3(0, 0, 0));
     camera_ = c;
 
@@ -145,6 +145,20 @@ public:
     mat = rviz_renderer_client::createSimpleColorMaterial();
     mat.setColor(1.0, 0.0, 0.0, 1.0);
     shape.setMaterial(mat);
+
+    for (uint32_t x = 0; x < 10; ++x)
+    {
+      for (uint32_t y = 0; y < 10; ++y)
+      {
+        for (uint32_t z = 0; z < 10; ++z)
+        {
+          n = s.createTransformNode();
+          n.setPosition(x + 10, y, z);
+          shape = s.createSimpleShape("sphere", n);
+          shape.setMaterial(mat);
+        }
+      }
+    }
 
     Connect(wxEVT_SIZE, wxSizeEventHandler(MyFrame::onSize));
     Connect(wxEVT_TIMER, wxTimerEventHandler(MyFrame::onTimer));

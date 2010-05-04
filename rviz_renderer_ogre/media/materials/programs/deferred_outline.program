@@ -6,8 +6,8 @@ fragment_program DeferredOutlineFP cg
   
   default_params
   {
-    param_named_auto viewport_size viewport_size
-    //param_named_auto near_clip_dist 
+    param_named_auto in_viewport_size viewport_size
+    param_named_auto in_far_clip_dist far_clip_distance 
   }
 }
 

@@ -1,3 +1,5 @@
+#include "gooch_98.cg"
+
 struct VPOutput
 {
   float4 position : POSITION;
@@ -28,18 +30,7 @@ void simpleColorFP_main(float3 norm : TEXCOORD0,
 {
   float3x3 view_mat = float3x3(view_side.xyz, view_up.xyz, view_dir.xyz);
   float3 light_vec = mul(view_mat, normalize(float3(1.0, 1.0, -1.0)));
-  float3 dir = light_vec;
-  float ldotn = dot(dir, norm);
-  float b = 0.4;
-  float y = 0.4;
-  float alpha = 0.2;
-  float beta = 0.6;
-  float3 kcool = float3(0.0, 0.0, b) + alpha * color.rgb;
-  float3 kwarm = float3(y, y, 0.0) + beta * color.rgb;
-  float one_plus_ldotn_div_2 = (1 + ldotn)/2.0;
-  float3 I = (one_plus_ldotn_div_2 * kwarm) + (1 - one_plus_ldotn_div_2) * kcool;  
-
-  out_color = float4(I, color.a);
+  out_color = float4(gooch98(norm, color.rgb, light_vec), color.a);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////

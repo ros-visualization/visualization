@@ -1,0 +1,15 @@
+float3 gooch98(float3 color, float3 normal, float3 light_vector)
+{
+  float3 dir = light_vector;
+  float ldotn = dot(dir, normal);
+  float b = 0.4;
+  float y = 0.4;
+  float alpha = 0.2;
+  float beta = 0.6;
+  float3 kcool = float3(0.0, 0.0, b) + alpha * color;
+  float3 kwarm = float3(y, y, 0.0) + beta * color;
+  float one_plus_ldotn_div_2 = (1 + ldotn)/2.0;
+  float3 I = (one_plus_ldotn_div_2 * kwarm) + (1 - one_plus_ldotn_div_2) * kcool;  
+  
+  return I;
+}

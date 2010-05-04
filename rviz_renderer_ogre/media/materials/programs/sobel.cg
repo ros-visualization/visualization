@@ -1,0 +1,10 @@
+float sobel(float ul, float um, float ur,
+            float ml, float mm, float mr,
+            float ll, float lm, float lr,
+            float scale)
+{
+  float horiz = ur + 2*mr + lr - ul - 2*ml - ll;
+  float vert = ul + 2*um + ur - ll - 2*lm - lr;
+  
+  return saturate(scale * (abs(horiz) + abs(vert)));
+}
