@@ -260,13 +260,6 @@ public:
       throw std::runtime_error("Scene [" + UUID(scene_id).toString() + "] does not exist");
     }
 
-    SimpleShape* shape = scene->getSimpleShape(shape_id);
-    Material* mat = shape->getMaterial();
-    if (mat)
-    {
-      mat->detachRenderable(shape);
-    }
-
     scene->destroySimpleShape(shape_id);
   }
 
@@ -310,13 +303,11 @@ public:
 
   }
 
-  virtual void setMaterial(const rviz_msgs::UUID& scene_id, const rviz_msgs::UUID& shape_id, const rviz_msgs::UUID& material_id)
+  virtual void setColor(const rviz_msgs::UUID& scene_id, const rviz_msgs::UUID& shape_id, const std_msgs::ColorRGBA& col)
   {
     Scene* scene = renderer_->getScene(scene_id);
     SimpleShape* shape = scene->getSimpleShape(shape_id);
-    Material* mat = renderer_->getMaterial(material_id);
-    shape->setMaterial(mat);
-    mat->attachRenderable(shape);
+    shape->setColor(Ogre::ColourValue(col.r, col.g, col.b, col.a));
   }
 
 private:

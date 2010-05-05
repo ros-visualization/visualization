@@ -121,30 +121,22 @@ public:
     camera_ = c;
 
     rviz_renderer_client::SimpleShape shape = s.createSimpleShape("sphere", s.createTransformNode());
-    rviz_renderer_client::SimpleColorMaterial mat = rviz_renderer_client::createSimpleColorMaterial();
-    mat.setColor(1.0, 1.0, 1.0, 1.0);
-    shape.setMaterial(mat);
+    shape.setColor(1.0, 1.0, 1.0, 1.0);
 
     rviz_renderer_client::TransformNode n = s.createTransformNode();
     n.setPosition(2, 0, 0);
     shape = s.createSimpleShape("cube", n);
-    mat = rviz_renderer_client::createSimpleColorMaterial();
-    mat.setColor(0.0, 1.0, 0.0, 1.0);
-    shape.setMaterial(mat);
+    shape.setColor(0.0, 1.0, 0.0, 1.0);
 
     n = s.createTransformNode();
     n.setPosition(-2, 0, 0);
     shape = s.createSimpleShape("cylinder", n);
-    mat = rviz_renderer_client::createSimpleColorMaterial();
-    mat.setColor(0.0, 0.0, 1.0, 1.0);
-    shape.setMaterial(mat);
+    shape.setColor(0.0, 0.0, 1.0, 1.0);
 
     n = s.createTransformNode();
     n.setPosition(-4, 0, 0);
     shape = s.createSimpleShape("cone", n);
-    mat = rviz_renderer_client::createSimpleColorMaterial();
-    mat.setColor(1.0, 0.0, 0.0, 1.0);
-    shape.setMaterial(mat);
+    shape.setColor(1.0, 0.0, 0.0, 1.0);
 
     for (uint32_t x = 0; x < 10; ++x)
     {
@@ -155,7 +147,7 @@ public:
           n = s.createTransformNode();
           n.setPosition(x + 10, y, z);
           shape = s.createSimpleShape("sphere", n);
-          shape.setMaterial(mat);
+          shape.setColor(1.0, 0.0, 0.0, 1.0);
         }
       }
     }

@@ -29,7 +29,8 @@
 
 #include <rviz_renderer_ogre/simple_shape.h>
 #include <rviz_renderer_ogre/transform_node.h>
-#include <rviz_renderer_ogre/material.h>
+#include <rviz_renderer_ogre/simple_color_material.h>
+#include <rviz_renderer_ogre/mesh_instance.h>
 
 #include <OGRE/OgreSceneManager.h>
 #include <OGRE/OgreEntity.h>
@@ -53,42 +54,23 @@ SimpleShape::SimpleShape(Ogre::SceneManager* scene_manager, Type type, Transform
 : scene_manager_(scene_manager)
 , material_(0)
 {
-  std::stringstream ss;
-  static size_t count = 0;
-  ss << "SimpleShape" << count++;
+  inst_ = new MeshInstance(scene_manager, node, g_shape_meshes[type]);
+  material_ = new SimpleColorMaterial();
 
-  entity_ = scene_manager_->createEntity(ss.str(), g_shape_meshes[type]);
-  node->getOgreSceneNode()->attachObject(entity_);
+  inst_->setMaterial(material_);
+  material_->attachRenderable(inst_);
 }
 
 SimpleShape::~SimpleShape()
 {
-  scene_manager_->destroyEntity(entity_);
+  material_->detachRenderable(inst_);
+  delete inst_;
+  delete material_;
 }
 
-Material* SimpleShape::getMaterial()
+void SimpleShape::setColor(const Ogre::ColourValue& col)
 {
-  return material_;
-}
-
-void SimpleShape::setMaterial(Material* mat)
-{
-  material_ = mat;
-
-  for (uint32_t i = 0; i < entity_->getNumSubEntities(); ++i)
-  {
-    Ogre::SubEntity* sub = entity_->getSubEntity(i);
-    sub->setMaterial(mat->getOgreMaterial());
-  }
-}
-
-void SimpleShape::getOgreRenderables(V_OgreRenderable& rends)
-{
-  for (uint32_t i = 0; i < entity_->getNumSubEntities(); ++i)
-  {
-    Ogre::SubEntity* sub = entity_->getSubEntity(i);
-    rends.push_back(sub);
-  }
+  material_->setColor(col);
 }
 
 } // namespace rviz_renderer_ogre

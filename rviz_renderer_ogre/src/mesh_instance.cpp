@@ -27,40 +27,63 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <rviz_renderer_client/simple_shape.h>
-#include <rviz_renderer_client/init.h>
-#include <rviz_renderer_client/material.h>
-#include <rviz_renderer_client/color.h>
+#include <rviz_renderer_ogre/mesh_instance.h>
+#include <rviz_renderer_ogre/transform_node.h>
+#include <rviz_renderer_ogre/material.h>
 
-#include <rviz_math/vector3.h>
-#include <rviz_math/quaternion.h>
+#include <OGRE/OgreSceneManager.h>
+#include <OGRE/OgreEntity.h>
+#include <OGRE/OgreSubEntity.h>
+#include <OGRE/OgreSceneNode.h>
 
-#include <rviz_interfaces/SimpleShape.h>
+#include <ros/types.h>
 
-using namespace rviz_math;
-
-namespace rviz_renderer_client
+namespace rviz_renderer_ogre
 {
 
-SimpleShape::SimpleShape()
-: proxy_(0)
-{}
-
-SimpleShape::SimpleShape(const rviz_uuid::UUID& scene_id, const rviz_uuid::UUID& id)
-: Object(id)
-, scene_id_(scene_id)
+MeshInstance::MeshInstance(Ogre::SceneManager* scene_manager, TransformNode* node, const std::string& mesh_resource)
+: scene_manager_(scene_manager)
+, material_(0)
 {
-  proxy_ = getProxyInterface<rviz_interfaces::SimpleShapeProxy>("simple_shape");
+  std::stringstream ss;
+  static size_t count = 0;
+  ss << "MeshInstance" << count++;
+
+  entity_ = scene_manager_->createEntity(ss.str(), mesh_resource);
+  node->getOgreSceneNode()->attachObject(entity_);
 }
 
-void SimpleShape::setColor(const Color& col)
+MeshInstance::~MeshInstance()
 {
-  proxy_->setColor(scene_id_, getID(), col);
+  scene_manager_->destroyEntity(entity_);
 }
 
-void SimpleShape::setColor(float r, float g, float b, float a)
+Material* MeshInstance::getMaterial()
 {
-  setColor(Color(r, g, b, a));
+  return material_;
 }
 
-} // namespace rviz_render_client
+void MeshInstance::setMaterial(Material* mat)
+{
+  material_ = mat;
+
+  if (material_)
+  {
+    for (uint32_t i = 0; i < entity_->getNumSubEntities(); ++i)
+    {
+      Ogre::SubEntity* sub = entity_->getSubEntity(i);
+      sub->setMaterial(mat->getOgreMaterial());
+    }
+  }
+}
+
+void MeshInstance::getOgreRenderables(V_OgreRenderable& rends)
+{
+  for (uint32_t i = 0; i < entity_->getNumSubEntities(); ++i)
+  {
+    Ogre::SubEntity* sub = entity_->getSubEntity(i);
+    rends.push_back(sub);
+  }
+}
+
+} // namespace rviz_renderer_ogre

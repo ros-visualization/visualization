@@ -47,6 +47,7 @@ namespace rviz_renderer_client
 {
 
 class Material;
+class Color;
 
 class SimpleShape : public Object
 {
@@ -54,13 +55,14 @@ public:
   SimpleShape();
   SimpleShape(const rviz_uuid::UUID& scene_id, const rviz_uuid::UUID& id);
 
-  void setMaterial(const Material& mat);
+  void setColor(const Color& col);
+  void setColor(float r, float g, float b, float a);
 
 private:
   rviz_uuid::UUID scene_id_;
   rviz_interfaces::SimpleShapeProxy* proxy_;
 };
 
-}
+} // namespace rviz_renderer_client
 
 #endif // RVIZ_RENDERER_CLIENT_SIMPLE_SHAPE_H

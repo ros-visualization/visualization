@@ -27,40 +27,56 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <rviz_renderer_client/simple_shape.h>
-#include <rviz_renderer_client/init.h>
-#include <rviz_renderer_client/material.h>
-#include <rviz_renderer_client/color.h>
+#ifndef RVIZ_RENDERER_OGRE_MESH_INSTANCE_H
+#define RVIZ_RENDERER_OGRE_MESH_INSTANCE_H
 
-#include <rviz_math/vector3.h>
-#include <rviz_math/quaternion.h>
+#include "renderable.h"
 
-#include <rviz_interfaces/SimpleShape.h>
+#include <string>
 
-using namespace rviz_math;
-
-namespace rviz_renderer_client
+namespace Ogre
 {
-
-SimpleShape::SimpleShape()
-: proxy_(0)
-{}
-
-SimpleShape::SimpleShape(const rviz_uuid::UUID& scene_id, const rviz_uuid::UUID& id)
-: Object(id)
-, scene_id_(scene_id)
-{
-  proxy_ = getProxyInterface<rviz_interfaces::SimpleShapeProxy>("simple_shape");
+class SceneManager;
+class Entity;
+class SceneNode;
 }
 
-void SimpleShape::setColor(const Color& col)
+namespace rviz_math
 {
-  proxy_->setColor(scene_id_, getID(), col);
+class Vector3;
+class Quaternion;
 }
 
-void SimpleShape::setColor(float r, float g, float b, float a)
+namespace rviz_renderer_ogre
 {
-  setColor(Color(r, g, b, a));
-}
 
-} // namespace rviz_render_client
+class TransformNode;
+
+class MeshInstance : public Renderable
+{
+public:
+  enum Type
+  {
+    Cone,
+    Cube,
+    Cylinder,
+    Sphere
+  };
+
+  MeshInstance(Ogre::SceneManager* scene_manager, TransformNode* node, const std::string& mesh_resource);
+  ~MeshInstance();
+
+  virtual Material* getMaterial();
+  virtual void setMaterial(Material* mat);
+  virtual void getOgreRenderables(V_OgreRenderable& rends);
+
+private:
+  Ogre::SceneManager* scene_manager_;
+  Ogre::Entity* entity_;
+
+  Material* material_;
+};
+
+} // namespace rviz_renderer_ogre
+
+#endif // RVIZ_RENDERER_OGRE_MESH_INSTANCE_H
