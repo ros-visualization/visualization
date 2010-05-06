@@ -46,18 +46,18 @@ static const char* g_simple_color_alpha_material_name = "rviz/SimpleColorWithAlp
 SimpleColorMaterial::SimpleColorMaterial()
 : transparent_(false)
 {
-  material_ = Ogre::MaterialManager::getSingleton().getByName(g_simple_color_material_name);
+  getMaterial(false);
 }
 
 void SimpleColorMaterial::getMaterial(bool transparent)
 {
   if (transparent)
   {
-    material_ = Ogre::MaterialManager::getSingleton().getByName(g_simple_color_material_name);
+    material_ = Ogre::MaterialManager::getSingleton().getByName(g_simple_color_alpha_material_name);
   }
   else
   {
-    material_ = Ogre::MaterialManager::getSingleton().getByName(g_simple_color_alpha_material_name);
+    material_ = Ogre::MaterialManager::getSingleton().getByName(g_simple_color_material_name);
   }
 }
 

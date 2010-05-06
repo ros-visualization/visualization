@@ -7,6 +7,7 @@ vertex_program rviz/SimpleColorVP cg
   default_params
   {
     param_named_auto worldviewproj worldviewproj_matrix
+    param_named_auto worldview worldview_matrix
   }
 }
 
@@ -18,9 +19,8 @@ fragment_program rviz/SimpleColorFP cg
   
   default_params
   {
-    param_named_auto view_dir view_direction
-    param_named_auto view_side view_side_vector
-    param_named_auto view_up view_up_vector
+    param_named_auto viewport_size viewport_size
+    param_named_auto in_far_clip far_clip_distance
     param_named_auto color custom 0
   }
 }

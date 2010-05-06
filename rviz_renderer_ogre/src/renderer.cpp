@@ -153,6 +153,7 @@ RenderWindow* Renderer::createRenderWindow(const rviz_uuid::UUID& id, const std:
   Ogre::Root* root = Ogre::Root::getSingletonPtr();
   Ogre::NameValuePairList params;
   params["parentWindowHandle"] = parent_window;
+  params["FSAA"] = "8";
 
   std::stringstream id_str;
   id_str << id;

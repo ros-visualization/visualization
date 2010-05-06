@@ -10,8 +10,11 @@ compositor DeferredShading/GBuffer
       input none
       pass clear
       {
-        buffers depth
-        depth_value -1
+        clear
+        {
+          //buffers depth
+          //depth_value -1
+        }
       }
       
       shadows off
@@ -43,12 +46,12 @@ compositor DeferredShading/Gooch98
         input 1 mrt_output 1
       }
       
-      pass render_quad
-      {
-        material DeferredShading/Outline
-        input 0 mrt_output 0
-        input 1 mrt_output 1
-      }
+      //pass render_quad
+      //{
+      //  material DeferredShading/Outline
+      //  input 0 mrt_output 0
+      //  input 1 mrt_output 1
+      //}
     }
   }
 }

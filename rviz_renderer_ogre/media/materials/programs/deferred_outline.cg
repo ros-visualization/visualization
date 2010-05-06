@@ -42,6 +42,7 @@ float4 fp_main(
   float d = saturate(d1 + d2);
   
   return float4(0, 0, 0, d);
+  //return float4(mm.xyz, 1.0);
 }
 
 

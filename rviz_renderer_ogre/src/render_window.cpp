@@ -74,6 +74,7 @@ void RenderWindow::attachCamera(const UUID& id)
   Camera* cam = renderer_->getCamera(id);
   ROS_ASSERT(cam);
   Ogre::Viewport* vp = render_window_->addViewport(cam->getOgreCamera());
+  // TODO: these asserts are bad
   ROS_ASSERT(Ogre::CompositorManager::getSingleton().addCompositor(vp, "DeferredShading/GBuffer"));
   ROS_ASSERT(Ogre::CompositorManager::getSingleton().addCompositor(vp, "DeferredShading/Gooch98"));
 

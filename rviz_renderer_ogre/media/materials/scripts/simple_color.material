@@ -21,10 +21,22 @@ material rviz/SimpleColorWithAlpha
 {
   technique
   {
+    scheme GBuffer
+  
     pass
     {
-      scene_blend alpha_blend
-      depth_write off
+      //scene_blend add
+      //depth_write off
+      //alpha_to_coverage on
+      //alpha_rejection greater_equal 128
+      
+      texture_unit
+      {
+        texture stipple.bmp
+        filtering none
+        tex_address_mode wrap
+        //scale 16 16
+      }
       
       vertex_program_ref rviz/SimpleColorVP
       {

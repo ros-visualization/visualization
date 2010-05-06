@@ -134,9 +134,9 @@ public:
     shape.setColor(0.0, 0.0, 1.0, 1.0);
 
     n = s.createTransformNode();
-    n.setPosition(-4, 0, 0);
+    n.setPosition(-2, 0, 2);
     shape = s.createSimpleShape("cone", n);
-    shape.setColor(1.0, 0.0, 0.0, 1.0);
+    shape.setColor(1.0, 0.0, 0.0, 0.2);
 
     for (uint32_t x = 0; x < 10; ++x)
     {
@@ -147,7 +147,7 @@ public:
           n = s.createTransformNode();
           n.setPosition(x + 10, y, z);
           shape = s.createSimpleShape("sphere", n);
-          shape.setColor(1.0, 0.0, 0.0, 1.0);
+          shape.setColor(1.0, 0.0, 0.0, y * 0.1);
         }
       }
     }
