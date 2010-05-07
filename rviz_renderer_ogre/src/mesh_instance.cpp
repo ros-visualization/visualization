@@ -37,6 +37,7 @@
 #include <OGRE/OgreSceneNode.h>
 
 #include <ros/types.h>
+#include <ros/console.h>
 
 namespace rviz_renderer_ogre
 {
@@ -51,6 +52,10 @@ MeshInstance::MeshInstance(Ogre::SceneManager* scene_manager, TransformNode* nod
 
   entity_ = scene_manager_->createEntity(ss.str(), mesh_resource);
   node->getOgreSceneNode()->attachObject(entity_);
+
+  uint32_t count4 = count;
+  entity_->getSubEntity(0)->setCustomParameter(0, Ogre::Vector4(((count4 >> 24) & 0xff) / 255.0, ((count4 >> 16) & 0xff) / 255.0, ((count4 >> 8) & 0xff) / 255.0, (count4 & 0xff) / 255.0));
+  //entity_->getSubEntity(0)->setCustomParameter(0, Ogre::Vector4(((count4 >> 16) & 0xff) / 255.0, ((count4 >> 8) & 0xff) / 255.0, ((count4 >> 0) & 0xff) / 255.0, 1.0));
 }
 
 MeshInstance::~MeshInstance()

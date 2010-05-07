@@ -21,7 +21,8 @@ fragment_program rviz/SimpleColorFP cg
   {
     param_named_auto viewport_size viewport_size
     param_named_auto in_far_clip far_clip_distance
-    param_named_auto color custom 0
+    param_named_auto object_id custom 0
+    param_named_auto color custom 1
   }
 }
 
@@ -46,7 +47,8 @@ fragment_program rviz/SimpleColorGBufferFP cg
   
   default_params
   {
-    param_named_auto in_color custom 0
+    param_named_auto object_id custom 0
+    param_named_auto in_color custom 1
     param_named_auto in_far_clip far_clip_distance
   }
 }

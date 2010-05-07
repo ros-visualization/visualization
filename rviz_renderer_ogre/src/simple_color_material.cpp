@@ -35,7 +35,8 @@
 #include <OGRE/OgreVector4.h>
 #include <OGRE/OgreRenderable.h>
 
-#define CUSTOM_PARAMETER_COLOR 0
+#define CUSTOM_PARAMETER_OBJECT_ID 0
+#define CUSTOM_PARAMETER_COLOR 1
 
 namespace rviz_renderer_ogre
 {
