@@ -1,0 +1,14 @@
+fragment_program DeferredStippleAlphaBlendFP cg
+{
+  source deferred_stipple_alpha_blend.cg
+  entry_point fp_main
+  profiles arbfp1 ps_2_0 fp20 fp30 fp40
+  
+  default_params
+  {
+    param_named_auto in_viewport_size viewport_size
+    param_named_auto in_far_clip_dist far_clip_distance 
+  }
+}
+
+

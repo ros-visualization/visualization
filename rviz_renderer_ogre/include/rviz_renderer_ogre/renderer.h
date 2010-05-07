@@ -52,6 +52,8 @@ class Scene;
 class Camera;
 class Material;
 typedef boost::shared_ptr<Material> MaterialPtr;
+class DisableRenderingSchemeListener;
+typedef boost::shared_ptr<DisableRenderingSchemeListener> DisableRenderingSchemeListenerPtr;
 
 class Renderer
 {
@@ -103,6 +105,8 @@ private:
 
   typedef std::map<rviz_uuid::UUID, MaterialPtr> M_Material;
   M_Material materials_;
+
+  DisableRenderingSchemeListenerPtr scheme_listener_;
 };
 
 } // namespace rviz_renderer_ogre

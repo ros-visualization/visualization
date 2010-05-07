@@ -1,0 +1,57 @@
+material DeferredShading/GaussianHoriz
+{
+  technique
+  {
+    pass
+    {
+      lighting off
+      depth_write off
+      depth_check off
+      cull_hardware none
+      cull_software none
+      
+      vertex_program_ref DeferredVP
+      {
+      }
+
+      fragment_program_ref GaussianHorizFP
+      {
+      }
+      
+      texture_unit
+      {
+        tex_address_mode clamp
+        filtering none
+      }
+    }
+  }
+}
+
+material DeferredShading/GaussianVert
+{
+  technique
+  {
+    pass
+    {
+      lighting off
+      depth_write off
+      depth_check off
+      cull_hardware none
+      cull_software none
+      
+      vertex_program_ref DeferredVP
+      {
+      }
+
+      fragment_program_ref GaussianVertFP
+      {
+      }
+      
+      texture_unit
+      {
+        tex_address_mode clamp
+        filtering none
+      }
+    }
+  }
+}

@@ -31,6 +31,7 @@
 #include "rviz_renderer_ogre/render_window.h"
 #include "rviz_renderer_ogre/scene.h"
 #include "rviz_renderer_ogre/camera.h"
+#include "rviz_renderer_ogre/disable_rendering_scheme_listener.h"
 
 #include <OGRE/OgreRoot.h>
 #include <OGRE/OgreRenderSystem.h>
@@ -127,10 +128,19 @@ void Renderer::init()
   root->setRenderSystem( render_system );
 
   root->initialise( false );
+
+  scheme_listener_.reset(new DisableRenderingSchemeListener);
+  Ogre::MaterialManager::getSingleton().addListener(scheme_listener_.get(), "GBuffer");
+  Ogre::MaterialManager::getSingleton().addListener(scheme_listener_.get(), "GBufferStippleAlpha");
+
+  Ogre::LogManager::getSingleton().getDefaultLog()->setDebugOutputEnabled(true);
+  Ogre::LogManager::getSingleton().getDefaultLog()->setLogDetail(Ogre::LL_BOREME);
 }
 
 void Renderer::oneTimeInit()
 {
+  Ogre::ResourceGroupManager::getSingleton().createResourceGroup(ROS_PACKAGE_NAME);
+
   std::string pkg_path = ros::package::getPath(ROS_PACKAGE_NAME);
   Ogre::ResourceGroupManager::getSingleton().addResourceLocation( pkg_path + "/media/textures", "FileSystem", ROS_PACKAGE_NAME );
   Ogre::ResourceGroupManager::getSingleton().addResourceLocation( pkg_path + "/media/fonts", "FileSystem", ROS_PACKAGE_NAME );
@@ -139,6 +149,12 @@ void Renderer::oneTimeInit()
   Ogre::ResourceGroupManager::getSingleton().addResourceLocation( pkg_path + "/media/materials/scripts", "FileSystem", ROS_PACKAGE_NAME );
   Ogre::ResourceGroupManager::getSingleton().addResourceLocation( pkg_path + "/media/compositors", "FileSystem", ROS_PACKAGE_NAME );
   Ogre::ResourceGroupManager::getSingleton().initialiseAllResourceGroups();
+
+  // Create our 3d stipple pattern for stipple-alpha
+  Ogre::DataStreamPtr stream = Ogre::ResourceGroupManager::getSingleton().openResource("3d_stipple.bytes", ROS_PACKAGE_NAME);
+  Ogre::Image image;
+  image.loadRawData(stream, 4, 4, 5, Ogre::PF_A8);
+  Ogre::TextureManager::getSingleton().loadImage("3d_stipple", ROS_PACKAGE_NAME, image, Ogre::TEX_TYPE_3D, 0);
 }
 
 RenderWindow* Renderer::createRenderWindow(const rviz_uuid::UUID& id, const std::string& parent_window, uint32_t width, uint32_t height)

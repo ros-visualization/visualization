@@ -136,7 +136,7 @@ public:
     n = s.createTransformNode();
     n.setPosition(-2, 0, 2);
     shape = s.createSimpleShape("cone", n);
-    shape.setColor(1.0, 0.0, 0.0, 0.2);
+    shape.setColor(1.0, 0.0, 0.0, 0.5);
 
     for (uint32_t x = 0; x < 10; ++x)
     {

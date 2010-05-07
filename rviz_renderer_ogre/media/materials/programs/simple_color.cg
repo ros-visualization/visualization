@@ -21,7 +21,7 @@ VPOutput simpleColorVP_main(float4 position : POSITION,
   OUT.position = mul(worldviewproj, position);
   OUT.color = color;
   OUT.normal = normal;
-  OUT.view_pos = position;//view_pos;
+  OUT.view_pos = view_pos;
   return OUT;
 }
 
@@ -36,14 +36,17 @@ void simpleColorFP_main(float3 norm : TEXCOORD0,
 				                uniform float in_far_clip)
 {
 
-  out_color0 = float4(color.rgb, color.a);
+  out_color0 = float4(color.rgb, 1.0);
   out_color1.rgb = norm;
   
   float depth = length(view_pos) / in_far_clip;
   out_color1.a = depth;
   
-  float2 sample_pos = view_pos.xy;//float2(viewport_size.z * screen_pos.x, viewport_size.w * screen_pos.y);
-  float4 stipple = tex2D(tex0, sample_pos * length(view_pos) * 64);
+  //float2 sample_pos = view_pos.xy;//float2(viewport_size.z * screen_pos.x, viewport_size.w * screen_pos.y);
+  //float4 stipple = tex2D(tex0, sample_pos * length(view_pos) * in_far_clip * 16);
+  
+  float2 sample_pos = (screen_pos / 4.0);// 4 == width and height of the stipple texture
+  float4 stipple = tex3D(tex0, float3(sample_pos, 1 - color.a));
   
   discard(stipple.a > color.a);
 }
@@ -76,7 +79,7 @@ void simpleColorGBufferFP_main(float3 in_normal : TEXCOORD0,
                                uniform float4 in_color,
                                uniform float in_far_clip)
 {
-  out_color0 = float4(in_color.rgb, 1.0);
+  out_color0 = float4(in_color.rgb, 0.0);
   out_color1.rgb = in_normal;
   
   float depth = length(in_view_pos) / in_far_clip;

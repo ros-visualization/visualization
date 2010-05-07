@@ -21,7 +21,7 @@ material rviz/SimpleColorWithAlpha
 {
   technique
   {
-    scheme GBuffer
+    scheme GBufferStippleAlpha
   
     pass
     {
@@ -32,10 +32,9 @@ material rviz/SimpleColorWithAlpha
       
       texture_unit
       {
-        texture stipple.bmp
+        texture 3d_stipple
         filtering none
-        tex_address_mode wrap
-        //scale 16 16
+        tex_address_mode wrap wrap clamp
       }
       
       vertex_program_ref rviz/SimpleColorVP

@@ -1,0 +1,104 @@
+// gaussian blur adapted from the Ogre samples
+float4 blur(sampler blur_tex, float2 uv, float pixel_frac, float2 pos[11])
+{
+  //We use the Normal-gauss distribution formula
+  //f(x) being the formula, we used f(0.5)-f(-0.5); f(1.5)-f(0.5)...
+  float sample_pct[11] =
+  {//stddev=2.0
+    0.01222447,
+    0.02783468,
+    0.06559061,
+    0.12097757,
+    0.17466632,
+    
+    0.19741265,
+    
+    0.17466632,
+    0.12097757,
+    0.06559061,
+    0.02783468,
+    0.01222447
+  };
+  
+  float4 samp_max = float4(0, 0, 0, 0);
+  float4 samples[11];
+  for(int i = 0;i < 11; i++)
+  {
+    samples[i] = tex2D(blur_tex, uv + (pos[i] * pixel_frac));
+    samp_max = max(samp_max, samples[i]); 
+  }
+  
+  float4 sum = float4(0, 0, 0, 0);
+  for(int i = 0;i < 11; i++)
+  {
+    float4 sample = samples[i];
+    
+    if (sample.a == 0.0)
+    {
+      sample.a = samples[i];
+      sample.rgb = samp_max.rgb;
+    }
+    sum = sum + (sample * sample_pct[i]);
+  }
+  
+  //return tex2D(blur_tex, uv);
+  return saturate(sum);
+}
+
+float4 blur_horiz(sampler blur_tex, float2 uv, float pixel_frac)
+{
+  float2 pos[11] = 
+  {
+    float2( -5, 0),
+    float2( -4, 0),
+    float2( -3, 0),
+    float2( -2, 0),
+    float2( -1, 0),
+    float2( 0, 0),
+    float2( 1, 0),
+    float2( 2, 0),
+    float2( 3, 0),
+    float2( 4, 0),
+    float2( 5, 0)
+  };
+
+  return blur(blur_tex, uv, pixel_frac, pos);
+}
+
+float4 blur_vert(sampler blur_tex, float2 uv, float pixel_frac)
+{
+  float2 pos[11] = 
+  {
+    float2(0, -5),
+    float2(0, -4),
+    float2(0, -3),
+    float2(0, -2),
+    float2(0, -1),
+    float2(0, 0),
+    float2(0, 1),
+    float2(0, 2),
+    float2(0, 3),
+    float2(0, 4),
+    float2(0, 5)
+  };
+
+  return blur(blur_tex, uv, pixel_frac, pos);
+}
+
+float4 fp_main_horiz(float2 uv: TEXCOORD0, 
+
+                     uniform sampler tex0: register(s0), // opaque final render
+                     uniform float4 in_viewport_size) : COLOR 
+{
+  return blur_horiz(tex0, uv, in_viewport_size.z);
+  //return tex2D(tex0, uv);
+}
+
+float4 fp_main_vert(float2 uv: TEXCOORD0, 
+
+                     uniform sampler tex0: register(s0), // opaque final render
+                     uniform float4 in_viewport_size) : COLOR 
+{
+  return blur_vert(tex0, uv, in_viewport_size.z);
+  //return tex2D(tex0, uv);
+}
