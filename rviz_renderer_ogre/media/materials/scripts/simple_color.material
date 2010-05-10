@@ -33,15 +33,16 @@ material rviz/SimpleColorWithAlpha
       texture_unit
       {
         texture 3d_stipple
+        //texture stipple.bmp 2d 0
         filtering none
         tex_address_mode wrap wrap clamp
       }
       
-      vertex_program_ref rviz/SimpleColorVP
+      vertex_program_ref rviz/SimpleColorGBufferStippleAlphaVP
       {
       }
 
-      fragment_program_ref rviz/SimpleColorFP
+      fragment_program_ref rviz/SimpleColorGBufferStippleAlphaFP
       {
       }
     }

@@ -8,8 +8,6 @@
     <license>BSD</license>
     <review status="Doc reviewed" notes=""/>
     <url>http://code.ros.org/wiki/rviz</url>
-    <depend package="ogre"/>
-    <depend package="ogre_tools"/>
     <depend package="roscpp"/>
     <depend package="rosconsole"/>
     <depend package="message_filters"/>

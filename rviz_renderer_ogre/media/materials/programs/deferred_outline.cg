@@ -40,8 +40,13 @@ float4 fp_main(
   
   // Add the two together
   float d = saturate(d1 + d2);
+  discard(d < 1);
+ 
+  float4 col = tex2D(tex0, in_color_uv);
+  //discard(col.a < 1);
+  col.rgb = sign(0.7 - length(float3(col.rgb))) * float3(0.7, 0.7, 0.7) + col.rgb;
   
-  return float4(0, 0, 0, d);
+  return float4(col.rgb, d);
   //return float4(mm.xyz, 1.0);
 }
 

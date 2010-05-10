@@ -77,9 +77,23 @@ void RenderWindow::attachCamera(const UUID& id)
   // TODO: these asserts are bad
   ROS_ASSERT(Ogre::CompositorManager::getSingleton().addCompositor(vp, "DeferredShading/GBuffer"));
   ROS_ASSERT(Ogre::CompositorManager::getSingleton().addCompositor(vp, "DeferredShading/Gooch98"));
+  ROS_ASSERT(Ogre::CompositorManager::getSingleton().addCompositor(vp, "DeferredShading/GBufferStippleAlpha"));
+  ROS_ASSERT(Ogre::CompositorManager::getSingleton().addCompositor(vp, "DeferredShading/Gooch98StippleAlpha"));
 
   Ogre::CompositorManager::getSingleton().setCompositorEnabled(vp, "DeferredShading/GBuffer", true);
   Ogre::CompositorManager::getSingleton().setCompositorEnabled(vp, "DeferredShading/Gooch98", true);
+  Ogre::CompositorManager::getSingleton().setCompositorEnabled(vp, "DeferredShading/GBufferStippleAlpha", true);
+  Ogre::CompositorManager::getSingleton().setCompositorEnabled(vp, "DeferredShading/Gooch98StippleAlpha", true);
+}
+
+void RenderWindow::beginRender()
+{
+  render_window_->update(false);
+}
+
+void RenderWindow::finishRender()
+{
+  render_window_->swapBuffers(false);
 }
 
 } // namespace rviz_renderer_ogre

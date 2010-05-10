@@ -92,7 +92,6 @@ void Renderer::init()
   {
     root->loadPlugin( "RenderSystem_GL" );
     root->loadPlugin( "Plugin_OctreeSceneManager" );
-    root->loadPlugin( "Plugin_ParticleFX" );
     root->loadPlugin( "Plugin_CgProgramManager" );
   }
 
@@ -132,6 +131,7 @@ void Renderer::init()
   scheme_listener_.reset(new DisableRenderingSchemeListener);
   Ogre::MaterialManager::getSingleton().addListener(scheme_listener_.get(), "GBuffer");
   Ogre::MaterialManager::getSingleton().addListener(scheme_listener_.get(), "GBufferStippleAlpha");
+  Ogre::MaterialManager::getSingleton().addListener(scheme_listener_.get(), "AlphaBlend");
 
   Ogre::LogManager::getSingleton().getDefaultLog()->setDebugOutputEnabled(true);
   Ogre::LogManager::getSingleton().getDefaultLog()->setLogDetail(Ogre::LL_BOREME);
@@ -312,9 +312,42 @@ void Renderer::renderThread()
 
   while (running_)
   {
-    Ogre::Root::getSingleton().renderOneFrame();
+    ros::WallTime start = ros::WallTime::now();
 
-    callback_queue_->callAvailable();
+#if 0
+    Ogre::Root::getSingleton().renderOneFrame();
+#else
+    if (Ogre::Root::getSingleton()._fireFrameStarted())
+    {
+
+      M_RenderWindow::iterator it = render_windows_.begin();
+      M_RenderWindow::iterator end = render_windows_.end();
+      for (; it != end; ++it)
+      {
+        const RenderWindowPtr& wnd = it->second;
+        wnd->beginRender();
+      }
+
+      callback_queue_->callAvailable();
+
+      it = render_windows_.begin();
+      end = render_windows_.end();
+      for (; it != end; ++it)
+      {
+        const RenderWindowPtr& wnd = it->second;
+        wnd->finishRender();
+      }
+
+      Ogre::Root::getSingleton()._fireFrameEnded();
+    }
+    else
+#endif
+    {
+      callback_queue_->callAvailable();
+    }
+
+    ros::WallTime end = ros::WallTime::now();
+    //ROS_INFO("Frame took %f", (end - start).toSec());
   }
 
   scenes_.clear();

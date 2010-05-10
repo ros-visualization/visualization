@@ -147,7 +147,7 @@ public:
           n = s.createTransformNode();
           n.setPosition(x + 10, y, z);
           shape = s.createSimpleShape("sphere", n);
-          shape.setColor(1.0, 0.0, 0.0, y * 0.1);
+          shape.setColor(x * 0.1, y * 0.1, z * 0.1, y * 0.1);
         }
       }
     }

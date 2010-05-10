@@ -11,7 +11,7 @@ float4 fp_main(
   float4 trans = tex2D(tex1, in_color_uv);
   
   float4 col = float4((trans.rgb * trans.a) + (opaque.rgb * (1 - trans.a)), 1.0);
-  //col = float4(trans.rgb, 1.0);
+  //col = float4(trans.a, trans.a, trans.a, 1.0);
   return col;
 }
 

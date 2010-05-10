@@ -1,7 +1,7 @@
-vertex_program rviz/SimpleColorVP cg
+vertex_program rviz/SimpleColorGBufferStippleAlphaVP cg
 {
   source simple_color.cg
-  entry_point simpleColorVP_main
+  entry_point simpleColorGBufferStippleAlphaVP_main
   profiles vp20 vs_2_0 arbvp1 vs_1_1
   
   default_params
@@ -11,10 +11,10 @@ vertex_program rviz/SimpleColorVP cg
   }
 }
 
-fragment_program rviz/SimpleColorFP cg
+fragment_program rviz/SimpleColorGBufferStippleAlphaFP cg
 {
   source simple_color.cg
-  entry_point simpleColorFP_main
+  entry_point simpleColorGBufferStippleAlphaFP_main
   profiles arbfp1 ps_2_0 fp20 fp30 fp40
   
   default_params

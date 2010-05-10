@@ -54,6 +54,9 @@ public:
 
   Ogre::RenderWindow* getOgreRenderWindow() { return render_window_; }
 
+  void beginRender();
+  void finishRender();
+
 private:
   rviz_uuid::UUID id_;
   Ogre::RenderWindow* render_window_;

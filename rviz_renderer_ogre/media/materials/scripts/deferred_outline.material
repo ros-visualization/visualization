@@ -9,7 +9,6 @@ material DeferredShading/Outline
       depth_check off
       cull_hardware none
       cull_software none
-      alpha_rejection greater_equal 128
       
       vertex_program_ref DeferredVP
       {

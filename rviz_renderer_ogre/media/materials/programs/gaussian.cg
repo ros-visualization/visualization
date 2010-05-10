@@ -1,65 +1,41 @@
 // gaussian blur adapted from the Ogre samples
-float4 blur(sampler blur_tex, float2 uv, float pixel_frac, float2 pos[11])
+float4 blur(sampler blur_tex, float2 uv, float pixel_frac, float2 pos[7])
 {
-  //We use the Normal-gauss distribution formula
-  //f(x) being the formula, we used f(0.5)-f(-0.5); f(1.5)-f(0.5)...
-  float sample_pct[11] =
-  {//stddev=2.0
-    0.01222447,
-    0.02783468,
-    0.06559061,
-    0.12097757,
-    0.17466632,
-    
-    0.19741265,
-    
-    0.17466632,
-    0.12097757,
-    0.06559061,
-    0.02783468,
-    0.01222447
+  //Calculated from the equation given on http://en.wikipedia.org/wiki/Gaussian_filter
+  // with stddev = 2.0
+  float sample_pct[7] =
+  {
+    0.064759,
+    0.120985,
+    0.176033,
+    0.276446,
+    0.176033,
+    0.120985,
+    0.064759
   };
   
-  float4 samp_max = float4(0, 0, 0, 0);
-  float4 samples[11];
-  for(int i = 0;i < 11; i++)
-  {
-    samples[i] = tex2D(blur_tex, uv + (pos[i] * pixel_frac));
-    samp_max = max(samp_max, samples[i]); 
-  }
-  
   float4 sum = float4(0, 0, 0, 0);
-  for(int i = 0;i < 11; i++)
+  for(int i = 0;i < 7; i++)
   {
-    float4 sample = samples[i];
-    
-    if (sample.a == 0.0)
-    {
-      sample.a = samples[i];
-      sample.rgb = samp_max.rgb;
-    }
+    float4 sample = tex2D(blur_tex, uv + (pos[i] * pixel_frac));
     sum = sum + (sample * sample_pct[i]);
   }
   
-  //return tex2D(blur_tex, uv);
+  return tex2D(blur_tex, uv);
   return saturate(sum);
 }
 
 float4 blur_horiz(sampler blur_tex, float2 uv, float pixel_frac)
 {
-  float2 pos[11] = 
+  float2 pos[7] = 
   {
-    float2( -5, 0),
-    float2( -4, 0),
     float2( -3, 0),
     float2( -2, 0),
     float2( -1, 0),
     float2( 0, 0),
     float2( 1, 0),
     float2( 2, 0),
-    float2( 3, 0),
-    float2( 4, 0),
-    float2( 5, 0)
+    float2( 3, 0)
   };
 
   return blur(blur_tex, uv, pixel_frac, pos);
@@ -67,19 +43,15 @@ float4 blur_horiz(sampler blur_tex, float2 uv, float pixel_frac)
 
 float4 blur_vert(sampler blur_tex, float2 uv, float pixel_frac)
 {
-  float2 pos[11] = 
+  float2 pos[7] = 
   {
-    float2(0, -5),
-    float2(0, -4),
     float2(0, -3),
     float2(0, -2),
     float2(0, -1),
     float2(0, 0),
     float2(0, 1),
     float2(0, 2),
-    float2(0, 3),
-    float2(0, 4),
-    float2(0, 5)
+    float2(0, 3)
   };
 
   return blur(blur_tex, uv, pixel_frac, pos);
