@@ -50,7 +50,7 @@ namespace rviz_renderer_ogre
 {
 
 Renderer::Renderer(bool enable_ogre_log)
-: running_(true)
+: running_(false)
 , first_window_created_(false)
 , enable_ogre_log_(enable_ogre_log)
 , callback_queue_(new ros::CallbackQueue)
@@ -64,14 +64,30 @@ Renderer::~Renderer()
 
 void Renderer::start()
 {
+  if (running_)
+  {
+    return;
+  }
+
+  init();
+
   running_ = true;
   render_thread_ = boost::thread(&Renderer::renderThread, this);
 }
 
 void Renderer::stop()
 {
+  if (!running_)
+  {
+    return;
+  }
+
   running_ = false;
   render_thread_.join();
+
+  scenes_.clear();
+  materials_.clear();
+  delete Ogre::Root::getSingletonPtr();
 }
 
 void Renderer::init()
@@ -79,21 +95,10 @@ void Renderer::init()
   Ogre::LogManager* log_manager = new Ogre::LogManager();
   log_manager->createLog( "Ogre.log", false, false, !enable_ogre_log_ );
 
-  std::string plugin_cfg = "/etc/OGRE/plugins.cfg";
-  bool has_plugin_cfg = false;
-#ifdef HAS_INSTALLED_OGRE
-  has_plugin_cfg = true;
-#else
-  plugin_cfg = "";
-#endif
-
-  Ogre::Root* root = new Ogre::Root( plugin_cfg );
-  if ( !has_plugin_cfg )
-  {
-    root->loadPlugin( "RenderSystem_GL" );
-    root->loadPlugin( "Plugin_OctreeSceneManager" );
-    root->loadPlugin( "Plugin_CgProgramManager" );
-  }
+  Ogre::Root* root = new Ogre::Root();
+  root->loadPlugin( "RenderSystem_GL" );
+  root->loadPlugin( "Plugin_OctreeSceneManager" );
+  root->loadPlugin( "Plugin_CgProgramManager" );
 
   // Taken from gazebo
   Ogre::RenderSystem* render_system = NULL;
@@ -310,7 +315,7 @@ Material* Renderer::getMaterial(const rviz_uuid::UUID& id)
 
 void Renderer::renderThread()
 {
-  init();
+  //init();
 
   while (running_)
   {
@@ -351,10 +356,6 @@ void Renderer::renderThread()
     ros::WallTime end = ros::WallTime::now();
     //ROS_INFO("Frame took %f", (end - start).toSec());
   }
-
-  scenes_.clear();
-  materials_.clear();
-  delete Ogre::Root::getSingletonPtr();
 }
 
 } // namespace rviz_renderer_ogre
