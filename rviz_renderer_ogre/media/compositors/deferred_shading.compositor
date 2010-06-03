@@ -173,6 +173,63 @@ compositor DeferredShading/Gooch98StippleAlpha
   }
 }
 
+compositor DeferredShading/WeightedAverageAlphaBlend
+{
+  technique
+  {
+    texture_ref opaque_output DeferredShading/Gooch98 color_output
+    texture rt0 target_width target_height PF_FLOAT16_RGBA PF_FLOAT16_RGBA
+    
+    target rt0
+    {
+      //input previous
+      
+      pass clear
+      {
+        clear
+        {
+          buffers colour
+        }
+      }
+    
+      material_scheme WeightedAverageAlpha
+      
+      pass render_scene
+      {
+      }
+    }
+    
+    target_output
+    {
+      pass render_quad
+      {
+        material WeightedAverageAlphaBlend
+        input 0 opaque_output 0
+        input 1 rt0 0
+        input 2 rt0 1
+      }
+    }
+  }
+}
+
+compositor DeferredShading/DebugFinalOutput
+{
+  technique
+  {
+    texture_ref opaque_output DeferredShading/Gooch98 color_output
+    
+    target_output
+    {
+      //input previous
+      pass render_quad
+      {
+        material DeferredShading/PassthroughOutput
+        input 0 opaque_output 0
+      }
+    }
+  }
+}
+
 compositor DeferredShading/AlphaBlend
 {
   technique
@@ -181,7 +238,7 @@ compositor DeferredShading/AlphaBlend
     {
       pass render_scene
       {
-        scheme AlphaBlend
+        material_scheme AlphaBlend
       }
     }
   }

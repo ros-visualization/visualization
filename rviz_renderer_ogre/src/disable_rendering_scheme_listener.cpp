@@ -43,10 +43,14 @@ Ogre::Technique* DisableRenderingSchemeListener::handleSchemeNotFound(unsigned s
                                                                        unsigned short lod_index,
                                                                        const Ogre::Renderable* rend)
 {
+#if 01
   Ogre::Technique* t = original_material->createTechnique();
   t->setSchemeName(scheme_name);
-//  Ogre::Pass* p = t->createPass();
+  //Ogre::Pass* p = t->createPass();
   return t;
+#else
+  return 0;
+#endif
 }
 
 } // namespace rviz_renderer_ogre

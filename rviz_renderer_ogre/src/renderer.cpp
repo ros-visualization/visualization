@@ -132,6 +132,7 @@ void Renderer::init()
   Ogre::MaterialManager::getSingleton().addListener(scheme_listener_.get(), "GBuffer");
   Ogre::MaterialManager::getSingleton().addListener(scheme_listener_.get(), "GBufferStippleAlpha");
   Ogre::MaterialManager::getSingleton().addListener(scheme_listener_.get(), "AlphaBlend");
+  Ogre::MaterialManager::getSingleton().addListener(scheme_listener_.get(), "WeightedAverageAlpha");
 
   Ogre::LogManager::getSingleton().getDefaultLog()->setDebugOutputEnabled(true);
   Ogre::LogManager::getSingleton().getDefaultLog()->setLogDetail(Ogre::LL_BOREME);
@@ -183,7 +184,7 @@ RenderWindow* Renderer::createRenderWindow(const rviz_uuid::UUID& id, const std:
 
   win->setActive(true);
   win->setVisible(true);
-  win->setAutoUpdated(true);
+  win->setAutoUpdated(false);
 
   RenderWindowPtr ptr(new RenderWindow(id, win, this));
   render_windows_[id] = ptr;
@@ -207,6 +208,7 @@ void Renderer::destroyRenderWindow(const rviz_uuid::UUID& id)
   Ogre::RenderWindow* ogre_win = win->getOgreRenderWindow();
   ogre_win->destroy();
   root->getRenderSystem()->destroyRenderWindow(ogre_win->getName());
+  render_windows_.erase(it);
 }
 
 RenderWindow* Renderer::getRenderWindow(const rviz_uuid::UUID& id)

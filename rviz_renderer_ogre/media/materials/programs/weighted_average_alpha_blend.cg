@@ -1,0 +1,36 @@
+float4 fp_main(
+        float2 in_color_uv: TEXCOORD0, 
+        float3 in_proj: TEXCOORD1,
+
+        uniform sampler tex0: register(s0), // opaque final render
+        uniform sampler tex1: register(s1), // transparent accum of weighted rgba
+        uniform sampler tex2: register(s2) // transparent accum of # of samples
+        ) : COLOR 
+{
+  float4 opaque = tex2D(tex0, in_color_uv);
+  float4 weighted_rgba = tex2D(tex1, in_color_uv);
+  float4 sample_count = tex2D(tex2, in_color_uv).rrrr;
+  float avg_alpha = weighted_rgba.a / sample_count.r;
+  if (sample_count.r == 0.0)
+  {
+    avg_alpha = 0.0;
+  }
+  float3 avg_color = weighted_rgba.rgb / weighted_rgba.a;
+  if (weighted_rgba.a == 0.0)
+  {
+    avg_color = float3(0.0, 0.0, 0.0);
+  }
+  
+  float alpha_factor = pow(1 - avg_alpha, sample_count);
+  float3 trans_color_factor = (avg_color * avg_alpha) * ((1 - alpha_factor) / avg_alpha);
+  if (avg_alpha == 0.0)
+  {
+    trans_color_factor = float3(0.0, 0.0, 0.0);
+  }
+  float3 color = trans_color_factor + (opaque.rgb * alpha_factor);
+  //return float4(alpha_factor.rrr, 1.0);
+  return float4(color, 1.0);
+}
+
+
+

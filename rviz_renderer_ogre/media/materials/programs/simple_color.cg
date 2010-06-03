@@ -78,3 +78,39 @@ void simpleColorGBufferStippleAlphaFP_main(float3 norm : TEXCOORD0,
   out_color1.rgb = norm;
   out_color1.a = depth;
 }
+
+#include "gooch_98.cg"
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+// Weighted Average Alpha programs
+///////////////////////////////////////////////////////////////////////////////////////////////////
+
+void simpleColorWeightedAverageAlphaVP_main(float4 in_position : POSITION, 
+                                             float3 in_normal : NORMAL, 
+                                             
+                                             out float4 out_position : POSITION,
+                                             out float3 out_normal : TEXCOORD0,
+                                             out float3 out_view_pos : TEXCOORD1,
+                                                           
+                                             uniform float4x4 worldviewproj,
+                                             uniform float4x4 worldview)
+{
+  out_position = mul(worldviewproj, in_position);
+  out_normal = mul(worldview, float4(in_normal, 0.0)).xyz;
+  out_view_pos = mul(worldview, in_position).xyz;
+}
+
+void simpleColorWeightedAverageAlphaFP_main(float3 norm : TEXCOORD0, 
+                                            float4 view_pos : TEXCOORD1,
+                                            out float4 out_color0 : COLOR,
+                                            out float4 out_color1 : COLOR1,
+                                            uniform float4 object_id,
+                                            uniform float4 color)
+{
+  float3 gooch_color = gooch98(color.rgb, norm, float3(1.0, 1.0, 0.0)); 
+  // Accumulate weighted color + alpha
+  out_color0 = float4(gooch_color * color.a, color.a);
+
+  // Accumulate # of samples
+  out_color1 = float4(1.0, 0.0, 0.0, 0.0);
+}

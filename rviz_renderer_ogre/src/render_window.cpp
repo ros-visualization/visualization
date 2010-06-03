@@ -77,18 +77,19 @@ void RenderWindow::attachCamera(const UUID& id)
   // TODO: these asserts are bad
   ROS_ASSERT(Ogre::CompositorManager::getSingleton().addCompositor(vp, "DeferredShading/GBuffer"));
   ROS_ASSERT(Ogre::CompositorManager::getSingleton().addCompositor(vp, "DeferredShading/Gooch98"));
-  ROS_ASSERT(Ogre::CompositorManager::getSingleton().addCompositor(vp, "DeferredShading/GBufferStippleAlpha"));
-  ROS_ASSERT(Ogre::CompositorManager::getSingleton().addCompositor(vp, "DeferredShading/Gooch98StippleAlpha"));
+  //ROS_ASSERT(Ogre::CompositorManager::getSingleton().addCompositor(vp, "DeferredShading/GBufferStippleAlpha"));
+  ROS_ASSERT(Ogre::CompositorManager::getSingleton().addCompositor(vp, "DeferredShading/WeightedAverageAlphaBlend"));
 
   Ogre::CompositorManager::getSingleton().setCompositorEnabled(vp, "DeferredShading/GBuffer", true);
   Ogre::CompositorManager::getSingleton().setCompositorEnabled(vp, "DeferredShading/Gooch98", true);
-  Ogre::CompositorManager::getSingleton().setCompositorEnabled(vp, "DeferredShading/GBufferStippleAlpha", true);
-  Ogre::CompositorManager::getSingleton().setCompositorEnabled(vp, "DeferredShading/Gooch98StippleAlpha", true);
+  //Ogre::CompositorManager::getSingleton().setCompositorEnabled(vp, "DeferredShading/GBufferStippleAlpha", true);
+  Ogre::CompositorManager::getSingleton().setCompositorEnabled(vp, "DeferredShading/WeightedAverageAlphaBlend", true);
 }
 
 void RenderWindow::beginRender()
 {
   render_window_->update(false);
+  //ROS_INFO("%f", render_window_->getLastFPS());
 }
 
 void RenderWindow::finishRender()

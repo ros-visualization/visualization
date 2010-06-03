@@ -1,0 +1,44 @@
+material WeightedAverageAlphaBlend
+{
+  technique
+  {
+    pass
+    {
+      lighting off
+      depth_write off
+      depth_check off
+      cull_hardware none
+      cull_software none
+      
+      vertex_program_ref DeferredVP
+      {
+      }
+
+      fragment_program_ref WeightedAverageAlphaBlendFP
+      {
+      }
+      
+      texture_unit
+      {
+        tex_address_mode clamp
+        filtering none
+      }
+      
+      texture_unit
+      {
+        tex_coord_set 1
+        tex_address_mode clamp
+        filtering none
+      }
+      
+      texture_unit
+      {
+        tex_coord_set 2
+        tex_address_mode clamp
+        filtering none
+      }
+    }
+  }
+}
+
+

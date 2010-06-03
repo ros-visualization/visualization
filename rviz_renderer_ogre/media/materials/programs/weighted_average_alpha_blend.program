@@ -1,0 +1,12 @@
+fragment_program WeightedAverageAlphaBlendFP cg
+{
+  source weighted_average_alpha_blend.cg
+  entry_point fp_main
+  profiles arbfp1 ps_2_0 fp20 fp30 fp40
+  
+  default_params
+  {
+  }
+}
+
+
