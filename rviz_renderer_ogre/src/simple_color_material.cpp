@@ -75,46 +75,34 @@ void SimpleColorMaterial::setColor(const Ogre::ColourValue& color)
     trans_changed = true;
   }
 
-  V_Renderable::iterator it = rends_.begin();
-  V_Renderable::iterator end = rends_.end();
+  M_Renderable::iterator it = rends_.begin();
+  M_Renderable::iterator end = rends_.end();
   for (; it != end; ++it)
   {
-    Renderable* rend = *it;
+    Renderable* rend = it->first;
     if (trans_changed)
     {
-      rend->setMaterial(this);
+      rend->onOgreMaterialChanged(this);
     }
 
-    V_OgreRenderable og_rends;
-    rend->getOgreRenderables(og_rends);
-    V_OgreRenderable::iterator og_it = og_rends.begin();
-    V_OgreRenderable::iterator og_end = og_rends.end();
+    V_OgreRenderable::iterator og_it = it->second.begin();
+    V_OgreRenderable::iterator og_end = it->second.end();
     for (; og_it != og_end; ++og_it)
     {
-      Ogre::Renderable* og_rend = *og_it;
-      og_rend->setCustomParameter(CUSTOM_PARAMETER_COLOR, Ogre::Vector4(color.r, color.g, color.b, color.a));
+      Ogre::Renderable* ogre_rend = *og_it;
+      ogre_rend->setCustomParameter(CUSTOM_PARAMETER_COLOR, Ogre::Vector4(color.r, color.g, color.b, color.a));
     }
   }
 }
 
-void SimpleColorMaterial::onRenderableAttached(Renderable* rend)
+void SimpleColorMaterial::onRenderableAttached(Renderable* rend, Ogre::Renderable* ogre_rend)
 {
-  rend->setMaterial(this);
-
-  V_OgreRenderable og_rends;
-  rend->getOgreRenderables(og_rends);
-  V_OgreRenderable::iterator og_it = og_rends.begin();
-  V_OgreRenderable::iterator og_end = og_rends.end();
-  for (; og_it != og_end; ++og_it)
-  {
-    Ogre::Renderable* og_rend = *og_it;
-    og_rend->setCustomParameter(CUSTOM_PARAMETER_COLOR, Ogre::Vector4(color_.r, color_.g, color_.b, color_.a));
-  }
+  rend->onOgreMaterialChanged(this);
+  ogre_rend->setCustomParameter(CUSTOM_PARAMETER_COLOR, Ogre::Vector4(color_.r, color_.g, color_.b, color_.a));
 }
 
-void SimpleColorMaterial::onRenderableDetached(Renderable* rend)
+void SimpleColorMaterial::onRenderableDetached(Renderable* rend, Ogre::Renderable* ogre_rend)
 {
-  rend->setMaterial(0);
 }
 
 } // namespace rviz_renderer_ogre

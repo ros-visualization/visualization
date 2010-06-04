@@ -44,10 +44,7 @@ typedef std::vector<Ogre::Renderable*> V_OgreRenderable;
 class Renderable
 {
 public:
-  virtual Material* getMaterial() = 0;
-  virtual void setMaterial(Material* mat) = 0;
-
-  virtual void getOgreRenderables(V_OgreRenderable& rends) = 0;
+  virtual void onOgreMaterialChanged(Material* mat) = 0;
 };
 
 }

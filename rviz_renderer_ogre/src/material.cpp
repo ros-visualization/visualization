@@ -32,18 +32,39 @@
 namespace rviz_renderer_ogre
 {
 
-void Material::attachRenderable(Renderable* rend)
+void Material::attachRenderable(Renderable* rend, Ogre::Renderable* ogre_rend)
 {
-  rends_.push_back(rend);
+  rends_[rend].push_back(ogre_rend);
 
-  onRenderableAttached(rend);
+  onRenderableAttached(rend, ogre_rend);
+}
+
+void Material::detachRenderable(Renderable* rend, Ogre::Renderable* ogre_rend)
+{
+  M_Renderable::iterator it = rends_.find(rend);
+  if (it != rends_.end())
+  {
+    V_OgreRenderable& ogre_rends = it->second;
+    std::remove(ogre_rends.begin(), ogre_rends.end(), ogre_rend);
+    ogre_rends.pop_back();
+
+    if (ogre_rends.empty())
+    {
+      rends_.erase(it);
+    }
+
+    onRenderableDetached(rend, ogre_rend);
+  }
 }
 
 void Material::detachRenderable(Renderable* rend)
 {
-  std::remove(rends_.begin(), rends_.end(), rend);
-
-  onRenderableDetached(rend);
+  M_Renderable::iterator it = rends_.find(rend);
+  if (it != rends_.end())
+  {
+    rends_.erase(it);
+    onRenderableDetached(rend, 0);
+  }
 }
 
 } // namespace rviz_renderer_ogre

@@ -38,13 +38,13 @@
 
 #include <ros/types.h>
 #include <ros/console.h>
+#include <ros/assert.h>
 
 namespace rviz_renderer_ogre
 {
 
 MeshInstance::MeshInstance(Ogre::SceneManager* scene_manager, TransformNode* node, const std::string& mesh_resource)
 : scene_manager_(scene_manager)
-, material_(0)
 {
   std::stringstream ss;
   static size_t count = 0;
@@ -55,39 +55,73 @@ MeshInstance::MeshInstance(Ogre::SceneManager* scene_manager, TransformNode* nod
 
   uint32_t count4 = count;
   entity_->getSubEntity(0)->setCustomParameter(0, Ogre::Vector4(((count4 >> 24) & 0xff) / 255.0, ((count4 >> 16) & 0xff) / 255.0, ((count4 >> 8) & 0xff) / 255.0, (count4 & 0xff) / 255.0));
-  //entity_->getSubEntity(0)->setCustomParameter(0, Ogre::Vector4(((count4 >> 16) & 0xff) / 255.0, ((count4 >> 8) & 0xff) / 255.0, ((count4 >> 0) & 0xff) / 255.0, 1.0));
 }
 
 MeshInstance::~MeshInstance()
 {
-  scene_manager_->destroyEntity(entity_);
-}
+  M_Material::iterator it = mat_to_subs_.begin();
+  M_Material::iterator end = mat_to_subs_.end();
+  for (; it != end; ++it)
+  {
+    it->first->detachRenderable(this);
+  }
 
-Material* MeshInstance::getMaterial()
-{
-  return material_;
+  scene_manager_->destroyEntity(entity_);
 }
 
 void MeshInstance::setMaterial(Material* mat)
 {
-  material_ = mat;
+  M_Material::iterator it = mat_to_subs_.begin();
+  M_Material::iterator end = mat_to_subs_.end();
+  for (; it != end; ++it)
+  {
+    it->first->detachRenderable(this);
+  }
 
-  if (material_)
+  mat_to_subs_.clear();
+
+  if (mat)
   {
     for (uint32_t i = 0; i < entity_->getNumSubEntities(); ++i)
     {
       Ogre::SubEntity* sub = entity_->getSubEntity(i);
-      sub->setMaterial(mat->getOgreMaterial());
+      mat_to_subs_[mat].insert(sub);
+      sub_to_mat_[sub] = mat;
+
+      mat->attachRenderable(this, sub);
     }
   }
 }
 
-void MeshInstance::getOgreRenderables(V_OgreRenderable& rends)
+void MeshInstance::setMaterial(uint32_t submesh_index, Material* mat)
 {
-  for (uint32_t i = 0; i < entity_->getNumSubEntities(); ++i)
+  ROS_ASSERT(submesh_index < entity_->getNumSubEntities());
+  Ogre::SubEntity* sub = entity_->getSubEntity(submesh_index);
+  M_SubEntityToMaterial::iterator subent_it = sub_to_mat_.find(sub);
+  if (subent_it != sub_to_mat_.end())
   {
-    Ogre::SubEntity* sub = entity_->getSubEntity(i);
-    rends.push_back(sub);
+    Material* old_mat = subent_it->second;
+    mat_to_subs_[old_mat].erase(sub);
+  }
+
+  sub_to_mat_[sub] = mat;
+  mat_to_subs_[mat].insert(sub);
+  mat->attachRenderable(this, sub);
+}
+
+void MeshInstance::onOgreMaterialChanged(Material* mat)
+{
+  M_Material::iterator it = mat_to_subs_.find(mat);
+  if (it != mat_to_subs_.end())
+  {
+    Material* mat = it->first;
+    S_OgreSubEntity::iterator sub_it = it->second.begin();
+    S_OgreSubEntity::iterator sub_end = it->second.end();
+    for (; sub_it != sub_end; ++sub_it)
+    {
+      Ogre::SubEntity* sub = *sub_it;
+      sub->setMaterial(mat->getOgreMaterial());
+    }
   }
 }
 

@@ -58,12 +58,10 @@ SimpleShape::SimpleShape(Ogre::SceneManager* scene_manager, Type type, Transform
   material_ = new SimpleColorMaterial();
 
   inst_->setMaterial(material_);
-  material_->attachRenderable(inst_);
 }
 
 SimpleShape::~SimpleShape()
 {
-  material_->detachRenderable(inst_);
   delete inst_;
   delete material_;
 }

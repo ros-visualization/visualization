@@ -36,4 +36,4 @@ rosbuild_add_library(${PROJECT_NAME} src/camera.cpp
 target_link_libraries(${PROJECT_NAME})
 rosbuild_add_boost_directories()
 
-rosbuild_add_executable(test_depth_peeling test/test_depth_peeling.cpp)
+#rosbuild_add_executable(test_depth_peeling test/test_depth_peeling.cpp)

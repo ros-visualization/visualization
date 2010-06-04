@@ -32,12 +32,18 @@
 
 #include "renderable.h"
 
+#include <ros/types.h>
+
 #include <string>
+#include <map>
+#include <vector>
+#include <set>
 
 namespace Ogre
 {
 class SceneManager;
 class Entity;
+class SubEntity;
 class SceneNode;
 }
 
@@ -66,15 +72,19 @@ public:
   MeshInstance(Ogre::SceneManager* scene_manager, TransformNode* node, const std::string& mesh_resource);
   ~MeshInstance();
 
-  virtual Material* getMaterial();
-  virtual void setMaterial(Material* mat);
-  virtual void getOgreRenderables(V_OgreRenderable& rends);
+  void setMaterial(Material* mat);
+  void setMaterial(uint32_t submesh_index, Material* mat);
+  virtual void onOgreMaterialChanged(Material* mat);
 
 private:
   Ogre::SceneManager* scene_manager_;
   Ogre::Entity* entity_;
 
-  Material* material_;
+  typedef std::set<Ogre::SubEntity*> S_OgreSubEntity;
+  typedef std::map<Material*, S_OgreSubEntity> M_Material;
+  M_Material mat_to_subs_;
+  typedef std::map<Ogre::SubEntity*, Material*> M_SubEntityToMaterial;
+  M_SubEntityToMaterial sub_to_mat_;
 };
 
 } // namespace rviz_renderer_ogre

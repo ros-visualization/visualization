@@ -31,7 +31,13 @@
 #define RVIZ_RENDERER_OGRE_MATERIAL_H
 
 #include <OGRE/OgreMaterial.h>
+#include <map>
 #include <vector>
+
+namespace Ogre
+{
+class Renderable;
+}
 
 namespace rviz_renderer_ogre
 {
@@ -42,17 +48,19 @@ class Material
 {
 public:
   virtual const Ogre::MaterialPtr& getOgreMaterial() { return material_; }
-  virtual void attachRenderable(Renderable* rend);
+  virtual void attachRenderable(Renderable* rend, Ogre::Renderable* ogre_rend);
+  virtual void detachRenderable(Renderable* rend, Ogre::Renderable* ogre_rend);
   virtual void detachRenderable(Renderable* rend);
 
 protected:
-  virtual void onRenderableAttached(Renderable* rend) = 0;
-  virtual void onRenderableDetached(Renderable* rend) = 0;
+  virtual void onRenderableAttached(Renderable* rend, Ogre::Renderable* ogre_rend) = 0;
+  virtual void onRenderableDetached(Renderable* rend, Ogre::Renderable* ogre_rend) = 0;
 
   Ogre::MaterialPtr material_;
 
-  typedef std::vector<Renderable*> V_Renderable;
-  V_Renderable rends_;
+  typedef std::vector<Ogre::Renderable*> V_OgreRenderable;
+  typedef std::map<Renderable*, V_OgreRenderable> M_Renderable;
+  M_Renderable rends_;
 };
 
 }

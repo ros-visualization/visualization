@@ -45,8 +45,8 @@ public:
   void setColor(const Ogre::ColourValue& color);
 
 protected:
-  virtual void onRenderableAttached(Renderable* rend);
-  virtual void onRenderableDetached(Renderable* rend);
+  virtual void onRenderableAttached(Renderable* rend, Ogre::Renderable* ogre_rend);
+  virtual void onRenderableDetached(Renderable* rend, Ogre::Renderable* ogre_rend);
 
   void getMaterial(bool transparent);
 
