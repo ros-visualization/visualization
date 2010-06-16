@@ -12,6 +12,7 @@
   <depend package="rosconsole"/>
   <depend package="eigen"/>
   <depend package="rviz_msgs"/>
+  <depend package="resource_retriever"/>
 
 </package>
 

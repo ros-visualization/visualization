@@ -27,24 +27,38 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef RVIZ_MESH_LOADER_LOADER_H
-#define RVIZ_MESH_LOADER_LOADER_H
+#ifndef RVIZ_MESH_LOADER_EXCEPTION_H
+#define RVIZ_MESH_LOADER_EXCEPTION_H
 
-#include <ros/types.h>
-#include <ros/message_forward.h>
-#include <cstddef>
-#include <string>
-
-namespace rviz_msgs
-{
-ROS_DECLARE_MESSAGE(Mesh);
-}
+#include <stdexcept>
 
 namespace rviz_mesh_loader
 {
 
-void load(const std::string& resource_path, rviz_msgs::Mesh& out_mesh);
+class Exception : public std::runtime_error
+{
+public:
+  Exception(const std::string& what)
+  : std::runtime_error(what)
+  {}
+};
 
-} // namespace rviz_mesh_loader
+class ParseException : public Exception
+{
+public:
+  ParseException(const std::string& what)
+  : Exception(what)
+  {}
+};
 
-#endif // RVIZ_MESH_LOADER_LOADER_H
+class LoadException : public Exception
+{
+public:
+  LoadException(const std::string& what)
+  : Exception(what)
+  {}
+};
+
+}
+
+#endif // RVIZ_MESH_LOADER_EXCEPTION_H

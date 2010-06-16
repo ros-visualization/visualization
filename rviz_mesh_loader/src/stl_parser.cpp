@@ -50,7 +50,7 @@ void calculateUV(const Eigen::Vector3f& vec, float& u, float& v)
   v /= M_PI;
 }
 
-void parseSTL(uint8_t* buffer, rviz_msgs::Mesh& out_mesh)
+void parseSTL(uint8_t* buffer, size_t buffer_size, const std::string& extension, rviz_msgs::Mesh& out_mesh)
 {
   out_mesh.submeshes.resize(1);
   rviz_msgs::SubMesh& submesh = out_mesh.submeshes[0];

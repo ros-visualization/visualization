@@ -21,5 +21,10 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 #uncomment if you have defined services
 #rosbuild_gensrv()
 
+rosbuild_add_boost_directories()
+
 #common commands for building c++ executables and libraries
-rosbuild_add_library(${PROJECT_NAME} src/stl_parser.cpp)
+rosbuild_add_library(${PROJECT_NAME} src/stl_parser.cpp
+                                     src/assimp_parser.cpp
+                                     src/loader.cpp)
+rosbuild_link_boost(${PROJECT_NAME} filesystem system)

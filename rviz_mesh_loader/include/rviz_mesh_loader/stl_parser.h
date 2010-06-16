@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Willow Garage, Inc.
+ * Copyright (c) 2010, Willow Garage, Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -32,6 +32,8 @@
 
 #include <ros/types.h>
 #include <ros/message_forward.h>
+#include <cstddef>
+#include <string>
 
 namespace rviz_msgs
 {
@@ -41,7 +43,7 @@ ROS_DECLARE_MESSAGE(Mesh);
 namespace rviz_mesh_loader
 {
 
-void parseSTL(uint8_t* buffer, rviz_msgs::Mesh& out_mesh);
+void parseSTL(uint8_t* buffer, size_t buffer_size, const std::string& filename, rviz_msgs::Mesh& out_mesh);
 
 }
 
