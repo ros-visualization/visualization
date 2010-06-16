@@ -1,0 +1,18 @@
+<package>
+  <description brief="rviz_mesh_loader">
+
+     rviz_mesh_loader
+
+  </description>
+  <author>Josh Faust</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/rviz_mesh_loader</url>
+  <depend package="assimp"/>
+  <depend package="rosconsole"/>
+  <depend package="eigen"/>
+  <depend package="rviz_msgs"/>
+
+</package>
+
+
