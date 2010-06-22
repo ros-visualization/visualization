@@ -36,7 +36,6 @@ rosbuild_add_library(${PROJECT_NAME} src/camera.cpp
 									 src/init.cpp
 									 src/disable_rendering_scheme_listener.cpp
 									 src/mesh_loader.cpp)
-target_link_libraries(${PROJECT_NAME})
 rosbuild_add_boost_directories()
-
+rosbuild_link_boost(${PROJECT_NAME} filesystem system)
 #rosbuild_add_executable(test_depth_peeling test/test_depth_peeling.cpp)
