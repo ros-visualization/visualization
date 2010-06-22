@@ -30,9 +30,13 @@
 #ifndef RVIZ_RENDERER_OGRE_MATERIAL_H
 #define RVIZ_RENDERER_OGRE_MATERIAL_H
 
+#include <rviz_uuid/uuid.h>
 #include <OGRE/OgreMaterial.h>
 #include <map>
 #include <vector>
+
+#include <boost/shared_ptr.hpp>
+#include <boost/enable_shared_from_this.hpp>
 
 namespace Ogre
 {
@@ -44,9 +48,15 @@ namespace rviz_renderer_ogre
 
 class Renderable;
 
-class Material
+class Material : public boost::enable_shared_from_this<Material>
 {
 public:
+  Material(const rviz_uuid::UUID& id)
+  : id_(id)
+  {}
+
+  const rviz_uuid::UUID& getID() { return id_; }
+
   virtual const Ogre::MaterialPtr& getOgreMaterial() { return material_; }
   virtual void attachRenderable(Renderable* rend, Ogre::Renderable* ogre_rend);
   virtual void detachRenderable(Renderable* rend, Ogre::Renderable* ogre_rend);
@@ -56,12 +66,15 @@ protected:
   virtual void onRenderableAttached(Renderable* rend, Ogre::Renderable* ogre_rend) = 0;
   virtual void onRenderableDetached(Renderable* rend, Ogre::Renderable* ogre_rend) = 0;
 
+  rviz_uuid::UUID id_;
+
   Ogre::MaterialPtr material_;
 
   typedef std::vector<Ogre::Renderable*> V_OgreRenderable;
   typedef std::map<Renderable*, V_OgreRenderable> M_Renderable;
   M_Renderable rends_;
 };
+typedef boost::shared_ptr<Material> MaterialPtr;
 
 }
 

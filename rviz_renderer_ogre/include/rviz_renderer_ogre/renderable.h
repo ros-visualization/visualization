@@ -27,7 +27,9 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <vector>
+#include <rviz_uuid/uuid.h>
+
+#include <boost/shared_ptr.hpp>
 
 namespace Ogre
 {
@@ -38,13 +40,21 @@ namespace rviz_renderer_ogre
 {
 
 class Material;
-
-typedef std::vector<Ogre::Renderable*> V_OgreRenderable;
+typedef boost::shared_ptr<Material> MaterialPtr;
 
 class Renderable
 {
 public:
-  virtual void onOgreMaterialChanged(Material* mat) = 0;
+  Renderable(const rviz_uuid::UUID& id)
+  : id_(id)
+  {}
+
+  const rviz_uuid::UUID& getID() { return id_; }
+
+  virtual void onOgreMaterialChanged(const MaterialPtr& mat) = 0;
+
+private:
+  rviz_uuid::UUID id_;
 };
 
 }

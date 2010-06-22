@@ -44,8 +44,9 @@ namespace rviz_renderer_ogre
 static const char* g_simple_color_material_name = "rviz/SimpleColor";
 static const char* g_simple_color_alpha_material_name = "rviz/SimpleColorWithAlpha";
 
-SimpleColorMaterial::SimpleColorMaterial()
-: transparent_(false)
+SimpleColorMaterial::SimpleColorMaterial(const rviz_uuid::UUID& id)
+: Material(id)
+, transparent_(false)
 {
   getMaterial(false);
 }
@@ -82,7 +83,7 @@ void SimpleColorMaterial::setColor(const Ogre::ColourValue& color)
     Renderable* rend = it->first;
     if (trans_changed)
     {
-      rend->onOgreMaterialChanged(this);
+      rend->onOgreMaterialChanged(shared_from_this());
     }
 
     V_OgreRenderable::iterator og_it = it->second.begin();
@@ -97,7 +98,7 @@ void SimpleColorMaterial::setColor(const Ogre::ColourValue& color)
 
 void SimpleColorMaterial::onRenderableAttached(Renderable* rend, Ogre::Renderable* ogre_rend)
 {
-  rend->onOgreMaterialChanged(this);
+  rend->onOgreMaterialChanged(shared_from_this());
   ogre_rend->setCustomParameter(CUSTOM_PARAMETER_COLOR, Ogre::Vector4(color_.r, color_.g, color_.b, color_.a));
 }
 

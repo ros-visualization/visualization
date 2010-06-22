@@ -12,7 +12,12 @@
   <depend package="rosconsole"/>
   <depend package="eigen"/>
   <depend package="rviz_msgs"/>
+  <depend package="rviz_uuid"/>
   <depend package="resource_retriever"/>
+  
+  <export>
+    <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -Wl,-rpath,${prefix}/lib -lrviz_mesh_loader"/>
+  </export>
 
 </package>
 

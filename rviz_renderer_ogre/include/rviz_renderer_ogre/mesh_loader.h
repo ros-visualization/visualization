@@ -27,55 +27,18 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef RVIZ_RENDERER_OGRE_SIMPLE_SHAPE_H
-#define RVIZ_RENDERER_OGRE_SIMPLE_SHAPE_H
+#ifndef RVIZ_RENDERER_OGRE_MESH_LOADER_H
+#define RVIZ_RENDERER_OGRE_MESH_LOADER_H
 
 #include <boost/shared_ptr.hpp>
 
-namespace Ogre
-{
-class SceneManager;
-class SceneNode;
-class ColourValue;
-}
-
-namespace rviz_math
-{
-class Vector3;
-class Quaternion;
-}
-
 namespace rviz_renderer_ogre
 {
+class Mesh;
+typedef boost::shared_ptr<Mesh> MeshPtr;
 
-class TransformNode;
-class MeshInstance;
-class SimpleColorMaterial;
-typedef boost::shared_ptr<SimpleColorMaterial> SimpleColorMaterialPtr;
+MeshPtr loadMesh(const std::string& resource_path);
 
-class SimpleShape
-{
-public:
-  enum Type
-  {
-    Cone,
-    Cube,
-    Cylinder,
-    Sphere
-  };
+}
 
-  SimpleShape(Ogre::SceneManager* scene_manager, Type type, TransformNode* node);
-  ~SimpleShape();
-
-  void setColor(const Ogre::ColourValue& col);
-
-private:
-  Ogre::SceneManager* scene_manager_;
-  MeshInstance* inst_;
-
-  SimpleColorMaterialPtr material_;
-};
-
-} // namespace rviz_renderer_ogre
-
-#endif // RVIZ_RENDERER_OGRE_SIMPLE_SHAPE_H
+#endif // RVIZ_RENDERER_OGRE_MESH_LOADER_H

@@ -27,55 +27,39 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef RVIZ_RENDERER_OGRE_SIMPLE_SHAPE_H
-#define RVIZ_RENDERER_OGRE_SIMPLE_SHAPE_H
+#include <rviz_renderer_ogre/mesh.h>
+#include <rviz_renderer_ogre/submesh.h>
 
-#include <boost/shared_ptr.hpp>
-
-namespace Ogre
-{
-class SceneManager;
-class SceneNode;
-class ColourValue;
-}
-
-namespace rviz_math
-{
-class Vector3;
-class Quaternion;
-}
+#include <ros/assert.h>
 
 namespace rviz_renderer_ogre
 {
 
-class TransformNode;
-class MeshInstance;
-class SimpleColorMaterial;
-typedef boost::shared_ptr<SimpleColorMaterial> SimpleColorMaterialPtr;
-
-class SimpleShape
+Mesh::Mesh(const std::string& resource_name, const Ogre::MeshPtr& mesh)
+: resource_name_(resource_name)
+, mesh_(mesh)
 {
-public:
-  enum Type
+  for (uint32_t i = 0; i < mesh->getNumSubMeshes(); ++i)
   {
-    Cone,
-    Cube,
-    Cylinder,
-    Sphere
-  };
+    SubMeshPtr sm(new SubMesh(mesh->getSubMesh(i)));
+    submeshes_.push_back(sm);
+  }
+}
 
-  SimpleShape(Ogre::SceneManager* scene_manager, Type type, TransformNode* node);
-  ~SimpleShape();
+Mesh::~Mesh()
+{
 
-  void setColor(const Ogre::ColourValue& col);
+}
 
-private:
-  Ogre::SceneManager* scene_manager_;
-  MeshInstance* inst_;
+size_t Mesh::getSubMeshCount()
+{
+  return submeshes_.size();
+}
 
-  SimpleColorMaterialPtr material_;
-};
+SubMesh* Mesh::getSubMesh(size_t index)
+{
+  ROS_ASSERT(index < submeshes_.size());
+  return submeshes_[index].get();
+}
 
 } // namespace rviz_renderer_ogre
-
-#endif // RVIZ_RENDERER_OGRE_SIMPLE_SHAPE_H

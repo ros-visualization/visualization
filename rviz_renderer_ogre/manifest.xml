@@ -12,6 +12,7 @@
   <depend package="rviz_uuid"/>
   <depend package="rviz_math"/>
   <depend package="rviz_interfaces"/>
+  <depend package="rviz_mesh_loader"/>
   
   <export>
   	<cpp cflags="-I${prefix}/include" lflags="-lrviz_renderer_ogre -L${prefix}/lib -Wl,-rpath,${prefix}/lib"/>

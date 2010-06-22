@@ -22,6 +22,8 @@ include_directories(include)
 #common commands for building c++ executables and libraries
 rosbuild_add_library(${PROJECT_NAME} src/camera.cpp
 									 src/convert.cpp
+									 src/mesh.cpp
+									 src/submesh.cpp
 									 src/render_window.cpp
 									 src/renderer.cpp
 									 src/scene.cpp
@@ -32,7 +34,8 @@ rosbuild_add_library(${PROJECT_NAME} src/camera.cpp
 									 src/simple_color_material.cpp
 									 src/server.cpp
 									 src/init.cpp
-									 src/disable_rendering_scheme_listener.cpp)
+									 src/disable_rendering_scheme_listener.cpp
+									 src/mesh_loader.cpp)
 target_link_libraries(${PROJECT_NAME})
 rosbuild_add_boost_directories()
 

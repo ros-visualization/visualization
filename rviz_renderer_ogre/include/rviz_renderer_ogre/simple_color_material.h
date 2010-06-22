@@ -40,7 +40,7 @@ namespace rviz_renderer_ogre
 class SimpleColorMaterial : public Material
 {
 public:
-  SimpleColorMaterial();
+  SimpleColorMaterial(const rviz_uuid::UUID& id);
 
   void setColor(const Ogre::ColourValue& color);
 

@@ -54,13 +54,15 @@ void parseSTL(uint8_t* buffer, size_t buffer_size, const std::string& extension,
 {
   out_mesh.submeshes.resize(1);
   rviz_msgs::SubMesh& submesh = out_mesh.submeshes[0];
+  submesh.has_normals = true;
+  submesh.has_tex_coords = true;
   uint8_t* pos = buffer;
   pos += 80; // skip the 80 byte header
 
   uint32_t tri_count = *(uint32_t*)pos;
   pos += 4;
 
-  out_mesh.vertices.resize(tri_count * 3);
+  submesh.vertices.resize(tri_count * 3);
   submesh.indices.resize(tri_count * 3);
   for ( uint32_t tri = 0; tri < tri_count; ++tri )
   {
@@ -78,7 +80,7 @@ void parseSTL(uint8_t* buffer, size_t buffer_size, const std::string& extension,
     for (uint32_t i = 0; i < 3; ++i)
     {
       uint32_t vert_index = tri * 3 + i;
-      rviz_msgs::Vertex& v = out_mesh.vertices[vert_index];
+      rviz_msgs::Vertex& v = submesh.vertices[vert_index];
       v.position.x = *(float*)pos;
       pos += 4;
       v.position.y = *(float*)pos;
@@ -101,9 +103,9 @@ void parseSTL(uint8_t* buffer, size_t buffer_size, const std::string& extension,
 
     if (normal.squaredNorm() < 0.001)
     {
-      rviz_msgs::Vertex& v0 = out_mesh.vertices[0];
-      rviz_msgs::Vertex& v1 = out_mesh.vertices[1];
-      rviz_msgs::Vertex& v2 = out_mesh.vertices[2];
+      rviz_msgs::Vertex& v0 = submesh.vertices[0];
+      rviz_msgs::Vertex& v1 = submesh.vertices[1];
+      rviz_msgs::Vertex& v2 = submesh.vertices[2];
       Eigen::Vector3f side1 = Eigen::Vector3f(v0.position.x, v0.position.y, v0.position.z) - Eigen::Vector3f(v1.position.x, v1.position.y, v1.position.z);
       Eigen::Vector3f side2 = Eigen::Vector3f(v1.position.x, v1.position.y, v1.position.z) - Eigen::Vector3f(v2.position.x, v2.position.y, v2.position.z);
       normal = side1.cross(side2);
@@ -114,7 +116,7 @@ void parseSTL(uint8_t* buffer, size_t buffer_size, const std::string& extension,
     for (uint32_t i = 0; i < 3; ++i)
     {
       uint32_t vert_index = tri * 3 + i;
-      rviz_msgs::Vertex& v = out_mesh.vertices[vert_index];
+      rviz_msgs::Vertex& v = submesh.vertices[vert_index];
       v.normal.x = normal.x();
       v.normal.y = normal.y();
       v.normal.z = normal.z();

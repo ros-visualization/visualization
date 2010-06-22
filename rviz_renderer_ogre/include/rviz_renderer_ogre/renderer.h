@@ -52,6 +52,8 @@ class Scene;
 class Camera;
 class Material;
 typedef boost::shared_ptr<Material> MaterialPtr;
+class Mesh;
+typedef boost::shared_ptr<Mesh> MeshPtr;
 class DisableRenderingSchemeListener;
 typedef boost::shared_ptr<DisableRenderingSchemeListener> DisableRenderingSchemeListenerPtr;
 
@@ -79,7 +81,12 @@ public:
 
    void addMaterial(const rviz_uuid::UUID& id, const MaterialPtr& mat);
    void removeMaterial(const rviz_uuid::UUID& id);
-   Material* getMaterial(const rviz_uuid::UUID& id);
+   MaterialPtr getMaterial(const rviz_uuid::UUID& id);
+
+   void addMesh(const std::string& resource_name, const MeshPtr& mesh);
+   void removeMesh(const std::string& resource_name);
+   MeshPtr getMesh(const std::string& resource_name);
+   bool meshExists(const std::string& resource_name);
 
 private:
   void init();
@@ -105,6 +112,9 @@ private:
 
   typedef std::map<rviz_uuid::UUID, MaterialPtr> M_Material;
   M_Material materials_;
+
+  typedef std::map<std::string, MeshPtr> M_Mesh;
+  M_Mesh meshes_;
 
   DisableRenderingSchemeListenerPtr scheme_listener_;
 };

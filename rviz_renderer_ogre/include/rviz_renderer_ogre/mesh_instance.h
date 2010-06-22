@@ -69,21 +69,21 @@ public:
     Sphere
   };
 
-  MeshInstance(Ogre::SceneManager* scene_manager, TransformNode* node, const std::string& mesh_resource);
+  MeshInstance(const rviz_uuid::UUID& id, Ogre::SceneManager* scene_manager, TransformNode* node, const std::string& mesh_resource);
   ~MeshInstance();
 
-  void setMaterial(Material* mat);
-  void setMaterial(uint32_t submesh_index, Material* mat);
-  virtual void onOgreMaterialChanged(Material* mat);
+  void setMaterial(const MaterialPtr& mat);
+  void setMaterial(uint32_t submesh_index, const MaterialPtr& mat);
+  virtual void onOgreMaterialChanged(const MaterialPtr& mat);
 
 private:
   Ogre::SceneManager* scene_manager_;
   Ogre::Entity* entity_;
 
   typedef std::set<Ogre::SubEntity*> S_OgreSubEntity;
-  typedef std::map<Material*, S_OgreSubEntity> M_Material;
+  typedef std::map<MaterialPtr, S_OgreSubEntity> M_Material;
   M_Material mat_to_subs_;
-  typedef std::map<Ogre::SubEntity*, Material*> M_SubEntityToMaterial;
+  typedef std::map<Ogre::SubEntity*, MaterialPtr> M_SubEntityToMaterial;
   M_SubEntityToMaterial sub_to_mat_;
 };
 

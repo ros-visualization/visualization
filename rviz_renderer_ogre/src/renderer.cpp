@@ -300,7 +300,7 @@ void Renderer::removeMaterial(const rviz_uuid::UUID& id)
   materials_.erase(id);
 }
 
-Material* Renderer::getMaterial(const rviz_uuid::UUID& id)
+MaterialPtr Renderer::getMaterial(const rviz_uuid::UUID& id)
 {
   M_Material::iterator it = materials_.find(id);
   if (it == materials_.end())
@@ -310,7 +310,35 @@ Material* Renderer::getMaterial(const rviz_uuid::UUID& id)
     throw std::runtime_error(ss.str());
   }
 
-  return it->second.get();
+  return it->second;
+}
+
+void Renderer::addMesh(const std::string& resource_name, const MeshPtr& mesh)
+{
+  meshes_[resource_name] = mesh;
+}
+
+void Renderer::removeMesh(const std::string& resource_name)
+{
+  meshes_.erase(resource_name);
+}
+
+MeshPtr Renderer::getMesh(const std::string& resource_name)
+{
+  M_Mesh::iterator it = meshes_.find(resource_name);
+  if (it == meshes_.end())
+  {
+    std::stringstream ss;
+    ss << "Mesh [" << resource_name << "] does not exist";
+    throw std::runtime_error(ss.str());
+  }
+
+  return it->second;
+}
+
+bool Renderer::meshExists(const std::string& resource_name)
+{
+  return meshes_.find(resource_name) != meshes_.end();
 }
 
 void Renderer::renderThread()

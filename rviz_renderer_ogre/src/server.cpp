@@ -359,7 +359,7 @@ public:
 
   virtual void create(const rviz_msgs::UUID& id)
   {
-    SimpleColorMaterial* mat = new SimpleColorMaterial();
+    SimpleColorMaterial* mat = new SimpleColorMaterial(id);
     renderer_->addMaterial(id, MaterialPtr(mat));
   }
 
@@ -370,7 +370,7 @@ public:
 
   virtual void setColor(const rviz_msgs::UUID& id, const std_msgs::ColorRGBA& col)
   {
-    SimpleColorMaterial* mat = dynamic_cast<SimpleColorMaterial*>(renderer_->getMaterial(id));
+    SimpleColorMaterialPtr mat = boost::dynamic_pointer_cast<SimpleColorMaterial>(renderer_->getMaterial(id));
     if (!mat)
     {
       std::stringstream ss;

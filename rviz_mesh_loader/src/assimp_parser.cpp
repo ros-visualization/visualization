@@ -32,6 +32,8 @@
 
 #include <rviz_msgs/Mesh.h>
 
+#include <rviz_uuid/uuid.h>
+
 #include <resource_retriever/retriever.h>
 
 #include <boost/filesystem.hpp>
@@ -207,6 +209,10 @@ void buildMesh(const aiScene* scene, const aiNode* node, rviz_msgs::Mesh& out_me
     out_mesh.submeshes.resize(out_mesh.submeshes.size() + 1);
     rviz_msgs::SubMesh& submesh = out_mesh.submeshes.back();
 
+    submesh.has_normals = input_mesh->HasNormals();
+    submesh.has_tex_coords = input_mesh->HasTextureCoords(0);
+    submesh.has_vertex_colors = input_mesh->HasVertexColors(0);
+
     // Add the vertices
     for (uint32_t j = 0; j < input_mesh->mNumVertices; j++)
     {
@@ -231,17 +237,24 @@ void buildMesh(const aiScene* scene, const aiNode* node, rviz_msgs::Mesh& out_me
         v.texcoord_dims = 2;
       }
 
-      out_mesh.vertices.push_back(v);
+      if (input_mesh->HasVertexColors(0))
+      {
+        v.color.r = input_mesh->mColors[0][j].r;
+        v.color.g = input_mesh->mColors[0][j].g;
+        v.color.b = input_mesh->mColors[0][j].b;
+        v.color.a = input_mesh->mColors[0][j].a;
+      }
+
+      submesh.vertices.push_back(v);
     }
 
     // add the indices
-    size_t index_start = submesh.indices.size();
     for (uint32_t j = 0; j < input_mesh->mNumFaces; j++)
     {
       aiFace& face = input_mesh->mFaces[j];
       for (uint32_t k = 0; k < face.mNumIndices; ++k)
       {
-        submesh.indices.push_back((size_t)index_start + face.mIndices[k]);
+        submesh.indices.push_back(face.mIndices[k]);
       }
     }
   }
@@ -257,6 +270,7 @@ void loadMaterialsForMesh(const std::string& resource_path, const aiScene* scene
   for (uint32_t i = 0; i < scene->mNumMaterials; i++)
   {
     rviz_msgs::Material mat;
+    mat.id = rviz_uuid::UUID::Generate();
 
     aiMaterial *amat = scene->mMaterials[i];
 
@@ -270,6 +284,7 @@ void loadMaterialsForMesh(const std::string& resource_path, const aiScene* scene
       // Assume textures are in paths relative to the mesh
       std::string texture_path = fs::path(resource_path).parent_path().string() + "/" + texName.data;
       mat.texture = texture_path;
+      mat.has_texture = true;
     }
 
     float opacity = 1.0;
@@ -282,6 +297,7 @@ void loadMaterialsForMesh(const std::string& resource_path, const aiScene* scene
       mat.color.b = clr.g;
       mat.color.g = clr.b;
       mat.color.a = opacity;
+      mat.has_color = true;
     }
   }
 

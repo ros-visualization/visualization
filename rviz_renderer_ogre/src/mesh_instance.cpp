@@ -43,8 +43,9 @@
 namespace rviz_renderer_ogre
 {
 
-MeshInstance::MeshInstance(Ogre::SceneManager* scene_manager, TransformNode* node, const std::string& mesh_resource)
-: scene_manager_(scene_manager)
+MeshInstance::MeshInstance(const rviz_uuid::UUID& id, Ogre::SceneManager* scene_manager, TransformNode* node, const std::string& mesh_resource)
+: Renderable(id)
+, scene_manager_(scene_manager)
 {
   std::stringstream ss;
   static size_t count = 0;
@@ -52,9 +53,6 @@ MeshInstance::MeshInstance(Ogre::SceneManager* scene_manager, TransformNode* nod
 
   entity_ = scene_manager_->createEntity(ss.str(), mesh_resource);
   node->getOgreSceneNode()->attachObject(entity_);
-
-  uint32_t count4 = count;
-  entity_->getSubEntity(0)->setCustomParameter(0, Ogre::Vector4(((count4 >> 24) & 0xff) / 255.0, ((count4 >> 16) & 0xff) / 255.0, ((count4 >> 8) & 0xff) / 255.0, (count4 & 0xff) / 255.0));
 }
 
 MeshInstance::~MeshInstance()
@@ -69,7 +67,7 @@ MeshInstance::~MeshInstance()
   scene_manager_->destroyEntity(entity_);
 }
 
-void MeshInstance::setMaterial(Material* mat)
+void MeshInstance::setMaterial(const MaterialPtr& mat)
 {
   M_Material::iterator it = mat_to_subs_.begin();
   M_Material::iterator end = mat_to_subs_.end();
@@ -93,14 +91,14 @@ void MeshInstance::setMaterial(Material* mat)
   }
 }
 
-void MeshInstance::setMaterial(uint32_t submesh_index, Material* mat)
+void MeshInstance::setMaterial(uint32_t submesh_index, const MaterialPtr& mat)
 {
   ROS_ASSERT(submesh_index < entity_->getNumSubEntities());
   Ogre::SubEntity* sub = entity_->getSubEntity(submesh_index);
   M_SubEntityToMaterial::iterator subent_it = sub_to_mat_.find(sub);
   if (subent_it != sub_to_mat_.end())
   {
-    Material* old_mat = subent_it->second;
+    const MaterialPtr& old_mat = subent_it->second;
     mat_to_subs_[old_mat].erase(sub);
   }
 
@@ -109,12 +107,12 @@ void MeshInstance::setMaterial(uint32_t submesh_index, Material* mat)
   mat->attachRenderable(this, sub);
 }
 
-void MeshInstance::onOgreMaterialChanged(Material* mat)
+void MeshInstance::onOgreMaterialChanged(const MaterialPtr& mat)
 {
   M_Material::iterator it = mat_to_subs_.find(mat);
   if (it != mat_to_subs_.end())
   {
-    Material* mat = it->first;
+    const MaterialPtr& mat = it->first;
     S_OgreSubEntity::iterator sub_it = it->second.begin();
     S_OgreSubEntity::iterator sub_end = it->second.end();
     for (; sub_it != sub_end; ++sub_it)

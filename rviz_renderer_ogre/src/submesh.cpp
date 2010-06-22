@@ -27,55 +27,41 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef RVIZ_RENDERER_OGRE_SIMPLE_SHAPE_H
-#define RVIZ_RENDERER_OGRE_SIMPLE_SHAPE_H
+#include <rviz_renderer_ogre/submesh.h>
+#include <rviz_renderer_ogre/init.h>
+#include <rviz_renderer_ogre/renderer.h>
+#include <rviz_renderer_ogre/material.h>
 
-#include <boost/shared_ptr.hpp>
-
-namespace Ogre
-{
-class SceneManager;
-class SceneNode;
-class ColourValue;
-}
-
-namespace rviz_math
-{
-class Vector3;
-class Quaternion;
-}
+#include <OGRE/OgreSubMesh.h>
+#include <OGRE/OgreMaterial.h>
 
 namespace rviz_renderer_ogre
 {
 
-class TransformNode;
-class MeshInstance;
-class SimpleColorMaterial;
-typedef boost::shared_ptr<SimpleColorMaterial> SimpleColorMaterialPtr;
-
-class SimpleShape
+SubMesh::SubMesh(Ogre::SubMesh* ogre_submesh)
+: submesh_(ogre_submesh)
 {
-public:
-  enum Type
+
+}
+
+SubMesh::~SubMesh()
+{
+
+}
+
+void SubMesh::setMaterialID(const rviz_uuid::UUID& id)
+{
+  material_id_ = id;
+
+  try
   {
-    Cone,
-    Cube,
-    Cylinder,
-    Sphere
-  };
+    MaterialPtr mat = getRenderer()->getMaterial(id);
+    submesh_->setMaterialName(mat->getOgreMaterial()->getName());
+  }
+  catch (std::runtime_error& e)
+  {
 
-  SimpleShape(Ogre::SceneManager* scene_manager, Type type, TransformNode* node);
-  ~SimpleShape();
-
-  void setColor(const Ogre::ColourValue& col);
-
-private:
-  Ogre::SceneManager* scene_manager_;
-  MeshInstance* inst_;
-
-  SimpleColorMaterialPtr material_;
-};
+  }
+}
 
 } // namespace rviz_renderer_ogre
-
-#endif // RVIZ_RENDERER_OGRE_SIMPLE_SHAPE_H
