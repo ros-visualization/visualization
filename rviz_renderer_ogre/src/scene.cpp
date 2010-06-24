@@ -31,6 +31,8 @@
 #include "rviz_renderer_ogre/camera.h"
 #include "rviz_renderer_ogre/simple_shape.h"
 #include "rviz_renderer_ogre/transform_node.h"
+#include "rviz_renderer_ogre/mesh_loader.h"
+#include "rviz_renderer_ogre/mesh_instance.h"
 
 #include <OGRE/OgreSceneManager.h>
 #include <OGRE/OgreCamera.h>
@@ -54,6 +56,7 @@ Scene::~Scene()
 {
   cameras_.clear();
   simple_shapes_.clear();
+  mesh_instances_.clear();
   transform_nodes_.clear();
   Ogre::Root::getSingleton().destroySceneManager(scene_manager_);
 }
@@ -110,9 +113,36 @@ void Scene::destroySimpleShape(const rviz_uuid::UUID& id)
 SimpleShape* Scene::getSimpleShape(const rviz_uuid::UUID& id)
 {
   M_SimpleShape::iterator it = simple_shapes_.find(id);
-  ROS_ASSERT(it != simple_shapes_.end());
+  if (it == simple_shapes_.end())
+  {
+    throw std::runtime_error("Simple shape [" + id.toString() + "] does not exist");
+  }
 
   return it->second.get();
+}
+
+MeshInstance* Scene::createMeshInstance(const rviz_uuid::UUID& id, const rviz_uuid::UUID& node_id, const std::string& mesh_resource)
+{
+  loadMesh(mesh_resource);
+  MeshInstancePtr inst(new MeshInstance(id, scene_manager_, getTransformNode(node_id), mesh_resource));
+  mesh_instances_[id] = inst;
+  return inst.get();
+}
+
+MeshInstance* Scene::getMeshInstance(const rviz_uuid::UUID& id)
+{
+  M_MeshInstance::iterator it = mesh_instances_.find(id);
+  if (it == mesh_instances_.end())
+  {
+    throw std::runtime_error("Mesh instance [" + id.toString() + "] does not exist");
+  }
+
+  return it->second.get();
+}
+
+void Scene::destroyMeshInstance(const rviz_uuid::UUID& id)
+{
+  mesh_instances_.erase(id);
 }
 
 TransformNode* Scene::createTransformNode(const rviz_uuid::UUID& id, const rviz_uuid::UUID& parent)

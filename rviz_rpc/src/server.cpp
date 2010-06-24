@@ -143,6 +143,8 @@ void Server::Impl::callback(const ros::MessageEvent<RequestWrapper const>& evt)
   {
     res->error_code = Response::EXCEPTION;
     res->error_string = e.what();
+
+    ROS_ERROR("%s", e.what());
   }
 
   pub_.publish(res);

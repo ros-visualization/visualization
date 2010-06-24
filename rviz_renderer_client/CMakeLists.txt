@@ -25,5 +25,6 @@ rosbuild_add_library(${PROJECT_NAME} src/init.cpp
 									 src/render_window.cpp
 									 src/scene.cpp
 									 src/simple_shape.cpp
+									 src/mesh_instance.cpp
 									 src/transform_node.cpp
 									 src/simple_color_material.cpp)

@@ -37,6 +37,7 @@
 #include <rviz_interfaces/SimpleShape.h>
 #include <rviz_interfaces/TransformNode.h>
 #include <rviz_interfaces/SimpleColorMaterial.h>
+#include <rviz_interfaces/MeshInstance.h>
 
 #include <ros/ros.h>
 
@@ -55,6 +56,7 @@ void rviz_renderer_client::init(const std::string& server_namespace)
   rviz_renderer_client::addProxyInterface("simple_shape", rviz_interface_gen::InterfacePtr(new rviz_interfaces::SimpleShapeProxy("simple_shape", *g_node_handle)));
   rviz_renderer_client::addProxyInterface("transform_node", rviz_interface_gen::InterfacePtr(new rviz_interfaces::TransformNodeProxy("transform_node", *g_node_handle)));
   rviz_renderer_client::addProxyInterface("simple_color_material", rviz_interface_gen::InterfacePtr(new rviz_interfaces::SimpleColorMaterialProxy("simple_color_material", *g_node_handle)));
+  rviz_renderer_client::addProxyInterface("mesh_instance", rviz_interface_gen::InterfacePtr(new rviz_interfaces::MeshInstanceProxy("mesh_instance", *g_node_handle)));
 }
 
 ros::NodeHandle& rviz_renderer_client::getNodeHandle()

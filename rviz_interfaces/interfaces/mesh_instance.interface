@@ -1,0 +1,6 @@
+interface MeshInstance
+{
+  async setMaterial(rviz_msgs/UUID scene_id, rviz_msgs/UUID inst_id, rviz_msgs/UUID material_id);
+  async setMaterialForSubMesh(rviz_msgs/UUID scene_id, rviz_msgs/UUID inst_id, uint32 submesh_index, rviz_msgs/UUID material_id);
+}
+

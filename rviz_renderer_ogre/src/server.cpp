@@ -34,6 +34,7 @@
 #include <rviz_renderer_ogre/transform_node.h>
 #include <rviz_renderer_ogre/camera.h>
 #include <rviz_renderer_ogre/simple_color_material.h>
+#include <rviz_renderer_ogre/mesh_instance.h>
 #include <rviz_uuid/uuid.h>
 #include <rviz_math/vector3.h>
 #include <rviz_math/quaternion.h>
@@ -47,6 +48,7 @@
 #include <rviz_interfaces/SimpleShape.h>
 #include <rviz_interfaces/TransformNode.h>
 #include <rviz_interfaces/SimpleColorMaterial.h>
+#include <rviz_interfaces/MeshInstance.h>
 
 using namespace rviz_uuid;
 
@@ -285,6 +287,28 @@ public:
     scene->destroyTransformNode(node_id);
   }
 
+  virtual void createMeshInstance(const rviz_msgs::UUID& scene_id, const rviz_msgs::UUID& inst_id, const rviz_msgs::UUID& node_id, const std::string& mesh_resource)
+  {
+    Scene* scene = renderer_->getScene(scene_id);
+    if (!scene)
+    {
+      throw std::runtime_error("Scene [" + UUID(scene_id).toString() + "] does not exist");
+    }
+
+    scene->createMeshInstance(inst_id, node_id, mesh_resource);
+  }
+
+  virtual void destroyMeshInstance(const rviz_msgs::UUID& scene_id, const rviz_msgs::UUID& inst_id)
+  {
+    Scene* scene = renderer_->getScene(scene_id);
+    if (!scene)
+    {
+      throw std::runtime_error("Scene [" + UUID(scene_id).toString() + "] does not exist");
+    }
+
+    scene->destroyMeshInstance(inst_id);
+  }
+
 private:
   Renderer* renderer_;
 };
@@ -385,18 +409,78 @@ private:
   Renderer* renderer_;
 };
 
+class MeshInstanceServer : public rviz_interfaces::MeshInstanceServer
+{
+public:
+  MeshInstanceServer(Renderer* rend, const std::string& name, const ros::NodeHandle& nh)
+  : rviz_interfaces::MeshInstanceServer(name, nh)
+  , renderer_(rend)
+  {
+  }
+
+  virtual void setMaterial(const rviz_msgs::UUID& scene_id, const rviz_msgs::UUID& inst_id, const rviz_msgs::UUID& material_id)
+  {
+    Scene* scene = renderer_->getScene(scene_id);
+    if (!scene)
+    {
+      throw std::runtime_error("Scene [" + UUID(scene_id).toString() + "] does not exist");
+    }
+
+    MaterialPtr material = renderer_->getMaterial(material_id);
+    if (!material)
+    {
+      throw std::runtime_error("Material [" + UUID(material_id).toString() + "] does not exist");
+    }
+
+    MeshInstance* inst = scene->getMeshInstance(inst_id);
+    if (!inst)
+    {
+      throw std::runtime_error("MeshInstance [" + UUID(material_id).toString() + "] does not exist");
+    }
+
+    inst->setMaterial(material);
+  }
+
+  virtual void setMaterialForSubMesh(const rviz_msgs::UUID& scene_id, const rviz_msgs::UUID& inst_id, uint32_t submesh_index, const rviz_msgs::UUID& material_id)
+  {
+    Scene* scene = renderer_->getScene(scene_id);
+    if (!scene)
+    {
+      throw std::runtime_error("Scene [" + UUID(scene_id).toString() + "] does not exist");
+    }
+
+    MaterialPtr material = renderer_->getMaterial(material_id);
+    if (!material)
+    {
+      throw std::runtime_error("Material [" + UUID(material_id).toString() + "] does not exist");
+    }
+
+    MeshInstance* inst = scene->getMeshInstance(inst_id);
+    if (!inst)
+    {
+      throw std::runtime_error("MeshInstance [" + UUID(material_id).toString() + "] does not exist");
+    }
+
+    inst->setMaterial(submesh_index, material);
+  }
+
+private:
+  Renderer* renderer_;
+};
 
 Server::Server(Renderer* renderer, const ros::NodeHandle& nh)
 : renderer_(renderer)
 , nh_(new ros::NodeHandle(nh))
 {
   nh_->setCallbackQueue(renderer_->getServerThreadCallbackQueue());
-  camera_server_.reset(new CameraServer(renderer_, "camera", *nh_));
-  render_window_server_.reset(new RenderWindowServer(renderer_, "render_window", *nh_));
-  scene_server_.reset(new SceneServer(renderer_, "scene", *nh_));
-  simple_shape_server_.reset(new SimpleShapeServer(renderer_, "simple_shape", *nh_));
-  transform_node_server_.reset(new TransformNodeServer(renderer_, "transform_node", *nh_));
-  simple_color_material_server_.reset(new SimpleColorMaterialServer(renderer_, "simple_color_material", *nh_));
+
+  interfaces_.push_back(rviz_interface_gen::InterfacePtr(new CameraServer(renderer_, "camera", *nh_)));
+  interfaces_.push_back(rviz_interface_gen::InterfacePtr(new RenderWindowServer(renderer_, "render_window", *nh_)));
+  interfaces_.push_back(rviz_interface_gen::InterfacePtr(new SceneServer(renderer_, "scene", *nh_)));
+  interfaces_.push_back(rviz_interface_gen::InterfacePtr(new SimpleShapeServer(renderer_, "simple_shape", *nh_)));
+  interfaces_.push_back(rviz_interface_gen::InterfacePtr(new TransformNodeServer(renderer_, "transform_node", *nh_)));
+  interfaces_.push_back(rviz_interface_gen::InterfacePtr(new SimpleColorMaterialServer(renderer_, "simple_color_material", *nh_)));
+  interfaces_.push_back(rviz_interface_gen::InterfacePtr(new MeshInstanceServer(renderer_, "mesh_instance", *nh_)));
 }
 
 Server::~Server()

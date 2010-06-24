@@ -11,4 +11,7 @@ interface Scene
 	
 	async createTransformNode(rviz_msgs/UUID scene_id, rviz_msgs/UUID transform_id, rviz_msgs/UUID parent_id);
 	async destroyTransformNode(rviz_msgs/UUID scene_ide, rviz_msgs/UUID transform_id);
+	
+	async createMeshInstance(rviz_msgs/UUID scene_id, rviz_msgs/UUID inst_id, rviz_msgs/UUID transform_id, string mesh_resource);
+	async destroyMeshInstance(rviz_msgs/UUID scene_id, rviz_msgs/UUID inst_id);
 }

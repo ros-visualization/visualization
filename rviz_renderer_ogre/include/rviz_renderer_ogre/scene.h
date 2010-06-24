@@ -55,6 +55,9 @@ typedef boost::shared_ptr<SimpleShape> SimpleShapePtr;
 class TransformNode;
 typedef boost::shared_ptr<TransformNode> TransformNodePtr;
 
+class MeshInstance;
+typedef boost::shared_ptr<MeshInstance> MeshInstancePtr;
+
 class Scene
 {
 public:
@@ -67,6 +70,10 @@ public:
   SimpleShape* createSimpleShape(const rviz_uuid::UUID& id, SimpleShape::Type type, const rviz_uuid::UUID& node_id);
   SimpleShape* getSimpleShape(const rviz_uuid::UUID& id);
   void destroySimpleShape(const rviz_uuid::UUID& id);
+
+  MeshInstance* createMeshInstance(const rviz_uuid::UUID& id, const rviz_uuid::UUID& node_id, const std::string& mesh_resource);
+  MeshInstance* getMeshInstance(const rviz_uuid::UUID& id);
+  void destroyMeshInstance(const rviz_uuid::UUID& id);
 
   TransformNode* createTransformNode(const rviz_uuid::UUID& id, const rviz_uuid::UUID& parent);
   void destroyTransformNode(const rviz_uuid::UUID& id);
@@ -85,8 +92,11 @@ private:
   typedef std::map<rviz_uuid::UUID, SimpleShapePtr> M_SimpleShape;
   M_SimpleShape simple_shapes_;
 
+  typedef std::map<rviz_uuid::UUID, MeshInstancePtr> M_MeshInstance;
+  M_MeshInstance mesh_instances_;
+
   typedef std::map<rviz_uuid::UUID, TransformNodePtr> M_TransformNode;
-  M_TransformNode transform_nodes_;;
+  M_TransformNode transform_nodes_;
 };
 
 } // namespace rviz_renderer_ogre

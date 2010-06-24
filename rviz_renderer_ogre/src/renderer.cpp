@@ -32,6 +32,7 @@
 #include "rviz_renderer_ogre/scene.h"
 #include "rviz_renderer_ogre/camera.h"
 #include "rviz_renderer_ogre/disable_rendering_scheme_listener.h"
+#include "rviz_renderer_ogre/mesh_loader.h"
 
 #include <OGRE/OgreRoot.h>
 #include <OGRE/OgreRenderSystem.h>
@@ -87,6 +88,7 @@ void Renderer::stop()
 
   scenes_.clear();
   materials_.clear();
+  meshes_.clear();
   delete Ogre::Root::getSingletonPtr();
 }
 

@@ -41,16 +41,16 @@ namespace ros
 class NodeHandle;
 }
 
+namespace rviz_interface_gen
+{
+class Interface;
+typedef boost::shared_ptr<Interface> InterfacePtr;
+}
+
 namespace rviz_renderer_ogre
 {
 
 class Renderer;
-class CameraServer;
-class RenderWindowServer;
-class SceneServer;
-class SimpleShapeServer;
-class TransformNodeServer;
-class SimpleColorMaterialServer;
 
 typedef boost::shared_ptr<ros::NodeHandle> NodeHandlePtr;
 
@@ -63,14 +63,7 @@ public:
 private:
 
   Renderer* renderer_;
-
-  boost::shared_ptr<CameraServer> camera_server_;
-  boost::shared_ptr<RenderWindowServer> render_window_server_;
-  boost::shared_ptr<SceneServer> scene_server_;
-  boost::shared_ptr<SimpleShapeServer> simple_shape_server_;
-  boost::shared_ptr<TransformNodeServer> transform_node_server_;
-  boost::shared_ptr<SimpleColorMaterialServer> simple_color_material_server_;
-
+  std::vector<rviz_interface_gen::InterfacePtr> interfaces_;
   NodeHandlePtr nh_;
 };
 

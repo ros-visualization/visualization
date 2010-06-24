@@ -299,6 +299,8 @@ void loadMaterialsForMesh(const std::string& resource_path, const aiScene* scene
       mat.color.a = opacity;
       mat.has_color = true;
     }
+
+    mesh.materials.push_back(mat);
   }
 
   for (size_t i = 0; i < mesh.submeshes.size(); ++i)

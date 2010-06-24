@@ -44,6 +44,7 @@ class RenderWindow;
 class Camera;
 class SimpleShape;
 class TransformNode;
+class MeshInstance;
 
 class Scene : public Object
 {
@@ -56,6 +57,9 @@ public:
 
   SimpleShape createSimpleShape(const std::string& type, const TransformNode& node);
   void destroySimpleShape(const SimpleShape& shape);
+
+  MeshInstance createMeshInstance(const std::string& mesh_resource, const TransformNode& node);
+  void destroyMeshInstance(const MeshInstance& inst);
 
   TransformNode createTransformNode();
   TransformNode createTransformNode(const TransformNode& parent);

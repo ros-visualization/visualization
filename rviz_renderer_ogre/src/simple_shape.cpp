@@ -31,6 +31,7 @@
 #include <rviz_renderer_ogre/transform_node.h>
 #include <rviz_renderer_ogre/simple_color_material.h>
 #include <rviz_renderer_ogre/mesh_instance.h>
+#include <rviz_renderer_ogre/mesh_loader.h>
 
 #include <rviz_uuid/uuid.h>
 
@@ -46,15 +47,16 @@ namespace rviz_renderer_ogre
 
 static const char* g_shape_meshes[] =
 {
-    "cone.mesh",
-    "cube.mesh",
-    "cylinder.mesh",
-    "sphere.mesh"
+    "package://"ROS_PACKAGE_NAME"/media/models/cone.mesh",
+    "package://"ROS_PACKAGE_NAME"/media/models/cube.mesh",
+    "package://"ROS_PACKAGE_NAME"/media/models/cylinder.mesh",
+    "package://"ROS_PACKAGE_NAME"/media/models/sphere.mesh"
 };
 
 SimpleShape::SimpleShape(Ogre::SceneManager* scene_manager, Type type, TransformNode* node)
 : scene_manager_(scene_manager)
 {
+  loadMesh(g_shape_meshes[type]);
   inst_ = new MeshInstance(rviz_uuid::UUID::Generate(), scene_manager, node, g_shape_meshes[type]);
   material_.reset(new SimpleColorMaterial(rviz_uuid::UUID::Generate()));
 

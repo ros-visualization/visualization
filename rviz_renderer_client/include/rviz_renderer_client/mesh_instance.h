@@ -27,24 +27,14 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef RVIZ_RENDERER_OGRE_MESH_INSTANCE_H
-#define RVIZ_RENDERER_OGRE_MESH_INSTANCE_H
+#ifndef RVIZ_RENDERER_CLIENT_MESH_INSTANCE_H
+#define RVIZ_RENDERER_CLIENT_MESH_INSTANCE_H
 
-#include "renderable.h"
+#include "object.h"
 
-#include <ros/types.h>
-
-#include <string>
-#include <map>
-#include <vector>
-#include <set>
-
-namespace Ogre
+namespace rviz_interfaces
 {
-class SceneManager;
-class Entity;
-class SubEntity;
-class SceneNode;
+class MeshInstanceProxy;
 }
 
 namespace rviz_math
@@ -53,40 +43,24 @@ class Vector3;
 class Quaternion;
 }
 
-namespace rviz_renderer_ogre
+namespace rviz_renderer_client
 {
 
-class TransformNode;
+class Material;
+class Color;
 
-class MeshInstance : public Renderable
+class MeshInstance : public Object
 {
 public:
-  enum Type
-  {
-    Cone,
-    Cube,
-    Cylinder,
-    Sphere
-  };
-
-  MeshInstance(const rviz_uuid::UUID& id, Ogre::SceneManager* scene_manager, TransformNode* node, const std::string& mesh_resource);
-  ~MeshInstance();
-
-  void setMaterial(const MaterialPtr& mat);
-  void setMaterial(size_t submesh_index, const MaterialPtr& mat);
-  virtual void onOgreMaterialChanged(const MaterialPtr& mat);
+  MeshInstance();
+  MeshInstance(const rviz_uuid::UUID& scene_id, const rviz_uuid::UUID& id);
 
 private:
-  Ogre::SceneManager* scene_manager_;
-  Ogre::Entity* entity_;
-
-  typedef std::set<Ogre::SubEntity*> S_OgreSubEntity;
-  typedef std::map<MaterialPtr, S_OgreSubEntity> M_Material;
-  M_Material mat_to_subs_;
-  typedef std::map<Ogre::SubEntity*, MaterialPtr> M_SubEntityToMaterial;
-  M_SubEntityToMaterial sub_to_mat_;
+  rviz_uuid::UUID scene_id_;
+  rviz_interfaces::MeshInstanceProxy* proxy_;
 };
 
-} // namespace rviz_renderer_ogre
+} // namespace rviz_renderer_client
 
-#endif // RVIZ_RENDERER_OGRE_MESH_INSTANCE_H
+#endif // RVIZ_RENDERER_CLIENT_MESH_INSTANCE_H
+

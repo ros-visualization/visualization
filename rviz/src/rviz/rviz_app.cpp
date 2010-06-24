@@ -34,6 +34,7 @@
 #include "rviz_renderer_client/camera.h"
 #include "rviz_renderer_client/simple_shape.h"
 #include "rviz_renderer_client/transform_node.h"
+#include "rviz_renderer_client/mesh_instance.h"
 #include "rviz_renderer_client/simple_color_material.h"
 #include "rviz_math/vector3.h"
 #include "rviz_math/quaternion.h"
@@ -120,10 +121,13 @@ public:
     c.lookAt(Vector3(0, 0, 0));
     camera_ = c;
 
+    rviz_renderer_client::TransformNode n;
+
+#if 01
     rviz_renderer_client::SimpleShape shape = s.createSimpleShape("sphere", s.createTransformNode());
     shape.setColor(1.0, 1.0, 1.0, 1.0);
 
-    rviz_renderer_client::TransformNode n = s.createTransformNode();
+    n = s.createTransformNode();
     n.setPosition(2, 0, 0);
     shape = s.createSimpleShape("cube", n);
     shape.setColor(0.0, 1.0, 0.0, 1.0);
@@ -151,6 +155,16 @@ public:
         }
       }
     }
+#endif
+
+    n = s.createTransformNode();
+    n.setPosition(0, 0, 2);
+    rviz_renderer_client::MeshInstance inst = s.createMeshInstance("package://pr2_description/meshes/base_v0/base.dae", n);
+
+    n = s.createTransformNode();
+    n.setPosition(2, 0, 2);
+    inst = s.createMeshInstance("package://pr2_description/meshes/base_v0/wheel.dae", n);
+
 
     Connect(wxEVT_SIZE, wxSizeEventHandler(MyFrame::onSize));
     Connect(wxEVT_TIMER, wxTimerEventHandler(MyFrame::onTimer));

@@ -10,6 +10,11 @@ compositor DeferredShading/GBuffer
       input none
       pass clear
       {
+        clear
+        {
+          colour_value 1.0 1.0 1.0 1.0
+        //  buffers colour depth stencil
+        }
       }
       
       shadows off

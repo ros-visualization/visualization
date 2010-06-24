@@ -164,8 +164,10 @@ MeshPtr convertMesh(const std::string& name, const rviz_msgs::Mesh& input_mesh)
     ibuf->unlock();
   }
 
+  mesh->_setBounds(aabb);
+  mesh->_setBoundingSphereRadius(radius);
+
   MeshPtr out_mesh(new Mesh(name, mesh));
-  getRenderer()->addMesh(name, out_mesh);
   // assign materials
   for (size_t i = 0; i < input_mesh.submeshes.size(); ++i)
   {
@@ -175,6 +177,8 @@ MeshPtr convertMesh(const std::string& name, const rviz_msgs::Mesh& input_mesh)
       out_mesh->getSubMesh(i)->setMaterialID(input_mesh.materials[mat_index].id);
     }
   }
+
+  getRenderer()->addMesh(name, out_mesh);
 
   return out_mesh;
 }
@@ -187,7 +191,10 @@ MaterialPtr createMaterial(const rviz_msgs::Material& mat)
 
   if (mat.has_color && mat.has_texture)
   {
-    ROS_BREAK();
+    SimpleColorMaterial* scm = new SimpleColorMaterial(mat.id);
+    out.reset(scm);
+
+    scm->setColor(Ogre::ColourValue(mat.color.r, mat.color.g, mat.color.b, mat.color.a));
   }
   else if (mat.has_color)
   {
@@ -198,7 +205,10 @@ MaterialPtr createMaterial(const rviz_msgs::Material& mat)
   }
   else if (mat.has_texture)
   {
+    SimpleColorMaterial* scm = new SimpleColorMaterial(mat.id);
+    out.reset(scm);
 
+    scm->setColor(Ogre::ColourValue(1, 0, 0, 1));
   }
 
   if (out)
@@ -250,7 +260,7 @@ MeshPtr loadMesh(const std::string& resource_path)
 
       Ogre::MeshSerializer ser;
       Ogre::DataStreamPtr stream(new Ogre::MemoryDataStream(res.data.get(), res.size));
-      Ogre::MeshPtr mesh = Ogre::MeshManager::getSingleton().createManual(resource_path, "rviz");
+      Ogre::MeshPtr mesh = Ogre::MeshManager::getSingleton().createManual(resource_path, ROS_PACKAGE_NAME);
       ser.importMesh(stream, mesh.get());
 
       MeshPtr out_mesh(new Mesh(resource_path, mesh));

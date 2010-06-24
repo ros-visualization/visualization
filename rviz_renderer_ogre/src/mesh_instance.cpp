@@ -28,8 +28,12 @@
  */
 
 #include <rviz_renderer_ogre/mesh_instance.h>
+#include <rviz_renderer_ogre/mesh.h>
+#include <rviz_renderer_ogre/submesh.h>
 #include <rviz_renderer_ogre/transform_node.h>
 #include <rviz_renderer_ogre/material.h>
+#include <rviz_renderer_ogre/init.h>
+#include <rviz_renderer_ogre/renderer.h>
 
 #include <OGRE/OgreSceneManager.h>
 #include <OGRE/OgreEntity.h>
@@ -53,6 +57,18 @@ MeshInstance::MeshInstance(const rviz_uuid::UUID& id, Ogre::SceneManager* scene_
 
   entity_ = scene_manager_->createEntity(ss.str(), mesh_resource);
   node->getOgreSceneNode()->attachObject(entity_);
+
+  MeshPtr mesh = getRenderer()->getMesh(mesh_resource);
+  for (size_t i = 0; i < mesh->getSubMeshCount(); ++i)
+  {
+    rviz_uuid::UUID mat_id = mesh->getSubMesh(i)->getMaterialID();
+
+    if (!mat_id.isNull())
+    {
+      MaterialPtr mat = getRenderer()->getMaterial(mat_id);
+      setMaterial(i, mat);
+    }
+  }
 }
 
 MeshInstance::~MeshInstance()
@@ -91,7 +107,7 @@ void MeshInstance::setMaterial(const MaterialPtr& mat)
   }
 }
 
-void MeshInstance::setMaterial(uint32_t submesh_index, const MaterialPtr& mat)
+void MeshInstance::setMaterial(size_t submesh_index, const MaterialPtr& mat)
 {
   ROS_ASSERT(submesh_index < entity_->getNumSubEntities());
   Ogre::SubEntity* sub = entity_->getSubEntity(submesh_index);
