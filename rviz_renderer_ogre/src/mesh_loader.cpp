@@ -59,10 +59,12 @@ MeshPtr convertMesh(const std::string& name, const rviz_msgs::Mesh& input_mesh)
 
   Ogre::AxisAlignedBox aabb;
   float radius = 0.0;
-
   for (size_t i = 0; i < input_mesh.submeshes.size(); ++i)
   {
     const rviz_msgs::SubMesh& input_submesh = input_mesh.submeshes[i];
+
+    bool has_normals = !input_submesh.normals.empty();
+
     Ogre::SubMesh* submesh = mesh->createSubMesh();
     submesh->useSharedVertices = false;
     submesh->vertexData = new Ogre::VertexData();
@@ -75,28 +77,44 @@ MeshPtr convertMesh(const std::string& name, const rviz_msgs::Mesh& input_mesh)
     offset += Ogre::VertexElement::getTypeSize(Ogre::VET_FLOAT3);
 
     // normals
-    if (input_submesh.has_normals)
+    if (has_normals)
     {
+      ROS_ASSERT(input_submesh.normals.size() == input_submesh.positions.size());
+
       vertex_decl->addElement(0, offset, Ogre::VET_FLOAT3, Ogre::VES_NORMAL);
       offset += Ogre::VertexElement::getTypeSize(Ogre::VET_FLOAT3);
     }
 
-    // texture coordinates (only support 1 for now)
-    if (input_submesh.has_tex_coords)
-    {
-      vertex_decl->addElement(0, offset, Ogre::VET_FLOAT2, Ogre::VES_TEXTURE_COORDINATES, 0);
-      offset += Ogre::VertexElement::getTypeSize(Ogre::VET_FLOAT2);
-    }
-
     // vertex colors
-    if (input_submesh.has_vertex_colors)
+    for (size_t j = 0; j < input_submesh.colors.size(); ++j)
     {
-      vertex_decl->addElement(0, offset, Ogre::VET_COLOUR, Ogre::VES_DIFFUSE, 0);
+      ROS_ASSERT(input_submesh.colors[j].array.size() == input_submesh.positions.size());
+      vertex_decl->addElement(0, offset, Ogre::VET_COLOUR, Ogre::VES_DIFFUSE, j);
       offset += Ogre::VertexElement::getTypeSize(Ogre::VET_COLOUR);
     }
 
+    // Texture coordinates
+    for (size_t j = 0; j < input_submesh.tex_coords.size(); ++j)
+    {
+     ROS_ASSERT(input_submesh.tex_coords[j].array.size() == input_submesh.positions.size());
+     ROS_ASSERT(input_submesh.tex_coords[j].dims <= 3);
+
+     Ogre::VertexElementType type = Ogre::VET_FLOAT1;
+     if (input_submesh.tex_coords[j].dims == 2)
+     {
+       type = Ogre::VET_FLOAT2;
+     }
+     else if (input_submesh.tex_coords[j].dims == 3)
+     {
+       type = Ogre::VET_FLOAT3;
+     }
+
+     vertex_decl->addElement(0, offset, type, Ogre::VES_TEXTURE_COORDINATES, j);
+     offset += Ogre::VertexElement::getTypeSize(type);
+    }
+
     // allocate the vertex buffer
-    vertex_data->vertexCount = input_submesh.vertices.size();
+    vertex_data->vertexCount = input_submesh.positions.size();
     Ogre::HardwareVertexBufferSharedPtr vbuf = Ogre::HardwareBufferManager::getSingleton().createVertexBuffer(vertex_decl->getVertexSize(0),
                                                                           vertex_data->vertexCount,
                                                                           Ogre::HardwareBuffer::HBU_STATIC_WRITE_ONLY,
@@ -106,14 +124,14 @@ MeshPtr convertMesh(const std::string& name, const rviz_msgs::Mesh& input_mesh)
     float* vertices = static_cast<float*>(vbuf->lock(Ogre::HardwareBuffer::HBL_DISCARD));
 
     // Add the vertices
-    for (size_t j = 0; j < input_submesh.vertices.size(); j++)
+    for (size_t j = 0; j < input_submesh.positions.size(); j++)
     {
-      rviz_msgs::Vertex v = input_submesh.vertices[j];
-      *vertices++ = v.position.x;
-      *vertices++ = v.position.y;
-      *vertices++ = v.position.z;
+      const rviz_msgs::Vector3& p = input_submesh.positions[j];
+      *vertices++ = p.x;
+      *vertices++ = p.y;
+      *vertices++ = p.z;
 
-      Ogre::Vector3 ogre_pos(v.position.x, v.position.y, v.position.z);
+      Ogre::Vector3 ogre_pos(p.x, p.y, p.z);
       aabb.merge(ogre_pos);
       float dist = ogre_pos.length();
       if (dist > radius)
@@ -121,23 +139,29 @@ MeshPtr convertMesh(const std::string& name, const rviz_msgs::Mesh& input_mesh)
         radius = dist;
       }
 
-      if (input_submesh.has_normals)
+
+      if (has_normals)
       {
-        *vertices++ = v.normal.x;
-        *vertices++ = v.normal.y;
-        *vertices++ = v.normal.z;
+        const rviz_msgs::Vector3& n = input_submesh.normals[j];
+        *vertices++ = n.x;
+        *vertices++ = n.y;
+        *vertices++ = n.z;
       }
 
-      if (input_submesh.has_tex_coords)
+      for (size_t j = 0; j < input_submesh.colors.size(); ++j)
       {
-        *vertices++ = v.tex.u;
-        *vertices++ = v.tex.v;
-      }
-
-      if (input_submesh.has_vertex_colors)
-      {
-        Ogre::Root::getSingleton().convertColourValue(Ogre::ColourValue(v.color.r, v.color.g, v.color.b, v.color.a), reinterpret_cast<uint32_t*>(vertices));
+        const std_msgs::ColorRGBA& color = input_submesh.colors[j].array[i];
+        Ogre::Root::getSingleton().convertColourValue(Ogre::ColourValue(color.r, color.g, color.b, color.a), reinterpret_cast<uint32_t*>(vertices));
         ++vertices;
+      }
+
+      for (size_t j = 0; j < input_submesh.tex_coords.size(); ++j)
+      {
+        const rviz_msgs::TexCoord& tex = input_submesh.tex_coords[j].array[i];
+        for (uint32_t k = 0; k < input_submesh.tex_coords[j].dims; ++k)
+        {
+          *vertices++ = tex.uvw[k];
+        }
       }
     }
 
@@ -194,7 +218,8 @@ MaterialPtr createMaterial(const rviz_msgs::Material& mat)
     SimpleColorMaterial* scm = new SimpleColorMaterial(mat.id);
     out.reset(scm);
 
-    scm->setColor(Ogre::ColourValue(mat.color.r, mat.color.g, mat.color.b, mat.color.a));
+    //scm->setColor(Ogre::ColourValue(mat.color.r, mat.color.g, mat.color.b, mat.color.a));
+    scm->setColor(Ogre::ColourValue(1, 0, 0, 1));
   }
   else if (mat.has_color)
   {

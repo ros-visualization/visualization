@@ -1,3 +1,1 @@
-float32 u
-float32 v
-float32 w
+float32[3] uvw

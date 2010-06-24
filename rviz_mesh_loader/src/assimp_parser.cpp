@@ -208,44 +208,49 @@ void buildMesh(const aiScene* scene, const aiNode* node, rviz_msgs::Mesh& out_me
     aiMesh* input_mesh = scene->mMeshes[node->mMeshes[i]];
     out_mesh.submeshes.resize(out_mesh.submeshes.size() + 1);
     rviz_msgs::SubMesh& submesh = out_mesh.submeshes.back();
-
-    submesh.has_normals = input_mesh->HasNormals();
-    submesh.has_tex_coords = input_mesh->HasTextureCoords(0);
-    submesh.has_vertex_colors = input_mesh->HasVertexColors(0);
+    submesh.tex_coords.resize(input_mesh->GetNumUVChannels());
+    submesh.colors.resize(input_mesh->GetNumColorChannels());
 
     // Add the vertices
     for (uint32_t j = 0; j < input_mesh->mNumVertices; j++)
     {
       aiVector3D p = input_mesh->mVertices[j];
       p *= transform;
-      rviz_msgs::Vertex v;
-      v.position.x = p.x;
-      v.position.y = p.y;
-      v.position.z = p.z;
+      rviz_msgs::Vector3 pos;
+      pos.x = p.x;
+      pos.y = p.y;
+      pos.z = p.z;
+      submesh.positions.push_back(pos);
 
       if (input_mesh->HasNormals())
       {
-        v.normal.x = input_mesh->mNormals[j].x;
-        v.normal.y = input_mesh->mNormals[j].y;
-        v.normal.z = input_mesh->mNormals[j].z;
+        rviz_msgs::Vector3 normal;
+        normal.x = input_mesh->mNormals[j].x;
+        normal.y = input_mesh->mNormals[j].y;
+        normal.z = input_mesh->mNormals[j].z;
+        submesh.normals.push_back(normal);
       }
 
-      if (input_mesh->HasTextureCoords(0))
+      for (uint32_t k = 0; input_mesh->HasTextureCoords(k); ++k)
       {
-        v.tex.u = input_mesh->mTextureCoords[0][j].x;
-        v.tex.v = input_mesh->mTextureCoords[0][j].y;
-        v.texcoord_dims = 2;
+        rviz_msgs::TexCoordChannel& channel = submesh.tex_coords[k];
+        rviz_msgs::TexCoord coord;
+        coord.uvw[0] = input_mesh->mTextureCoords[k][j].x;
+        coord.uvw[1] = input_mesh->mTextureCoords[k][j].y;
+        channel.dims = 2;
+        channel.array.push_back(coord);
       }
 
-      if (input_mesh->HasVertexColors(0))
+      for (uint32_t k = 0; input_mesh->HasVertexColors(k); ++k)
       {
-        v.color.r = input_mesh->mColors[0][j].r;
-        v.color.g = input_mesh->mColors[0][j].g;
-        v.color.b = input_mesh->mColors[0][j].b;
-        v.color.a = input_mesh->mColors[0][j].a;
+        rviz_msgs::ColorChannel& channel = submesh.colors[k];
+        std_msgs::ColorRGBA color;
+        color.r = input_mesh->mColors[0][j].r;
+        color.g = input_mesh->mColors[0][j].g;
+        color.b = input_mesh->mColors[0][j].b;
+        color.a = input_mesh->mColors[0][j].a;
+        channel.array.push_back(color);
       }
-
-      submesh.vertices.push_back(v);
     }
 
     // add the indices

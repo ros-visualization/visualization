@@ -54,16 +54,18 @@ void parseSTL(uint8_t* buffer, size_t buffer_size, const std::string& extension,
 {
   out_mesh.submeshes.resize(1);
   rviz_msgs::SubMesh& submesh = out_mesh.submeshes[0];
-  submesh.has_normals = true;
-  submesh.has_tex_coords = true;
   uint8_t* pos = buffer;
   pos += 80; // skip the 80 byte header
 
   uint32_t tri_count = *(uint32_t*)pos;
   pos += 4;
 
-  submesh.vertices.resize(tri_count * 3);
+  submesh.positions.resize(tri_count * 3);
+  submesh.normals.resize(tri_count * 3);
   submesh.indices.resize(tri_count * 3);
+  submesh.tex_coords.resize(1);
+  submesh.tex_coords[0].array.resize(tri_count * 3);
+  submesh.tex_coords[0].dims = 2;
   for ( uint32_t tri = 0; tri < tri_count; ++tri )
   {
     // Read face normal
@@ -80,19 +82,16 @@ void parseSTL(uint8_t* buffer, size_t buffer_size, const std::string& extension,
     for (uint32_t i = 0; i < 3; ++i)
     {
       uint32_t vert_index = tri * 3 + i;
-      rviz_msgs::Vertex& v = submesh.vertices[vert_index];
-      v.position.x = *(float*)pos;
+      rviz_msgs::Vector3& p = submesh.positions[vert_index];
+      p.x = *(float*)pos;
       pos += 4;
-      v.position.y = *(float*)pos;
+      p.y = *(float*)pos;
       pos += 4;
-      v.position.z = *(float*)pos;
+      p.z = *(float*)pos;
       pos += 4;
 
-      float tex_u, tex_v;
-      calculateUV( Eigen::Vector3f(v.position.x, v.position.y, v.position.z), tex_u, tex_v );
-      v.tex.u = tex_u;
-      v.tex.v = tex_v;
-      v.texcoord_dims = 2;
+      rviz_msgs::TexCoord& uvw = submesh.tex_coords[0].array[vert_index];
+      calculateUV( Eigen::Vector3f(p.x, p.y, p.z), uvw.uvw[0], uvw.uvw[1] );
     }
 
     // Blender was writing a large number into this short... am I misinterpreting what the attribute byte count is supposed to do?
@@ -103,11 +102,11 @@ void parseSTL(uint8_t* buffer, size_t buffer_size, const std::string& extension,
 
     if (normal.squaredNorm() < 0.001)
     {
-      rviz_msgs::Vertex& v0 = submesh.vertices[0];
-      rviz_msgs::Vertex& v1 = submesh.vertices[1];
-      rviz_msgs::Vertex& v2 = submesh.vertices[2];
-      Eigen::Vector3f side1 = Eigen::Vector3f(v0.position.x, v0.position.y, v0.position.z) - Eigen::Vector3f(v1.position.x, v1.position.y, v1.position.z);
-      Eigen::Vector3f side2 = Eigen::Vector3f(v1.position.x, v1.position.y, v1.position.z) - Eigen::Vector3f(v2.position.x, v2.position.y, v2.position.z);
+      rviz_msgs::Vector3& p0 = submesh.positions[0];
+      rviz_msgs::Vector3& p1 = submesh.positions[1];
+      rviz_msgs::Vector3& p2 = submesh.positions[2];
+      Eigen::Vector3f side1 = Eigen::Vector3f(p0.x, p0.y, p0.z) - Eigen::Vector3f(p1.x, p1.y, p1.z);
+      Eigen::Vector3f side2 = Eigen::Vector3f(p1.x, p1.y, p1.z) - Eigen::Vector3f(p2.x, p2.y, p2.z);
       normal = side1.cross(side2);
       normal.normalize();
     }
@@ -116,10 +115,10 @@ void parseSTL(uint8_t* buffer, size_t buffer_size, const std::string& extension,
     for (uint32_t i = 0; i < 3; ++i)
     {
       uint32_t vert_index = tri * 3 + i;
-      rviz_msgs::Vertex& v = submesh.vertices[vert_index];
-      v.normal.x = normal.x();
-      v.normal.y = normal.y();
-      v.normal.z = normal.z();
+      rviz_msgs::Vector3& n = submesh.normals[vert_index];
+      n.x = normal.x();
+      n.y = normal.y();
+      n.z = normal.z();
     }
   }
 }
