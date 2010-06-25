@@ -1,0 +1,52 @@
+material rviz/SimpleTexture
+{
+  technique
+  {
+    scheme GBuffer
+  
+    pass
+    {
+      vertex_program_ref rviz/SimpleTextureGBufferVP
+      {
+      }
+
+      fragment_program_ref rviz/SimpleTextureGBufferFP
+      {
+      }
+      
+      texture_unit
+      {
+        tex_address_mode clamp
+        filtering none
+      }
+    }
+  }
+}
+
+material rviz/SimpleTextureWithAlpha
+{
+  technique
+  {
+    scheme WeightedAverageAlpha
+  
+    pass
+    {
+      scene_blend add
+      depth_write off
+      
+      vertex_program_ref rviz/SimpleTextureWeightedAverageAlphaVP
+      {
+      }
+
+      fragment_program_ref rviz/SimpleTextureWeightedAverageAlphaFP
+      {
+      }
+      
+      texture_unit
+      {
+        tex_address_mode clamp
+        filtering none
+      }
+    }
+  }
+}

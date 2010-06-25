@@ -1,0 +1,80 @@
+vertex_program rviz/SimpleTextureGBufferStippleAlphaVP cg
+{
+  source simple_texture.cg
+  entry_point simpleTextureGBufferStippleAlphaVP_main
+  profiles vp20 vs_2_0 arbvp1 vs_1_1
+  
+  default_params
+  {
+    param_named_auto worldviewproj worldviewproj_matrix
+    param_named_auto worldview worldview_matrix
+  }
+}
+
+fragment_program rviz/SimpleTextureGBufferStippleAlphaFP cg
+{
+  source simple_texture.cg
+  entry_point simpleTextureGBufferStippleAlphaFP_main
+  profiles arbfp1 ps_2_0 fp20 fp30 fp40
+  
+  default_params
+  {
+    param_named_auto viewport_size viewport_size
+    param_named_auto in_far_clip far_clip_distance
+    param_named_auto object_id custom 0
+    param_named_auto color custom 1
+  }
+}
+
+vertex_program rviz/SimpleTextureGBufferVP cg
+{
+  source simple_texture.cg
+  entry_point simpleTextureGBufferVP_main
+  profiles vp20 vs_2_0 arbvp1 vs_1_1
+  
+  default_params
+  {
+    param_named_auto worldviewproj worldviewproj_matrix
+    param_named_auto worldview worldview_matrix
+  }
+}
+
+fragment_program rviz/SimpleTextureGBufferFP cg
+{
+  source simple_texture.cg
+  entry_point simpleTextureGBufferFP_main
+  profiles arbfp1 ps_2_0 fp20 fp30 fp40
+  
+  default_params
+  {
+    param_named_auto object_id custom 0
+    param_named_auto in_color custom 1
+    param_named_auto in_far_clip far_clip_distance
+  }
+}
+
+vertex_program rviz/SimpleTextureWeightedAverageAlphaVP cg
+{
+  source simple_texture.cg
+  entry_point simpleTextureWeightedAverageAlphaVP_main
+  profiles vp20 vs_2_0 arbvp1 vs_1_1
+  
+  default_params
+  {
+    param_named_auto worldviewproj worldviewproj_matrix
+    param_named_auto worldview worldview_matrix
+  }
+}
+
+fragment_program rviz/SimpleTextureWeightedAverageAlphaFP cg
+{
+  source simple_texture.cg
+  entry_point simpleTextureWeightedAverageAlphaFP_main
+  profiles arbfp1 ps_2_0 fp20 fp30 fp40
+  
+  default_params
+  {
+    param_named_auto object_id custom 0
+    param_named_auto color custom 1
+  }
+}

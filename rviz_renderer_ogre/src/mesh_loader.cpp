@@ -147,19 +147,19 @@ MeshPtr convertMesh(const std::string& name, const rviz_msgs::Mesh& input_mesh)
         *vertices++ = n.z;
       }
 
-      for (size_t j = 0; j < input_submesh.colors.size(); ++j)
+      for (size_t k = 0; k < input_submesh.colors.size(); ++k)
       {
-        const std_msgs::ColorRGBA& color = input_submesh.colors[j].array[i];
+        const std_msgs::ColorRGBA& color = input_submesh.colors[k].array[j];
         Ogre::Root::getSingleton().convertColourValue(Ogre::ColourValue(color.r, color.g, color.b, color.a), reinterpret_cast<uint32_t*>(vertices));
         ++vertices;
       }
 
-      for (size_t j = 0; j < input_submesh.tex_coords.size(); ++j)
+      for (size_t k = 0; k < input_submesh.tex_coords.size(); ++k)
       {
-        const rviz_msgs::TexCoord& tex = input_submesh.tex_coords[j].array[i];
-        for (uint32_t k = 0; k < input_submesh.tex_coords[j].dims; ++k)
+        const rviz_msgs::TexCoord& tex = input_submesh.tex_coords[k].array[j];
+        for (uint32_t l = 0; l < input_submesh.tex_coords[k].dims; ++l)
         {
-          *vertices++ = tex.uvw[k];
+          *vertices++ = tex.uvw[l];
         }
       }
     }

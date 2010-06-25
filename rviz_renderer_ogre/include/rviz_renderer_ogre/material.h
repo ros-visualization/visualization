@@ -81,6 +81,8 @@ protected:
   void materialUpdated();
   void ogreMaterialChanged();
 
+  void cloneSimpleTextureMaterial();
+
   rviz_uuid::UUID id_;
 
   Ogre::MaterialPtr material_;

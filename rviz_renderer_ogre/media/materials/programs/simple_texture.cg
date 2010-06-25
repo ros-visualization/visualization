@@ -1,0 +1,122 @@
+///////////////////////////////////////////////////////////////////////////////////////////////////
+// GBuffer programs
+///////////////////////////////////////////////////////////////////////////////////////////////////
+
+void simpleTextureGBufferVP_main(float4 in_position : POSITION, 
+                                   float3 in_normal : NORMAL,
+                                   float2 in_uv : TEXCOORD0,
+                                   
+                                   out float4 out_position : POSITION,
+                                   out float3 out_normal : TEXCOORD0,
+                                   out float3 out_view_pos : TEXCOORD1,
+                                   out float2 out_uv : TEXCOORD2,
+                                                 
+                                   uniform float4x4 worldviewproj,
+                                   uniform float4x4 worldview)
+{
+  out_position = mul(worldviewproj, in_position);
+  out_normal = mul(worldview, float4(in_normal, 0.0)).xyz;
+  out_view_pos = mul(worldview, in_position).xyz;
+  out_uv = in_uv;
+}
+
+void simpleTextureGBufferFP_main(float3 in_normal : TEXCOORD0,
+                               float3 in_view_pos : TEXCOORD1,
+                               float2 in_uv : TEXCOORD2,
+                               
+                               out float4 out_color0 : COLOR0,
+                               out float4 out_color1 : COLOR1,
+                               
+                               uniform float4 object_id,
+                               uniform float4 in_color,
+                               uniform float in_far_clip,
+                               uniform sampler tex0: register(s0))
+{
+  out_color0 = float4(tex2D(tex0, in_uv).rgb, in_color.a);
+ // out_color0 = float4(in_uv, 0.0, 1.0);
+  out_color1.rgb = in_normal;
+  
+  float depth = length(in_view_pos) / in_far_clip;
+  out_color1.a = depth;
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+// GBufferStippleAlpha programs
+///////////////////////////////////////////////////////////////////////////////////////////////////
+
+void simpleTextureGBufferStippleAlphaVP_main(float4 in_position : POSITION, 
+                                   float3 in_normal : NORMAL, 
+                                   
+                                   out float4 out_position : POSITION,
+                                   out float3 out_normal : TEXCOORD0,
+                                   out float3 out_view_pos : TEXCOORD1,
+                                                 
+                                   uniform float4x4 worldviewproj,
+                                   uniform float4x4 worldview)
+{
+  out_position = mul(worldviewproj, in_position);
+  out_normal = mul(worldview, float4(in_normal, 0.0)).xyz;
+  out_view_pos = mul(worldview, in_position).xyz;
+}
+
+void simpleTextureGBufferStippleAlphaFP_main(float3 norm : TEXCOORD0, 
+                        float4 view_pos : TEXCOORD1,
+                        float4 screen_pos : WPOS,
+                        out float4 out_color0 : COLOR0,
+                        out float4 out_color1 : COLOR1,
+                        uniform float4 object_id,
+                        uniform float4 color,
+                        uniform sampler tex0: register(s0),
+                        uniform float4 viewport_size,
+                        uniform float in_far_clip)
+{
+  float depth = length(view_pos) / in_far_clip;
+
+  float2 sample_pos = ((screen_pos.xy + object_id.ba + object_id.rg) / 4.0);// 4 == width and height of the stipple texture;
+  float4 stipple = tex3D(tex0, float3(sample_pos, 1 - color.a));
+  
+  discard(stipple.a > color.a);
+
+  float a = saturate(ceil(color.a - stipple.a));
+  out_color0 = float4(color.rgb, a);
+  //out_color0 = float4(a, a, a, 1);
+  //out_color0 = float4(1, 0, 0, 1);
+  out_color1.rgb = norm;
+  out_color1.a = depth;
+}
+
+#include "gooch_98.cg"
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+// Weighted Average Alpha programs
+///////////////////////////////////////////////////////////////////////////////////////////////////
+
+void simpleTextureWeightedAverageAlphaVP_main(float4 in_position : POSITION, 
+                                             float3 in_normal : NORMAL, 
+                                             
+                                             out float4 out_position : POSITION,
+                                             out float3 out_normal : TEXCOORD0,
+                                             out float3 out_view_pos : TEXCOORD1,
+                                                           
+                                             uniform float4x4 worldviewproj,
+                                             uniform float4x4 worldview)
+{
+  out_position = mul(worldviewproj, in_position);
+  out_normal = mul(worldview, float4(in_normal, 0.0)).xyz;
+  out_view_pos = mul(worldview, in_position).xyz;
+}
+
+void simpleTextureWeightedAverageAlphaFP_main(float3 norm : TEXCOORD0, 
+                                            float4 view_pos : TEXCOORD1,
+                                            out float4 out_color0 : COLOR,
+                                            out float4 out_color1 : COLOR1,
+                                            uniform float4 object_id,
+                                            uniform float4 color)
+{
+  float3 gooch_color = gooch98(color.rgb, norm, float3(1.0, 1.0, 0.0)); 
+  // Accumulate weighted color + alpha
+  out_color0 = float4(gooch_color * color.a, color.a);
+
+  // Accumulate # of samples
+  out_color1 = float4(1.0, 0.0, 0.0, 0.0);
+}
