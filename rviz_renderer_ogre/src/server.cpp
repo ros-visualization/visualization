@@ -33,7 +33,7 @@
 #include <rviz_renderer_ogre/scene.h>
 #include <rviz_renderer_ogre/transform_node.h>
 #include <rviz_renderer_ogre/camera.h>
-#include <rviz_renderer_ogre/simple_color_material.h>
+#include <rviz_renderer_ogre/material.h>
 #include <rviz_renderer_ogre/mesh_instance.h>
 #include <rviz_uuid/uuid.h>
 #include <rviz_math/vector3.h>
@@ -47,7 +47,7 @@
 #include <rviz_interfaces/Scene.h>
 #include <rviz_interfaces/SimpleShape.h>
 #include <rviz_interfaces/TransformNode.h>
-#include <rviz_interfaces/SimpleColorMaterial.h>
+#include <rviz_interfaces/Material.h>
 #include <rviz_interfaces/MeshInstance.h>
 
 using namespace rviz_uuid;
@@ -372,18 +372,18 @@ private:
   Renderer* renderer_;
 };
 
-class SimpleColorMaterialServer : public rviz_interfaces::SimpleColorMaterialServer
+class MaterialServer : public rviz_interfaces::MaterialServer
 {
 public:
-  SimpleColorMaterialServer(Renderer* rend, const std::string& name, const ros::NodeHandle& nh)
-  : rviz_interfaces::SimpleColorMaterialServer(name, nh)
+  MaterialServer(Renderer* rend, const std::string& name, const ros::NodeHandle& nh)
+  : rviz_interfaces::MaterialServer(name, nh)
   , renderer_(rend)
   {
   }
 
   virtual void create(const rviz_msgs::UUID& id)
   {
-    SimpleColorMaterial* mat = new SimpleColorMaterial(id);
+    Material* mat = new Material(id);
     renderer_->addMaterial(id, MaterialPtr(mat));
   }
 
@@ -392,17 +392,17 @@ public:
     renderer_->removeMaterial(id);
   }
 
-  virtual void setColor(const rviz_msgs::UUID& id, const std_msgs::ColorRGBA& col)
+  virtual void setMaterial(const rviz_msgs::UUID& id, const rviz_msgs::Material& in_mat)
   {
-    SimpleColorMaterialPtr mat = boost::dynamic_pointer_cast<SimpleColorMaterial>(renderer_->getMaterial(id));
+    MaterialPtr mat = renderer_->getMaterial(id);
     if (!mat)
     {
       std::stringstream ss;
-      ss << "SimpleColorMaterial [" << id << "] does not exist!";
+      ss << "Material [" << id << "] does not exist!";
       throw std::runtime_error(ss.str());
     }
 
-    mat->setColor(Ogre::ColourValue(col.r, col.g, col.b, col.a));
+    mat->setMaterial(in_mat);
   }
 
 private:
@@ -479,7 +479,7 @@ Server::Server(Renderer* renderer, const ros::NodeHandle& nh)
   interfaces_.push_back(rviz_interface_gen::InterfacePtr(new SceneServer(renderer_, "scene", *nh_)));
   interfaces_.push_back(rviz_interface_gen::InterfacePtr(new SimpleShapeServer(renderer_, "simple_shape", *nh_)));
   interfaces_.push_back(rviz_interface_gen::InterfacePtr(new TransformNodeServer(renderer_, "transform_node", *nh_)));
-  interfaces_.push_back(rviz_interface_gen::InterfacePtr(new SimpleColorMaterialServer(renderer_, "simple_color_material", *nh_)));
+  interfaces_.push_back(rviz_interface_gen::InterfacePtr(new MaterialServer(renderer_, "material", *nh_)));
   interfaces_.push_back(rviz_interface_gen::InterfacePtr(new MeshInstanceServer(renderer_, "mesh_instance", *nh_)));
 }
 

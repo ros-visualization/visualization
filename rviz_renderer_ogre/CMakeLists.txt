@@ -31,7 +31,6 @@ rosbuild_add_library(${PROJECT_NAME} src/camera.cpp
 									 src/simple_shape.cpp
 									 src/material.cpp
 									 src/mesh_instance.cpp
-									 src/simple_color_material.cpp
 									 src/server.cpp
 									 src/init.cpp
 									 src/disable_rendering_scheme_listener.cpp

@@ -34,7 +34,7 @@
 #include <rviz_math/vector3.h>
 #include <rviz_math/quaternion.h>
 
-#include <rviz_interfaces/SimpleColorMaterial.h>
+#include <rviz_interfaces/Material.h>
 
 using namespace rviz_math;
 using namespace rviz_interfaces;
@@ -50,22 +50,29 @@ SimpleColorMaterial::SimpleColorMaterial()
 SimpleColorMaterial::SimpleColorMaterial(const rviz_uuid::UUID& id)
 : Material(id)
 {
-  proxy_ = getProxyInterface<SimpleColorMaterialProxy>("simple_color_material");
+  proxy_ = getProxyInterface<MaterialProxy>("material");
 }
 
 void SimpleColorMaterial::setColor(const Color& c)
 {
-  proxy_->setColor(getID(), c);
+  rviz_msgs::Material mat;
+  mat.id = getID();
+  mat.has_color = true;
+  mat.opacity = c.a;
+  mat.color.r = c.r;
+  mat.color.g = c.g;
+  mat.color.b = c.b;
+  proxy_->setMaterial(getID(), mat);
 }
 
 void SimpleColorMaterial::setColor(float r, float g, float b, float a)
 {
-  proxy_->setColor(getID(), Color(r, g, b, a));
+  setColor(Color(r, g, b, a));
 }
 
 SimpleColorMaterial createSimpleColorMaterial()
 {
-  rviz_interfaces::SimpleColorMaterialProxy* proxy = getProxyInterface<rviz_interfaces::SimpleColorMaterialProxy>("simple_color_material");
+  rviz_interfaces::MaterialProxy* proxy = getProxyInterface<rviz_interfaces::MaterialProxy>("material");
   UUID id = UUID::Generate();
   proxy->create(id);
   return SimpleColorMaterial(id);
@@ -73,7 +80,7 @@ SimpleColorMaterial createSimpleColorMaterial()
 
 void destroySimpleColorMaterial(const SimpleColorMaterial& mat)
 {
-  rviz_interfaces::SimpleColorMaterialProxy* proxy = getProxyInterface<rviz_interfaces::SimpleColorMaterialProxy>("simple_color_material");
+  rviz_interfaces::MaterialProxy* proxy = getProxyInterface<rviz_interfaces::MaterialProxy>("material");
   proxy->destroy(mat.getID());
 }
 

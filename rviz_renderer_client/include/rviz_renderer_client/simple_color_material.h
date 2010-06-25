@@ -34,7 +34,7 @@
 
 namespace rviz_interfaces
 {
-class SimpleColorMaterialProxy;
+class MaterialProxy;
 }
 
 namespace rviz_renderer_client
@@ -51,7 +51,7 @@ public:
   void setColor(float r, float g, float b, float a);
 
 private:
-  rviz_interfaces::SimpleColorMaterialProxy* proxy_;
+  rviz_interfaces::MaterialProxy* proxy_;
 };
 
 SimpleColorMaterial createSimpleColorMaterial();

@@ -29,7 +29,7 @@
 
 #include <rviz_renderer_ogre/simple_shape.h>
 #include <rviz_renderer_ogre/transform_node.h>
-#include <rviz_renderer_ogre/simple_color_material.h>
+#include <rviz_renderer_ogre/material.h>
 #include <rviz_renderer_ogre/mesh_instance.h>
 #include <rviz_renderer_ogre/mesh_loader.h>
 
@@ -58,7 +58,15 @@ SimpleShape::SimpleShape(Ogre::SceneManager* scene_manager, Type type, Transform
 {
   loadMesh(g_shape_meshes[type]);
   inst_ = new MeshInstance(rviz_uuid::UUID::Generate(), scene_manager, node, g_shape_meshes[type]);
-  material_.reset(new SimpleColorMaterial(rviz_uuid::UUID::Generate()));
+  material_.reset(new Material(rviz_uuid::UUID::Generate()));
+
+  rviz_msgs::Material mat;
+  mat.has_color = true;
+  mat.opacity = 1.0;
+  mat.color.r = 1.0;
+  mat.color.g = 1.0;
+  mat.color.b = 1.0;
+  material_->setMaterial(mat);
 
   inst_->setMaterial(material_);
 }
@@ -71,7 +79,13 @@ SimpleShape::~SimpleShape()
 
 void SimpleShape::setColor(const Ogre::ColourValue& col)
 {
-  material_->setColor(col);
+  rviz_msgs::Material mat;
+  mat.has_color = true;
+  mat.opacity = col.a;
+  mat.color.r = col.r;
+  mat.color.g = col.g;
+  mat.color.b = col.b;
+  material_->setMaterial(mat);
 }
 
 } // namespace rviz_renderer_ogre

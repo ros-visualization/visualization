@@ -50,8 +50,8 @@ namespace rviz_renderer_ogre
 
 class TransformNode;
 class MeshInstance;
-class SimpleColorMaterial;
-typedef boost::shared_ptr<SimpleColorMaterial> SimpleColorMaterialPtr;
+class Material;
+typedef boost::shared_ptr<Material> MaterialPtr;
 
 class SimpleShape
 {
@@ -73,7 +73,7 @@ private:
   Ogre::SceneManager* scene_manager_;
   MeshInstance* inst_;
 
-  SimpleColorMaterialPtr material_;
+  MaterialPtr material_;
 };
 
 } // namespace rviz_renderer_ogre

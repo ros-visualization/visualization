@@ -1,0 +1,7 @@
+interface Material
+{
+	create(rviz_msgs/UUID id);
+	destroy(rviz_msgs/UUID id);
+	
+	setMaterial(rviz_msgs/UUID id, rviz_msgs/Material material);
+}

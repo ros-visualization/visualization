@@ -28,9 +28,102 @@
  */
 
 #include <rviz_renderer_ogre/material.h>
+#include <rviz_renderer_ogre/renderable.h>
+
+#include <OGRE/OgreMaterialManager.h>
+#include <OGRE/OgreRenderable.h>
 
 namespace rviz_renderer_ogre
 {
+
+static const char* g_simple_color_material_name = "rviz/SimpleColor";
+static const char* g_simple_color_alpha_material_name = "rviz/SimpleColorWithAlpha";
+
+void Material::setMaterial(const rviz_msgs::Material& mat)
+{
+  input_material_ = mat;
+  createMaterialFromInput();
+  materialUpdated();
+}
+
+void Material::createMaterialFromInput()
+{
+  Ogre::MaterialPtr old_mat = material_;
+
+  // TODO this is terrible.  Need a material/shader manager that generates materials/shaders on the fly
+  // based on input materials
+  bool transparent = input_material_.opacity < 0.99;
+  if (transparent)
+  {
+    if (input_material_.has_color && input_material_.has_texture)
+    {
+      material_ = Ogre::MaterialManager::getSingleton().getByName(g_simple_color_alpha_material_name);
+    }
+    else if (input_material_.has_color)
+    {
+      material_ = Ogre::MaterialManager::getSingleton().getByName(g_simple_color_alpha_material_name);
+    }
+    else if (input_material_.has_texture)
+    {
+      material_ = Ogre::MaterialManager::getSingleton().getByName(g_simple_color_alpha_material_name);
+    }
+    else
+    {
+      ROS_BREAK();
+    }
+  }
+  else
+  {
+    if (input_material_.has_color && input_material_.has_texture)
+    {
+      material_ = Ogre::MaterialManager::getSingleton().getByName(g_simple_color_material_name);
+    }
+    else if (input_material_.has_color)
+    {
+      material_ = Ogre::MaterialManager::getSingleton().getByName(g_simple_color_material_name);
+    }
+    else if (input_material_.has_texture)
+    {
+      material_ = Ogre::MaterialManager::getSingleton().getByName(g_simple_color_material_name);
+    }
+    else
+    {
+      ROS_BREAK();
+    }
+  }
+
+  if (old_mat != material_)
+  {
+    ogreMaterialChanged();
+  }
+}
+
+void Material::ogreMaterialChanged()
+{
+  M_Renderable::iterator it = rends_.begin();
+  M_Renderable::iterator end = rends_.end();
+  for (; it != end; ++it)
+  {
+    Renderable* rend = it->first;
+    rend->onOgreMaterialChanged(shared_from_this());
+  }
+}
+
+void Material::materialUpdated()
+{
+  M_Renderable::iterator it = rends_.begin();
+  M_Renderable::iterator end = rends_.end();
+  for (; it != end; ++it)
+  {
+    V_OgreRenderable::iterator og_it = it->second.begin();
+    V_OgreRenderable::iterator og_end = it->second.end();
+    for (; og_it != og_end; ++og_it)
+    {
+      Ogre::Renderable* ogre_rend = *og_it;
+      ogre_rend->setCustomParameter(CustomParam_Color, Ogre::Vector4(input_material_.color.r, input_material_.color.g, input_material_.color.b, input_material_.opacity));
+    }
+  }
+}
 
 void Material::attachRenderable(Renderable* rend, Ogre::Renderable* ogre_rend)
 {
@@ -65,6 +158,16 @@ void Material::detachRenderable(Renderable* rend)
     rends_.erase(it);
     onRenderableDetached(rend, 0);
   }
+}
+
+void Material::onRenderableAttached(Renderable* rend, Ogre::Renderable* ogre_rend)
+{
+  rend->onOgreMaterialChanged(shared_from_this());
+  ogre_rend->setCustomParameter(CustomParam_Color, Ogre::Vector4(input_material_.color.r, input_material_.color.g, input_material_.color.b, input_material_.opacity));
+}
+
+void Material::onRenderableDetached(Renderable* rend, Ogre::Renderable* ogre_rend)
+{
 }
 
 } // namespace rviz_renderer_ogre

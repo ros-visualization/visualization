@@ -31,7 +31,6 @@
 #include <rviz_renderer_ogre/mesh.h>
 #include <rviz_renderer_ogre/submesh.h>
 #include <rviz_renderer_ogre/material.h>
-#include <rviz_renderer_ogre/simple_color_material.h>
 #include <rviz_renderer_ogre/init.h>
 #include <rviz_renderer_ogre/renderer.h>
 
@@ -209,38 +208,9 @@ MeshPtr convertMesh(const std::string& name, const rviz_msgs::Mesh& input_mesh)
 
 MaterialPtr createMaterial(const rviz_msgs::Material& mat)
 {
-  MaterialPtr out;
-
-  ROS_ASSERT(!((rviz_uuid::UUID)mat.id).isNull());
-
-  if (mat.has_color && mat.has_texture)
-  {
-    SimpleColorMaterial* scm = new SimpleColorMaterial(mat.id);
-    out.reset(scm);
-
-    //scm->setColor(Ogre::ColourValue(mat.color.r, mat.color.g, mat.color.b, mat.color.a));
-    scm->setColor(Ogre::ColourValue(1, 0, 0, 1));
-  }
-  else if (mat.has_color)
-  {
-    SimpleColorMaterial* scm = new SimpleColorMaterial(mat.id);
-    out.reset(scm);
-
-    scm->setColor(Ogre::ColourValue(mat.color.r, mat.color.g, mat.color.b, mat.color.a));
-  }
-  else if (mat.has_texture)
-  {
-    SimpleColorMaterial* scm = new SimpleColorMaterial(mat.id);
-    out.reset(scm);
-
-    scm->setColor(Ogre::ColourValue(1, 0, 0, 1));
-  }
-
-  if (out)
-  {
-    getRenderer()->addMaterial(out->getID(), out);
-  }
-
+  MaterialPtr out(new Material(mat.id));
+  out->setMaterial(mat);
+  getRenderer()->addMaterial(out->getID(), out);
   return out;
 }
 

@@ -31,6 +31,8 @@
 #define RVIZ_RENDERER_OGRE_MATERIAL_H
 
 #include <rviz_uuid/uuid.h>
+#include <rviz_msgs/Material.h>
+
 #include <OGRE/OgreMaterial.h>
 #include <map>
 #include <vector>
@@ -51,6 +53,12 @@ class Renderable;
 class Material : public boost::enable_shared_from_this<Material>
 {
 public:
+  enum
+  {
+    CustomParam_ObjectID = 0,
+    CustomParam_Color = 1,
+  };
+
   Material(const rviz_uuid::UUID& id)
   : id_(id)
   {}
@@ -58,17 +66,25 @@ public:
   const rviz_uuid::UUID& getID() { return id_; }
 
   virtual const Ogre::MaterialPtr& getOgreMaterial() { return material_; }
-  virtual void attachRenderable(Renderable* rend, Ogre::Renderable* ogre_rend);
-  virtual void detachRenderable(Renderable* rend, Ogre::Renderable* ogre_rend);
-  virtual void detachRenderable(Renderable* rend);
+  void attachRenderable(Renderable* rend, Ogre::Renderable* ogre_rend);
+  void detachRenderable(Renderable* rend, Ogre::Renderable* ogre_rend);
+  void detachRenderable(Renderable* rend);
+
+  void setMaterial(const rviz_msgs::Material& mat);
+
 
 protected:
-  virtual void onRenderableAttached(Renderable* rend, Ogre::Renderable* ogre_rend) = 0;
-  virtual void onRenderableDetached(Renderable* rend, Ogre::Renderable* ogre_rend) = 0;
+  virtual void onRenderableAttached(Renderable* rend, Ogre::Renderable* ogre_rend);
+  virtual void onRenderableDetached(Renderable* rend, Ogre::Renderable* ogre_rend);
+
+  void createMaterialFromInput();
+  void materialUpdated();
+  void ogreMaterialChanged();
 
   rviz_uuid::UUID id_;
 
   Ogre::MaterialPtr material_;
+  rviz_msgs::Material input_material_;
 
   typedef std::vector<Ogre::Renderable*> V_OgreRenderable;
   typedef std::map<Renderable*, V_OgreRenderable> M_Renderable;

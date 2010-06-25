@@ -57,6 +57,9 @@ typedef boost::shared_ptr<Mesh> MeshPtr;
 class DisableRenderingSchemeListener;
 typedef boost::shared_ptr<DisableRenderingSchemeListener> DisableRenderingSchemeListenerPtr;
 
+class Renderer;
+Renderer* getRenderer();
+
 class Renderer
 {
 public:

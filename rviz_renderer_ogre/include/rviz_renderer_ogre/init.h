@@ -35,7 +35,4 @@ namespace rviz_renderer_ogre
 void init(bool enable_ogre_log, const std::string& ns);
 void shutdown();
 
-class Renderer;
-Renderer* getRenderer();
-
 }

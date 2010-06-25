@@ -293,7 +293,14 @@ void loadMaterialsForMesh(const std::string& resource_path, const aiScene* scene
     }
 
     float opacity = 1.0;
-    amat->Get(AI_MATKEY_OPACITY, opacity);
+    // From looking at the assimp code I'm not entirely sure if opacity will remain unchanged here
+    // if the value does not exist
+    if (amat->Get(AI_MATKEY_OPACITY, opacity) != aiReturn_SUCCESS)
+    {
+      opacity = 1.0;
+    }
+
+    mat.opacity = opacity;
 
     aiColor3D clr;
     if (amat->Get(AI_MATKEY_COLOR_DIFFUSE, clr) == aiReturn_SUCCESS)
@@ -301,7 +308,6 @@ void loadMaterialsForMesh(const std::string& resource_path, const aiScene* scene
       mat.color.r = clr.r;
       mat.color.b = clr.g;
       mat.color.g = clr.b;
-      mat.color.a = opacity;
       mat.has_color = true;
     }
 

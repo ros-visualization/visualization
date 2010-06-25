@@ -36,30 +36,31 @@
 #include <rviz_interfaces/Scene.h>
 #include <rviz_interfaces/SimpleShape.h>
 #include <rviz_interfaces/TransformNode.h>
-#include <rviz_interfaces/SimpleColorMaterial.h>
+#include <rviz_interfaces/Material.h>
 #include <rviz_interfaces/MeshInstance.h>
 
 #include <ros/ros.h>
 
 using namespace rviz_uuid;
-using namespace rviz_renderer_client;
 
+namespace rviz_renderer_client
+{
 static ros::NodeHandlePtr g_node_handle;
 
-void rviz_renderer_client::init(const std::string& server_namespace)
+void init(const std::string& server_namespace)
 {
   g_node_handle.reset(new ros::NodeHandle(server_namespace));
 
-  rviz_renderer_client::addProxyInterface("camera", rviz_interface_gen::InterfacePtr(new rviz_interfaces::CameraProxy("camera", *g_node_handle)));
-  rviz_renderer_client::addProxyInterface("render_window", rviz_interface_gen::InterfacePtr(new rviz_interfaces::RenderWindowProxy("render_window", *g_node_handle)));
-  rviz_renderer_client::addProxyInterface("scene", rviz_interface_gen::InterfacePtr(new rviz_interfaces::SceneProxy("scene", *g_node_handle)));
-  rviz_renderer_client::addProxyInterface("simple_shape", rviz_interface_gen::InterfacePtr(new rviz_interfaces::SimpleShapeProxy("simple_shape", *g_node_handle)));
-  rviz_renderer_client::addProxyInterface("transform_node", rviz_interface_gen::InterfacePtr(new rviz_interfaces::TransformNodeProxy("transform_node", *g_node_handle)));
-  rviz_renderer_client::addProxyInterface("simple_color_material", rviz_interface_gen::InterfacePtr(new rviz_interfaces::SimpleColorMaterialProxy("simple_color_material", *g_node_handle)));
-  rviz_renderer_client::addProxyInterface("mesh_instance", rviz_interface_gen::InterfacePtr(new rviz_interfaces::MeshInstanceProxy("mesh_instance", *g_node_handle)));
+  addProxyInterface("camera", rviz_interface_gen::InterfacePtr(new rviz_interfaces::CameraProxy("camera", *g_node_handle)));
+  addProxyInterface("render_window", rviz_interface_gen::InterfacePtr(new rviz_interfaces::RenderWindowProxy("render_window", *g_node_handle)));
+  addProxyInterface("scene", rviz_interface_gen::InterfacePtr(new rviz_interfaces::SceneProxy("scene", *g_node_handle)));
+  addProxyInterface("simple_shape", rviz_interface_gen::InterfacePtr(new rviz_interfaces::SimpleShapeProxy("simple_shape", *g_node_handle)));
+  addProxyInterface("transform_node", rviz_interface_gen::InterfacePtr(new rviz_interfaces::TransformNodeProxy("transform_node", *g_node_handle)));
+  addProxyInterface("material", rviz_interface_gen::InterfacePtr(new rviz_interfaces::MaterialProxy("material", *g_node_handle)));
+  addProxyInterface("mesh_instance", rviz_interface_gen::InterfacePtr(new rviz_interfaces::MeshInstanceProxy("mesh_instance", *g_node_handle)));
 }
 
-ros::NodeHandle& rviz_renderer_client::getNodeHandle()
+ros::NodeHandle& getNodeHandle()
 {
   return *g_node_handle;
 }
@@ -67,7 +68,7 @@ ros::NodeHandle& rviz_renderer_client::getNodeHandle()
 typedef std::map<std::string, rviz_interface_gen::InterfacePtr> M_Proxy;
 M_Proxy g_proxies;
 
-void rviz_renderer_client::addProxyInterface(const std::string& name, const rviz_interface_gen::InterfacePtr& proxy)
+void addProxyInterface(const std::string& name, const rviz_interface_gen::InterfacePtr& proxy)
 {
   if (!g_proxies.insert(std::make_pair(name, proxy)).second)
   {
@@ -75,12 +76,12 @@ void rviz_renderer_client::addProxyInterface(const std::string& name, const rviz
   }
 }
 
-void rviz_renderer_client::removeProxyInterface(const std::string& name)
+void removeProxyInterface(const std::string& name)
 {
   g_proxies.erase(name);
 }
 
-rviz_interface_gen::Interface* rviz_renderer_client::getProxyInterface(const std::string& name)
+rviz_interface_gen::Interface* getProxyInterface(const std::string& name)
 {
   M_Proxy::iterator it = g_proxies.find(name);
   if (it == g_proxies.end())
@@ -91,10 +92,10 @@ rviz_interface_gen::Interface* rviz_renderer_client::getProxyInterface(const std
   return it->second.get();
 }
 
-void rviz_renderer_client::shutdown()
+void shutdown()
 {
   g_proxies.clear();
   g_node_handle.reset();
 }
 
-
+} // namespace rviz_renderer_client
