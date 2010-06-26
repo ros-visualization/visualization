@@ -27,71 +27,22 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef RVIZ_RENDERER_OGRE_MATERIAL_H
-#define RVIZ_RENDERER_OGRE_MATERIAL_H
+#ifndef RVIZ_RENDERER_OGRE_OGRE_MATERIAL_GENERATOR_H
+#define RVIZ_RENDERER_OGRE_OGRE_MATERIAL_GENERATOR_H
 
-#include <rviz_uuid/uuid.h>
-#include <rviz_msgs/Material.h>
-
+#include <ros/message_forward.h>
 #include <OGRE/OgreMaterial.h>
-#include <map>
-#include <vector>
 
-#include <boost/shared_ptr.hpp>
-#include <boost/enable_shared_from_this.hpp>
-
-namespace Ogre
+namespace rviz_msgs
 {
-class Renderable;
+ROS_DECLARE_MESSAGE(Material);
 }
 
 namespace rviz_renderer_ogre
 {
 
-class Renderable;
+Ogre::MaterialPtr generateOgreMaterial(const rviz_msgs::Material& mat);
 
-class Material : public boost::enable_shared_from_this<Material>
-{
-public:
-  enum
-  {
-    CustomParam_ObjectID = 0,
-    CustomParam_Color = 1,
-  };
+} // namespace rviz_renderer_ogre
 
-  Material(const rviz_uuid::UUID& id)
-  : id_(id)
-  {}
-
-  const rviz_uuid::UUID& getID() { return id_; }
-
-  virtual const Ogre::MaterialPtr& getOgreMaterial() { return material_; }
-  void attachRenderable(Renderable* rend, Ogre::Renderable* ogre_rend);
-  void detachRenderable(Renderable* rend, Ogre::Renderable* ogre_rend);
-  void detachRenderable(Renderable* rend);
-
-  void setMaterial(const rviz_msgs::Material& mat);
-
-
-protected:
-  virtual void onRenderableAttached(Renderable* rend, Ogre::Renderable* ogre_rend);
-  virtual void onRenderableDetached(Renderable* rend, Ogre::Renderable* ogre_rend);
-
-  void createMaterialFromInput();
-  void materialUpdated();
-  void ogreMaterialChanged();
-
-  rviz_uuid::UUID id_;
-
-  Ogre::MaterialPtr material_;
-  rviz_msgs::Material input_material_;
-
-  typedef std::vector<Ogre::Renderable*> V_OgreRenderable;
-  typedef std::map<Renderable*, V_OgreRenderable> M_Renderable;
-  M_Renderable rends_;
-};
-typedef boost::shared_ptr<Material> MaterialPtr;
-
-}
-
-#endif // RVIZ_RENDERER_OGRE_MATERIAL_H
+#endif // RVIZ_RENDERER_OGRE_OGRE_MATERIAL_GENERATOR_H

@@ -29,6 +29,7 @@
 
 #include <rviz_renderer_ogre/material.h>
 #include <rviz_renderer_ogre/renderable.h>
+#include <rviz_renderer_ogre/ogre_material_generator.h>
 
 #include <OGRE/OgreMaterialManager.h>
 #include <OGRE/OgreTextureManager.h>
@@ -45,50 +46,6 @@ namespace fs = boost::filesystem;
 namespace rviz_renderer_ogre
 {
 
-static const char* g_simple_color_material_name = "rviz/SimpleColor";
-static const char* g_simple_color_alpha_material_name = "rviz/SimpleColorWithAlpha";
-static const char* g_simple_texture_material_name = "rviz/SimpleTexture";
-static const char* g_simple_texture_alpha_material_name = "rviz/SimpleTextureWithAlpha";
-
-void loadTexture(const std::string& resource_path)
-{
-  if (!Ogre::TextureManager::getSingleton().resourceExists(resource_path))
-  {
-    resource_retriever::Retriever retriever;
-    resource_retriever::MemoryResource res;
-    try
-    {
-      res = retriever.get(resource_path);
-    }
-    catch (resource_retriever::Exception& e)
-    {
-      ROS_ERROR("%s", e.what());
-    }
-
-    if (res.size != 0)
-    {
-      Ogre::DataStreamPtr stream(new Ogre::MemoryDataStream(res.data.get(), res.size));
-      Ogre::Image image;
-      std::string extension = fs::extension(fs::path(resource_path));
-
-      if (extension[0] == '.')
-      {
-        extension = extension.substr(1, extension.size() - 1);
-      }
-
-      try
-      {
-        image.load(stream, extension);
-        Ogre::TextureManager::getSingleton().loadImage(resource_path, ROS_PACKAGE_NAME, image);
-      }
-      catch (Ogre::Exception& e)
-      {
-        ROS_ERROR("Could not load texture [%s]: %s", resource_path.c_str(), e.what());
-      }
-    }
-  }
-}
-
 void Material::setMaterial(const rviz_msgs::Material& mat)
 {
   input_material_ = mat;
@@ -100,71 +57,12 @@ void Material::createMaterialFromInput()
 {
   Ogre::MaterialPtr old_mat = material_;
 
-  // TODO this is terrible.  Need a material/shader manager that generates materials/shaders on the fly
-  // based on input materials
-  bool transparent = input_material_.opacity < 0.99;
-  if (transparent)
-  {
-    if (input_material_.has_color && input_material_.has_texture)
-    {
-      material_ = Ogre::MaterialManager::getSingleton().getByName(g_simple_texture_alpha_material_name);
-      cloneSimpleTextureMaterial();
-    }
-    else if (input_material_.has_color)
-    {
-      material_ = Ogre::MaterialManager::getSingleton().getByName(g_simple_color_alpha_material_name);
-    }
-    else if (input_material_.has_texture)
-    {
-      material_ = Ogre::MaterialManager::getSingleton().getByName(g_simple_texture_alpha_material_name);
-      cloneSimpleTextureMaterial();
-    }
-    else
-    {
-      ROS_BREAK();
-    }
-  }
-  else
-  {
-    if (input_material_.has_color && input_material_.has_texture)
-    {
-      material_ = Ogre::MaterialManager::getSingleton().getByName(g_simple_texture_material_name);
-      cloneSimpleTextureMaterial();
-    }
-    else if (input_material_.has_color)
-    {
-      material_ = Ogre::MaterialManager::getSingleton().getByName(g_simple_color_material_name);
-    }
-    else if (input_material_.has_texture)
-    {
-      material_ = Ogre::MaterialManager::getSingleton().getByName(g_simple_texture_material_name);
-      cloneSimpleTextureMaterial();
-    }
-    else
-    {
-      ROS_BREAK();
-    }
-  }
+  material_ = generateOgreMaterial(input_material_);
 
   if (old_mat != material_)
   {
     ogreMaterialChanged();
   }
-}
-
-void Material::cloneSimpleTextureMaterial()
-{
-  if (Ogre::MaterialManager::getSingleton().resourceExists(getID().toString()))
-  {
-    material_ = Ogre::MaterialManager::getSingleton().getByName(getID().toString());
-  }
-  else
-  {
-    material_ = material_->clone(getID().toString());
-  }
-
-  loadTexture(input_material_.texture);
-  material_->getTechnique(0)->getPass(0)->getTextureUnitState(0)->setTextureName(input_material_.texture);
 }
 
 void Material::ogreMaterialChanged()

@@ -1,5 +1,10 @@
 #include "gooch_98.cg"
 
+float lengthSquared(float3 vec)
+{
+  return vec.x * vec.x + vec.y * vec.y + vec.z * vec.z;
+}
+
 float4 deferredGooch98FP_main(
         float2 in_color_uv: TEXCOORD0, 
         float3 in_proj: TEXCOORD1,
@@ -11,8 +16,8 @@ float4 deferredGooch98FP_main(
   float4 a1 = tex2D(tex1, in_color_uv); // Attribute 1: Normal+depth
   
   float3 light_vec = float3(1.0, 1.0, 1.0);
-  
-  discard(length(a1.xyz) == 0.0);
+ 
+  discard(lengthSquared(a1.xyz) == 0.0);
   
   return float4(gooch98(a0.rgb, a1.xyz, normalize(light_vec)), a0.a);
 }
