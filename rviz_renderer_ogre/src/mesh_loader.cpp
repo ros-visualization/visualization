@@ -93,6 +93,7 @@ MeshPtr convertMesh(const std::string& name, const rviz_msgs::Mesh& input_mesh)
     }
 
     // Texture coordinates
+    uint32_t texcoord_index = 0;
     for (size_t j = 0; j < input_submesh.tex_coords.size(); ++j)
     {
      ROS_ASSERT(input_submesh.tex_coords[j].array.size() == input_submesh.positions.size());
@@ -108,8 +109,16 @@ MeshPtr convertMesh(const std::string& name, const rviz_msgs::Mesh& input_mesh)
        type = Ogre::VET_FLOAT3;
      }
 
-     vertex_decl->addElement(0, offset, type, Ogre::VES_TEXTURE_COORDINATES, j);
+     vertex_decl->addElement(0, offset, type, Ogre::VES_TEXTURE_COORDINATES, texcoord_index++);
      offset += Ogre::VertexElement::getTypeSize(type);
+    }
+
+    // Tangents
+    if (!input_submesh.tangents.empty())
+    {
+      // Tangents
+      vertex_decl->addElement(0, offset, Ogre::VET_FLOAT3, Ogre::VES_TANGENT, 0);
+      offset += Ogre::VertexElement::getTypeSize(Ogre::VET_FLOAT3);
     }
 
     // allocate the vertex buffer
@@ -138,7 +147,6 @@ MeshPtr convertMesh(const std::string& name, const rviz_msgs::Mesh& input_mesh)
         radius = dist;
       }
 
-
       if (has_normals)
       {
         const rviz_msgs::Vector3& n = input_submesh.normals[j];
@@ -161,6 +169,14 @@ MeshPtr convertMesh(const std::string& name, const rviz_msgs::Mesh& input_mesh)
         {
           *vertices++ = tex.uvw[l];
         }
+      }
+
+      if (!input_submesh.tangents.empty())
+      {
+        const rviz_msgs::Vector3& t = input_submesh.tangents[j];
+        *vertices++ = t.x;
+        *vertices++ = t.y;
+        *vertices++ = t.z;
       }
     }
 

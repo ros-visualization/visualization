@@ -184,6 +184,15 @@ private:
   mutable resource_retriever::Retriever retriever_;
 };
 
+rviz_msgs::Vector3 assimpToMsg(const aiVector3D& vec)
+{
+  rviz_msgs::Vector3 out;
+  out.x = vec.x;
+  out.y = vec.y;
+  out.z = vec.z;
+  return out;
+}
+
 // Mostly stolen from gazebo
 void buildMesh(const aiScene* scene, const aiNode* node, rviz_msgs::Mesh& out_mesh)
 {
@@ -224,11 +233,13 @@ void buildMesh(const aiScene* scene, const aiNode* node, rviz_msgs::Mesh& out_me
 
       if (input_mesh->HasNormals())
       {
-        rviz_msgs::Vector3 normal;
-        normal.x = input_mesh->mNormals[j].x;
-        normal.y = input_mesh->mNormals[j].y;
-        normal.z = input_mesh->mNormals[j].z;
-        submesh.normals.push_back(normal);
+        submesh.normals.push_back(assimpToMsg(input_mesh->mNormals[j]));
+      }
+
+      if (input_mesh->HasTangentsAndBitangents())
+      {
+        submesh.tangents.push_back(assimpToMsg(input_mesh->mTangents[j]));
+        submesh.binormals.push_back(assimpToMsg(input_mesh->mBitangents[j]));
       }
 
       for (uint32_t k = 0; input_mesh->HasTextureCoords(k); ++k)
@@ -245,10 +256,10 @@ void buildMesh(const aiScene* scene, const aiNode* node, rviz_msgs::Mesh& out_me
       {
         rviz_msgs::ColorChannel& channel = submesh.colors[k];
         std_msgs::ColorRGBA color;
-        color.r = input_mesh->mColors[0][j].r;
-        color.g = input_mesh->mColors[0][j].g;
-        color.b = input_mesh->mColors[0][j].b;
-        color.a = input_mesh->mColors[0][j].a;
+        color.r = input_mesh->mColors[k][j].r;
+        color.g = input_mesh->mColors[k][j].g;
+        color.b = input_mesh->mColors[k][j].b;
+        color.a = input_mesh->mColors[k][j].a;
         channel.array.push_back(color);
       }
     }
@@ -292,25 +303,9 @@ void loadMaterialsForMesh(const std::string& resource_path, const aiScene* scene
 
     if (amat->GetTexture(aiTextureType_HEIGHT, 0, &tex_name) == aiReturn_SUCCESS)
     {
-      ROS_ERROR("NORMAL MAP!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
       std::string texture_path = fs::path(resource_path).parent_path().string() + "/" + tex_name.data;
       mat.normal_map = texture_path;
       mat.has_normal_map = true;
-    }
-    else
-    {
-      ROS_ERROR("NO NORMAL MAP!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-    }
-
-    for (uint32_t j = 0; j <= aiTextureType_UNKNOWN; ++j)
-    {
-      for (uint32_t i = 0; i < 10; ++i)
-      {
-        if (amat->GetTexture((aiTextureType)j, i, &tex_name) == aiReturn_SUCCESS)
-        {
-          ROS_ERROR("%d %d: %s", j, i, tex_name.data);
-        }
-      }
     }
 
     float opacity = 1.0;
@@ -357,7 +352,7 @@ void parseWithAssimp(uint8_t* buffer, size_t buffer_size, const std::string& fil
   Assimp::Importer importer;
   importer.SetIOHandler(new ResourceIOSystem());
   std::string extension = fs::extension(fs::path(filename)).substr(1);
-  const aiScene* scene = importer.ReadFileFromMemory(buffer, buffer_size, aiProcess_SortByPType|aiProcess_GenNormals|aiProcess_Triangulate|aiProcess_GenUVCoords|aiProcess_FlipUVs, extension.c_str());
+  const aiScene* scene = importer.ReadFileFromMemory(buffer, buffer_size, aiProcess_SortByPType|aiProcess_GenNormals|aiProcess_Triangulate|aiProcess_GenUVCoords|aiProcess_FlipUVs|aiProcess_CalcTangentSpace, extension.c_str());
   if (!scene)
   {
     throw ParseException(importer.GetErrorString());

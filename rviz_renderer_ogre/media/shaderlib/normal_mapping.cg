@@ -1,0 +1,6 @@
+float3 extractNormalFromMap(sampler s, float2 uv, float3 normal, float3 tangent, float3 binormal)
+{
+  float3 tex_normal = (tex2D(s, uv) - 0.5) * 2;
+  float3x3 normal_rotation = float3x3(tangent, binormal, normal);
+  return normalize(mul(tex_normal, normal_rotation));
+}

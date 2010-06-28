@@ -131,14 +131,26 @@ Ogre::GpuProgramPtr generateVertexShader(const rviz_msgs::Material& input_mat)
     ss << " float2 in_uv" << i << " : TEXCOORD" << i << ',' << std::endl;
   }
 
+  if (input_mat.has_normal_map)
+  {
+    ss << " float3 in_tangent : TANGENT0,\n";
+  }
+
   ss << std::endl;
 
   ss << " out float4 out_position : POSITION," << std::endl;
   ss << " out float3 out_view_pos : TEXCOORD0," << std::endl;
   ss << " out float3 out_normal : TEXCOORD1," << std::endl;
+  uint32_t tex_coord_num = 2;
   for (uint32_t i = 0; i < num_tex_coords; i++)
   {
-    ss << " out float2 out_uv" << i << " : TEXCOORD" << i + 2 << ',' << std::endl;
+    ss << " out float2 out_uv" << i << " : TEXCOORD" << tex_coord_num++ << ',' << std::endl;
+  }
+
+  if (input_mat.has_normal_map)
+  {
+    ss << " out float3 out_tangent : TEXCOORD" << tex_coord_num++ << "," << std::endl;
+    ss << " out float3 out_binormal : TEXCOORD" << tex_coord_num++ << "," << std::endl;
   }
 
   ss << std::endl;
@@ -153,6 +165,12 @@ Ogre::GpuProgramPtr generateVertexShader(const rviz_msgs::Material& input_mat)
   ss << " out_normal = mul(worldview, float4(in_normal,0)).xyz;" << std::endl;
 
   ss << " out_view_pos = mul(worldview, in_position).xyz;" << std::endl;
+
+  if (input_mat.has_normal_map)
+  {
+    ss << " out_tangent = mul(worldview, float4(in_tangent, 0)).xyz;" << std::endl;
+    ss << " out_binormal = cross(out_normal, out_tangent);" << std::endl;
+  }
 
   for (uint32_t i = 0; i < num_tex_coords; i++)
   {
@@ -186,14 +204,26 @@ Ogre::GpuProgramPtr generateFragmentShader(const rviz_msgs::Material& input_mat)
 {
   std::stringstream ss;
 
+  if (input_mat.has_normal_map)
+  {
+    ss << "#include \"normal_mapping.cg\"\n\n";
+  }
+
   ss << "void fp(" << std::endl;
   ss << " float3 in_view_pos : TEXCOORD0," << std::endl;
   ss << " float3 in_normal   : TEXCOORD1," << std::endl;
 
   uint32_t num_tex_coords = input_mat.has_texture ? 1 : 0;
+  uint32_t tex_coord_num = 2;
   for (uint32_t i = 0; i < num_tex_coords; i++)
   {
-    ss << " float2 in_uv" << i << " : TEXCOORD" << i + 2 << ',' << std::endl;
+    ss << " float2 in_uv" << i << " : TEXCOORD" << tex_coord_num++ << ',' << std::endl;
+  }
+
+  if (input_mat.has_normal_map)
+  {
+    ss << " float3 in_tangent : TEXCOORD" << tex_coord_num++ << "," << std::endl;
+    ss << " float3 in_binormal : TEXCOORD" << tex_coord_num++ << "," << std::endl;
   }
 
   ss << std::endl;
@@ -206,13 +236,13 @@ Ogre::GpuProgramPtr generateFragmentShader(const rviz_msgs::Material& input_mat)
   uint32_t sampler_num = 0;
   if (input_mat.has_texture)
   {
-    ss << " uniform sampler sampler_tex" << sampler_num << " : register(s" << sampler_num << ")," << std::endl;
+    ss << " uniform sampler sampler_tex : register(s" << sampler_num << ")," << std::endl;
     ++sampler_num;
   }
 
   if (input_mat.has_normal_map)
   {
-    ss << " uniform sampler sampler_tex" << sampler_num << " : register(s" << sampler_num << ")," << std::endl;
+    ss << " uniform sampler sampler_normal_map : register(s" << sampler_num << ")," << std::endl;
     ++sampler_num;
   }
 
@@ -227,7 +257,7 @@ Ogre::GpuProgramPtr generateFragmentShader(const rviz_msgs::Material& input_mat)
 #if 01
   if (num_tex_coords > 0 && input_mat.has_texture)
   {
-    ss << " out_color0.rgb = tex2D(sampler_tex0, in_uv0);" << std::endl;
+    ss << " out_color0.rgb = tex2D(sampler_tex, in_uv0);" << std::endl;
     if (input_mat.has_color)
     {
       //ss << " out_color0.rgb *= in_color.rgb;" << std::endl;
@@ -243,10 +273,8 @@ Ogre::GpuProgramPtr generateFragmentShader(const rviz_msgs::Material& input_mat)
 
   if (input_mat.has_normal_map)
   {
-    uint32_t sampler = input_mat.has_texture ? 1 : 0;
-    ss << " out_color1.rgb = normalize(mul(worldview, float4(tex2D(sampler_tex" << sampler << ", in_uv0).rgb * 2.0 - 1.0, 0))).rgb;" << std::endl;
-    //ss << " out_color1.rgb = tex2D(sampler_tex" << sampler << ", in_uv0).rgb * 2.0 - 1.0;" << std::endl;
-    ss << " out_color0.rgb = out_color1.rgb;" << std::endl;
+    ss << " out_color1.rgb = extractNormalFromMap(sampler_normal_map, in_uv0, in_normal, in_tangent, in_binormal);" << std::endl;
+    //ss << " out_color0.rgb = out_color1.rgb;" << std::endl;
   }
   else
   {
