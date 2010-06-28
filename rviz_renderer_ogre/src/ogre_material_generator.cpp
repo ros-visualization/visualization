@@ -91,7 +91,7 @@ void loadTexture(const std::string& resource_path)
 std::string materialToStringID(const rviz_msgs::Material& input_mat)
 {
   std::stringstream ss;
-  ss << "GBuffer";
+  ss << "Gen_";
 
   if (input_mat.has_color)
   {
@@ -200,14 +200,57 @@ Ogre::GpuProgramPtr generateVertexShader(const rviz_msgs::Material& input_mat)
   return Ogre::GpuProgramPtr(program);
 }
 
+void generateWeightedAverageAlphaShaderCode(std::stringstream& ss, const rviz_msgs::Material& input_mat)
+{
+  if (input_mat.has_texture)
+  {
+    ss << "float4 color = tex2D(sampler_tex, in_uv0);\n";
+    if (input_mat.has_color)
+    {
+      ss << "color *= in_color;\n";
+    }
+  }
+  else
+  {
+    ss << "float4 color = in_color;\n";
+  }
+
+  ss << "float3 gooch_color = gooch98(color.rgb, normal, float3(1.0, 1.0, 1.0));\n";
+  ss << "out_color0 = float4(gooch_color * color.a, color.a);\n";
+  ss << "out_color1 = float4(1.0, 0.0, 0.0, 0.0);\n";
+}
+
+void generateGBufferShaderCode(std::stringstream& ss, const rviz_msgs::Material& input_mat)
+{
+  if (input_mat.has_texture)
+  {
+    ss << " out_color0.rgb = tex2D(sampler_tex, in_uv0);" << std::endl;
+    if (input_mat.has_color)
+    {
+      ss << " out_color0.rgb *= in_color.rgb;" << std::endl;
+    }
+  }
+  else
+  {
+    ss << " out_color0.rgb = in_color.rgb;" << std::endl;
+  }
+
+  ss << " out_color1.rgb = normal;" << std::endl;
+  ss << "  out_color1.a = length(in_view_pos) / far_distance;" << std::endl;
+}
+
 Ogre::GpuProgramPtr generateFragmentShader(const rviz_msgs::Material& input_mat)
 {
   std::stringstream ss;
 
+  ss << "#include \"gooch_98.cg\"\n";
+
   if (input_mat.has_normal_map)
   {
-    ss << "#include \"normal_mapping.cg\"\n\n";
+    ss << "#include \"normal_mapping.cg\"\n";
   }
+
+  ss << std::endl;
 
   ss << "void fp(" << std::endl;
   ss << " float3 in_view_pos : TEXCOORD0," << std::endl;
@@ -254,34 +297,25 @@ Ogre::GpuProgramPtr generateFragmentShader(const rviz_msgs::Material& input_mat)
 
   ss << "{" << std::endl;
 
-#if 01
-  if (num_tex_coords > 0 && input_mat.has_texture)
-  {
-    ss << " out_color0.rgb = tex2D(sampler_tex, in_uv0);" << std::endl;
-    if (input_mat.has_color)
-    {
-      //ss << " out_color0.rgb *= in_color.rgb;" << std::endl;
-    }
-  }
-  else
-  {
-    ss << " out_color0.rgb = in_color.rgb;" << std::endl;
-  }
-#else
-  ss << " out_color0 = float4(1.0, 0.0, 0.0, 1.0);" << std::endl;
-#endif
-
   if (input_mat.has_normal_map)
   {
-    ss << " out_color1.rgb = extractNormalFromMap(sampler_normal_map, in_uv0, in_normal, in_tangent, in_binormal);" << std::endl;
+    ss << " float3 normal = extractNormalFromMap(sampler_normal_map, in_uv0, in_normal, in_tangent, in_binormal);" << std::endl;
     //ss << " out_color0.rgb = out_color1.rgb;" << std::endl;
   }
   else
   {
-    ss << " out_color1.rgb = normalize(in_normal);" << std::endl;
+    ss << " float3 normal = normalize(in_normal);" << std::endl;
   }
 
-  ss << "  out_color1.a = length(in_view_pos) / far_distance;" << std::endl;
+  bool transparent = input_mat.opacity < 0.99;
+  if (transparent)
+  {
+    generateWeightedAverageAlphaShaderCode(ss, input_mat);
+  }
+  else
+  {
+    generateGBufferShaderCode(ss, input_mat);
+  }
 
   ss << "}" << std::endl;
 
@@ -311,7 +345,14 @@ Ogre::GpuProgramPtr generateFragmentShader(const rviz_msgs::Material& input_mat)
   }
 
   //params->setNamedAutoConstant("object_id", Ogre::GpuProgramParameters::ACT_CUSTOM, Material::CustomParam_ObjectID);
-  params->setNamedAutoConstant("far_distance", Ogre::GpuProgramParameters::ACT_FAR_CLIP_DISTANCE);
+
+  try
+  {
+    params->setNamedAutoConstant("far_distance", Ogre::GpuProgramParameters::ACT_FAR_CLIP_DISTANCE);
+  }
+  catch (Ogre::Exception&)
+  {
+  }
 
   try
   {
@@ -334,7 +375,18 @@ Ogre::MaterialPtr generateOgreMaterial(const rviz_msgs::Material& input_mat)
   }
 
   Ogre::MaterialPtr mat = Ogre::MaterialManager::getSingleton().create(material_name, ROS_PACKAGE_NAME);
-  mat->getTechnique(0)->setSchemeName("GBuffer");
+
+  bool transparent = input_mat.opacity < 0.99;
+  if (transparent)
+  {
+    mat->getTechnique(0)->setSchemeName("WeightedAverageAlpha");
+    mat->setSceneBlending(Ogre::SBT_ADD);
+    mat->setDepthWriteEnabled(false);
+  }
+  else
+  {
+    mat->getTechnique(0)->setSchemeName("GBuffer");
+  }
   Ogre::Pass* pass = mat->getTechnique(0)->getPass(0);
   pass->setLightingEnabled(false);
   if (input_mat.has_texture)
