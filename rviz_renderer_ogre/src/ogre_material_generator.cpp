@@ -103,6 +103,11 @@ std::string materialToStringID(const rviz_msgs::Material& input_mat)
     ss << "Texture_" << input_mat.texture;
   }
 
+  if (input_mat.has_normal_map)
+  {
+    ss << "NormalMap_" << input_mat.normal_map;
+  }
+
   bool transparent = input_mat.opacity < 0.99;
   if (transparent)
   {
@@ -198,27 +203,34 @@ Ogre::GpuProgramPtr generateFragmentShader(const rviz_msgs::Material& input_mat)
 
   ss << std::endl;
 
-  int sampler_num = 0;
-  uint32_t num_textures = input_mat.has_texture ? 1 : 0;
-  for (uint32_t i = 0; i < num_textures; i++)
+  uint32_t sampler_num = 0;
+  if (input_mat.has_texture)
   {
-    ss << " uniform sampler sampler_tex" << i << " : register(s" << sampler_num++ << ")," << std::endl;
+    ss << " uniform sampler sampler_tex" << sampler_num << " : register(s" << sampler_num << ")," << std::endl;
+    ++sampler_num;
+  }
+
+  if (input_mat.has_normal_map)
+  {
+    ss << " uniform sampler sampler_tex" << sampler_num << " : register(s" << sampler_num << ")," << std::endl;
+    ++sampler_num;
   }
 
   ss << " uniform float4 in_color," << std::endl;
-  ss << " uniform float far_distance" << std::endl;
+  ss << " uniform float far_distance," << std::endl;
+  ss << " uniform float4x4 worldview" << std::endl;
 
   ss << " )" << std::endl;
 
   ss << "{" << std::endl;
 
 #if 01
-  if (num_tex_coords > 0 && num_textures > 0)
+  if (num_tex_coords > 0 && input_mat.has_texture)
   {
     ss << " out_color0.rgb = tex2D(sampler_tex0, in_uv0);" << std::endl;
     if (input_mat.has_color)
     {
-      ss << " out_color0.rgb *= in_color.rgb;" << std::endl;
+      //ss << " out_color0.rgb *= in_color.rgb;" << std::endl;
     }
   }
   else
@@ -229,9 +241,19 @@ Ogre::GpuProgramPtr generateFragmentShader(const rviz_msgs::Material& input_mat)
   ss << " out_color0 = float4(1.0, 0.0, 0.0, 1.0);" << std::endl;
 #endif
 
-  ss << " out_color1.rgb = normalize(in_normal);" << std::endl;
+  if (input_mat.has_normal_map)
+  {
+    uint32_t sampler = input_mat.has_texture ? 1 : 0;
+    ss << " out_color1.rgb = normalize(mul(worldview, float4(tex2D(sampler_tex" << sampler << ", in_uv0).rgb * 2.0 - 1.0, 0))).rgb;" << std::endl;
+    //ss << " out_color1.rgb = tex2D(sampler_tex" << sampler << ", in_uv0).rgb * 2.0 - 1.0;" << std::endl;
+    ss << " out_color0.rgb = out_color1.rgb;" << std::endl;
+  }
+  else
+  {
+    ss << " out_color1.rgb = normalize(in_normal);" << std::endl;
+  }
 
-  ss << "     out_color1.a = length(in_view_pos) / far_distance;" << std::endl;
+  ss << "  out_color1.a = length(in_view_pos) / far_distance;" << std::endl;
 
   ss << "}" << std::endl;
 
@@ -263,6 +285,14 @@ Ogre::GpuProgramPtr generateFragmentShader(const rviz_msgs::Material& input_mat)
   //params->setNamedAutoConstant("object_id", Ogre::GpuProgramParameters::ACT_CUSTOM, Material::CustomParam_ObjectID);
   params->setNamedAutoConstant("far_distance", Ogre::GpuProgramParameters::ACT_FAR_CLIP_DISTANCE);
 
+  try
+  {
+    params->setNamedAutoConstant("worldview", Ogre::GpuProgramParameters::ACT_WORLDVIEW_MATRIX);
+  }
+  catch (Ogre::Exception&)
+  {
+  }
+
   program->load();
   return Ogre::GpuProgramPtr(program);
 }
@@ -281,9 +311,16 @@ Ogre::MaterialPtr generateOgreMaterial(const rviz_msgs::Material& input_mat)
   pass->setLightingEnabled(false);
   if (input_mat.has_texture)
   {
-    pass->createTextureUnitState();
+    Ogre::TextureUnitState* tu = pass->createTextureUnitState();
     loadTexture(input_mat.texture);
-    pass->getTextureUnitState(0)->setTextureName(input_mat.texture);
+    tu->setTextureName(input_mat.texture);
+  }
+
+  if (input_mat.has_normal_map)
+  {
+    Ogre::TextureUnitState* tu = pass->createTextureUnitState();
+    loadTexture(input_mat.normal_map);
+    tu->setTextureName(input_mat.normal_map);
   }
 
   Ogre::GpuProgramPtr vertex_program = generateVertexShader(input_mat);

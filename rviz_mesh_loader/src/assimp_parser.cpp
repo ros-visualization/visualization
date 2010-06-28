@@ -281,15 +281,36 @@ void loadMaterialsForMesh(const std::string& resource_path, const aiScene* scene
 
     // Just pull out texture and diffuse color for now
 
-    aiString texName;
-    aiTextureMapping mapping;
-    uint32_t uvIndex;
-    if (amat->GetTexture(aiTextureType_DIFFUSE,0, &texName, &mapping, &uvIndex) == aiReturn_SUCCESS)
+    aiString tex_name;
+    if (amat->GetTexture(aiTextureType_DIFFUSE, 0, &tex_name) == aiReturn_SUCCESS)
     {
       // Assume textures are in paths relative to the mesh
-      std::string texture_path = fs::path(resource_path).parent_path().string() + "/" + texName.data;
+      std::string texture_path = fs::path(resource_path).parent_path().string() + "/" + tex_name.data;
       mat.texture = texture_path;
       mat.has_texture = true;
+    }
+
+    if (amat->GetTexture(aiTextureType_HEIGHT, 0, &tex_name) == aiReturn_SUCCESS)
+    {
+      ROS_ERROR("NORMAL MAP!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+      std::string texture_path = fs::path(resource_path).parent_path().string() + "/" + tex_name.data;
+      mat.normal_map = texture_path;
+      mat.has_normal_map = true;
+    }
+    else
+    {
+      ROS_ERROR("NO NORMAL MAP!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+    }
+
+    for (uint32_t j = 0; j <= aiTextureType_UNKNOWN; ++j)
+    {
+      for (uint32_t i = 0; i < 10; ++i)
+      {
+        if (amat->GetTexture((aiTextureType)j, i, &tex_name) == aiReturn_SUCCESS)
+        {
+          ROS_ERROR("%d %d: %s", j, i, tex_name.data);
+        }
+      }
     }
 
     float opacity = 1.0;

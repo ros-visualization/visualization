@@ -17,6 +17,8 @@ float4 deferredGooch98FP_main(
   
   float3 light_vec = float3(1.0, 1.0, 1.0);
  
+  return float4(a0.rgb, 1.0);
+ 
   discard(lengthSquared(a1.xyz) == 0.0);
   
   return float4(gooch98(a0.rgb, a1.xyz, normalize(light_vec)), a0.a);

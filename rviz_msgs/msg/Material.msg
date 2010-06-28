@@ -7,3 +7,6 @@ ColorRGB color
 
 bool has_texture
 string texture 
+
+bool has_normal_map
+string normal_map
