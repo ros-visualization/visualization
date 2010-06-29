@@ -69,6 +69,11 @@ inline Ogre::Vector3 fromRobot( const rviz_math::Vector3& point )
   return g_robot_to_ogre_matrix * convert(point);
 }
 
+inline Ogre::Vector3 fromRobot( const Ogre::Vector3& point )
+{
+  return g_robot_to_ogre_matrix * point;
+}
+
 /**
  * \brief Convert a scale xyz from robot space to ogre space
  * @param scale Converts this scale xyz in-place
@@ -91,6 +96,11 @@ inline Ogre::Vector3 scaleFromRobot( const rviz_math::Vector3& scale )
 inline Ogre::Quaternion fromRobot( const rviz_math::Quaternion& quat )
 {
   return g_robot_to_ogre_quat * convert(quat);
+}
+
+inline Ogre::Quaternion fromRobot(const Ogre::Quaternion& quat)
+{
+  return g_robot_to_ogre_quat * quat;
 }
 
 } // namespace rviz_renderer_ogre

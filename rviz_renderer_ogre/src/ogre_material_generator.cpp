@@ -215,7 +215,7 @@ void generateWeightedAverageAlphaShaderCode(std::stringstream& ss, const rviz_ms
     ss << "float4 color = in_color;\n";
   }
 
-  ss << "float3 gooch_color = gooch98(color.rgb, normal, float3(1.0, 1.0, 1.0));\n";
+  ss << "float3 gooch_color = gooch98(color.rgb, normal, float3(0.0, 0.0, 1.0));\n";
   ss << "out_color0 = float4(gooch_color * color.a, color.a);\n";
   ss << "out_color1 = float4(1.0, 0.0, 0.0, 0.0);\n";
 }
@@ -300,7 +300,6 @@ Ogre::GpuProgramPtr generateFragmentShader(const rviz_msgs::Material& input_mat)
   if (input_mat.has_normal_map)
   {
     ss << " float3 normal = extractNormalFromMap(sampler_normal_map, in_uv0, in_normal, in_tangent, in_binormal);" << std::endl;
-    //ss << " out_color0.rgb = out_color1.rgb;" << std::endl;
   }
   else
   {
@@ -316,6 +315,13 @@ Ogre::GpuProgramPtr generateFragmentShader(const rviz_msgs::Material& input_mat)
   {
     generateGBufferShaderCode(ss, input_mat);
   }
+
+#if 0
+  if (input_mat.has_normal_map)
+  {
+    ss << " out_color0.rgb = normal;" << std::endl;
+  }
+#endif
 
   ss << "}" << std::endl;
 
@@ -401,6 +407,7 @@ Ogre::MaterialPtr generateOgreMaterial(const rviz_msgs::Material& input_mat)
     Ogre::TextureUnitState* tu = pass->createTextureUnitState();
     loadTexture(input_mat.normal_map);
     tu->setTextureName(input_mat.normal_map);
+    //tu->setTextureFiltering(Ogre::TFO_NONE);
   }
 
   Ogre::GpuProgramPtr vertex_program = generateVertexShader(input_mat);

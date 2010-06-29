@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="utf-8"?>
+<COLLADA xmlns="http://www.collada.org/2005/11/COLLADASchema" version="1.4.1">
+  <asset>
+    <contributor>
+      <author>josh</author>
+      <authoring_tool>OpenCOLLADA2011 x64</authoring_tool>
+      <comments>
+			ColladaMaya export options: 
+			bakeTransforms=1;relativePaths=1;copyTextures=0;exportTriangles=1;exportCgfxFileReferences=1;
+			isSampling=0;curveConstrainSampling=0;removeStaticCurves=1;exportPolygonMeshes=1;exportLights=1;
+			exportCameras=1;exportJointsAndSkin=1;exportAnimations=1;exportInvisibleNodes=0;exportDefaultCameras=0;
+			exportTexCoords=1;exportNormals=1;exportNormalsPerVertex=1;exportVertexColors=1;exportVertexColorsPerVertex=1;
+			exportTexTangents=0;exportTangents=0;exportReferencedMaterials=0;exportMaterialsOnly=0;
+			exportXRefs=1;dereferenceXRefs=1;exportCameraAsLookat=0;cameraXFov=0;cameraYFov=1;doublePrecision=0
+		</comments>
+      <source_data>file:///C:/Users/josh/Documents/models/cone.mb</source_data>
+    </contributor>
+    <created>2010-06-29T16:17:19</created>
+    <modified>2010-06-29T16:17:19</modified>
+    <unit name="meter" meter="1"/>
+    <up_axis>Y_UP</up_axis>
+  </asset>
+  <library_materials>
+    <material id="lambert1" name="lambert1">
+      <instance_effect url="#lambert1-fx"/>
+    </material>
+  </library_materials>
+  <library_effects>
+    <effect id="lambert1-fx">
+      <profile_COMMON>
+        <technique sid="common">
+          <lambert>
+            <emission>
+              <color>0 0 0 1</color>
+            </emission>
+            <ambient>
+              <color>0 0 0 1</color>
+            </ambient>
+            <diffuse>
+              <color>0.4 0.4 0.4 1</color>
+            </diffuse>
+            <transparent opaque="RGB_ZERO">
+              <color>0 0 0 1</color>
+            </transparent>
+            <transparency>
+              <float>1</float>
+            </transparency>
+          </lambert>
+          <extra/>
+        </technique>
+      </profile_COMMON>
+    </effect>
+  </library_effects>
+  <library_geometries>
+    <geometry id="pConeShape1" name="pConeShape1">
+      <mesh>
+        <source id="pConeShape1-positions" name="pConeShape1-positions">
+          <float_array id="pConeShape1-positions-array" count="93">0.4567727 -0.5 -0.2033681 0.3345653 -0.5 -0.3715723 0.1545086 -0.5 -0.4755281 -0.05226414 -0.5 -0.4972609 -0.2499999 -0.5 -0.4330127 -0.4045084 -0.5 -0.2938926 -0.4890737 -0.5 -0.1039559 -0.4890738 -0.5 0.1039558 -0.4045085 -0.5 0.2938926 -0.25 -0.5 0.4330126 -0.05226426 -0.5 0.4972609 0.1545085 -0.5 0.4755283 0.3345653 -0.5 0.3715724 0.4567727 -0.5 0.2033683 0.5 -0.5 0 0 -0.5 0 4.56773e-4 0.499 -2.03368e-4 3.34565e-4 0.499 -3.71572e-4 1.54509e-4 0.499 -4.75528e-4 -5.22641e-5 0.499 -4.97261e-4 -2.5e-4 0.499 -4.33013e-4 -4.04508e-4 0.499 -2.93893e-4 -4.89074e-4 0.499 -1.03956e-4 -4.89074e-4 0.499 1.03956e-4 -4.04508e-4 0.499 2.93893e-4 -2.5e-4 0.499 4.33013e-4 -5.22643e-5 0.499 4.97261e-4 1.54508e-4 0.499 4.75528e-4 3.34565e-4 0.499 3.71572e-4 4.56773e-4 0.499 2.03368e-4 5e-4 0.499 0</float_array>
+          <technique_common>
+            <accessor source="#pConeShape1-positions-array" count="31" stride="3">
+              <param name="X" type="float"/>
+              <param name="Y" type="float"/>
+              <param name="Z" type="float"/>
+            </accessor>
+          </technique_common>
+        </source>
+        <source id="pConeShape1-normals" name="pConeShape1-normals">
+          <float_array id="pConeShape1-normals-array" count="138">0 -1 0 0 -1 0 0 -1 0 0 -1 0 0 -1 0 0 -1 0 0 -1 0 0 -1 0 0 -1 0 0 -1 0 0 -1 0 0 -1 0 0 -1 0 0 -1 0 0 -1 0 0 -1 0 0.6831352 0.730292 0 0.6240737 0.7302903 -0.2778631 0.457105 0.7302891 -0.507674 0.2110994 0.7302883 -0.6497046 -0.07140657 0.7302881 -0.679397 -0.3415659 0.7302887 -0.5916175 -0.5526662 0.7302897 -0.4015432 -0.6682063 0.7302911 -0.1420393 -0.6682077 0.7302926 0.1420243 -0.5526697 0.7302942 0.4015304 -0.3415692 0.7302952 0.5916075 -0.07140755 0.7302957 0.6793888 0.2111013 0.7302955 0.6496958 0.4571083 0.7302948 0.5076627 0.6240763 0.7302936 0.2778491 0.8944271 0.4472136 0 0.8170999 0.4472134 -0.3637964 0.5984887 0.4472135 -0.6646888 0.2763933 0.4472135 -0.8506508 -0.09349293 0.4472135 -0.8895274 -0.4472134 0.4472135 -0.7745968 -0.7236066 0.4472136 -0.5257312 -0.8748818 0.4472135 -0.185962 -0.8748819 0.4472135 0.1859618 -0.7236068 0.4472136 0.525731 -0.4472137 0.4472136 0.7745966 -0.09349325 0.4472136 0.8895274 0.2763931 0.4472136 0.8506508 0.5984885 0.4472136 0.6646889 0.8170998 0.4472136 0.3637963</float_array>
+          <technique_common>
+            <accessor source="#pConeShape1-normals-array" count="46" stride="3">
+              <param name="X" type="float"/>
+              <param name="Y" type="float"/>
+              <param name="Z" type="float"/>
+            </accessor>
+          </technique_common>
+        </source>
+        <source id="pConeShape1-map1" name="pConeShape1-map1">
+          <float_array id="pConeShape1-map1-array" count="96">0.9586524 0.1483159 0.836445 0.06421387 0.6563883 0.01223594 0.4496155 0.001369566 0.2518798 0.03349367 0.09737131 0.1030537 0.01280597 0.1980221 0.01280594 0.3019779 0.09737122 0.3969463 0.2518797 0.4665063 0.4496154 0.4986305 0.6563882 0.4877641 0.836445 0.4357862 0.9586524 0.3516842 1.00188 0.25 0 0.5 0.06666667 0.5 0.1333333 0.5 0.2 0.5 0.2666667 0.5 0.3333333 0.5 0.4 0.5 0.4666667 0.5 0.5333334 0.5 0.6 0.5 0.6666667 0.5 0.7333333 0.5 0.8 0.5 0.8666667 0.5 0.9333333 0.5 1 0.5 0.5 0.25 0.75 0.75 0.25 0.75 0.2833333 0.75 0.3166667 0.75 0.35 0.75 0.3833333 0.75 0.4166667 0.75 0.45 0.75 0.4833333 0.75 0.5166667 0.75 0.55 0.75 0.5833334 0.75 0.6166667 0.75 0.65 0.75 0.6833333 0.75 0.7166667 0.75</float_array>
+          <technique_common>
+            <accessor source="#pConeShape1-map1-array" count="48" stride="2">
+              <param name="S" type="float"/>
+              <param name="T" type="float"/>
+            </accessor>
+          </technique_common>
+        </source>
+        <vertices id="pConeShape1-vertices" name="pConeShape1-vertices">
+          <input semantic="POSITION" source="#pConeShape1-positions"/>
+        </vertices>
+        <triangles material="initialShadingGroup" count="58">
+          <input semantic="VERTEX" source="#pConeShape1-vertices" offset="0"/>
+          <input semantic="NORMAL" source="#pConeShape1-normals" offset="1"/>
+          <input semantic="TEXCOORD" source="#pConeShape1-map1" offset="2" set="0"/>
+          <p>1 0 1 0 1 0 15 2 31 2 3 2 1 0 1 15 2 31 3 4 3 2 3 2 15 2 31 4 5 4 3 4 3 15 2 31 5 6 5 4 5 4 15 2 31 6 7 6 5 6 5 15 2 31 7 8 7 6 7 6 15 2 31 8 9 8 7 8 7 15 2 31 9 10 9 8 9 8 15 2 31 10 11 10 9 10 9 15 2 31 11 12 11 10 11 10 15 2 31 12 13 12 11 12 11 15 2 31 13 14 13 12 13 12 15 2 31 14 15 14 13 14 13 15 2 31 0 1 0 14 15 14 15 2 31 30 16 47 16 17 33 29 30 46 17 18 34 18 19 35 16 17 33 19 20 36 20 21 37 18 19 35 21 22 38 22 23 39 20 21 37 23 24 40 24 25 41 22 23 39 25 26 42 26 27 43 24 25 41 27 28 44 28 29 45 26 27 43 28 29 45 29 30 46 26 27 43 16 17 33 18 19 35 29 30 46 20 21 37 22 23 39 18 19 35 24 25 41 26 27 43 22 23 39 18 19 35 22 23 39 29 30 46 22 23 39 26 27 43 29 30 46 16 17 32 30 16 47 0 32 30 14 31 29 0 32 30 30 16 47 17 18 34 16 17 33 1 33 16 0 32 15 1 33 16 16 17 33 18 19 35 17 18 34 2 34 17 1 33 16 2 34 17 17 18 34 19 20 36 18 19 35 3 35 18 2 34 17 3 35 18 18 19 35 20 21 37 19 20 36 4 36 19 3 35 18 4 36 19 19 20 36 21 22 38 20 21 37 5 37 20 4 36 19 5 37 20 20 21 37 22 23 39 21 22 38 6 38 21 5 37 20 6 38 21 21 22 38 23 24 40 22 23 39 7 39 22 6 38 21 7 39 22 22 23 39 24 25 41 23 24 40 8 40 23 7 39 22 8 40 23 23 24 40 25 26 42 24 25 41 9 41 24 8 40 23 9 41 24 24 25 41 26 27 43 25 26 42 10 42 25 9 41 24 10 42 25 25 26 42 27 28 44 26 27 43 11 43 26 10 42 25 11 43 26 26 27 43 28 29 45 27 28 44 12 44 27 11 43 26 12 44 27 27 28 44 29 30 46 28 29 45 13 45 28 12 44 27 13 45 28 28 29 45 30 16 47 29 30 46 14 31 29 13 45 28 14 31 29 29 30 46</p>
+        </triangles>
+      </mesh>
+      <extra>
+        <technique profile="OpenCOLLADAMaya">
+          <originalMayaNodeId>pConeShape1</originalMayaNodeId>
+          <double_sided>1</double_sided>
+        </technique>
+      </extra>
+    </geometry>
+  </library_geometries>
+  <library_visual_scenes>
+    <visual_scene id="VisualSceneNode" name="cone">
+      <node id="pCone1" name="pCone1" type="NODE">
+        <matrix sid="transform">1 0 0 0 0 0 -1 0 0 1 0 0 0 0 0 1</matrix>
+        <instance_geometry url="#pConeShape1">
+          <bind_material>
+            <technique_common>
+              <instance_material symbol="initialShadingGroup" target="#lambert1"/>
+            </technique_common>
+          </bind_material>
+        </instance_geometry>
+        <extra>
+          <technique profile="OpenCOLLADAMaya">
+            <originalMayaNodeId>pCone1</originalMayaNodeId>
+          </technique>
+        </extra>
+      </node>
+    </visual_scene>
+  </library_visual_scenes>
+  <scene>
+    <instance_visual_scene url="#VisualSceneNode"/>
+  </scene>
+</COLLADA>

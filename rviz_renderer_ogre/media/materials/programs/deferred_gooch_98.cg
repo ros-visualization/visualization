@@ -15,7 +15,8 @@ float4 deferredGooch98FP_main(
   float4 a0 = tex2D(tex0, in_color_uv); // Attribute 0: Diffuse color
   float4 a1 = tex2D(tex1, in_color_uv); // Attribute 1: Normal+depth
   
-  float3 light_vec = float3(1.0, 1.0, 1.0);
+  //float3 light_vec = float3(1.0, 1.0, 1.0);
+  float3 light_vec = float3(0.0, 0.0, 1.0);
  
   //return float4(a0.rgb, 1.0);
  

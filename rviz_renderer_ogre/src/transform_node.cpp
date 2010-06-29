@@ -48,6 +48,8 @@ TransformNode::TransformNode(Ogre::SceneManager* scene_manager, TransformNode* p
   {
     scene_node_ = parent->getOgreSceneNode()->createChildSceneNode();
   }
+
+  scene_node_->setOrientation(fromRobot(Ogre::Quaternion::IDENTITY));
 }
 
 TransformNode::~TransformNode()
@@ -57,17 +59,17 @@ TransformNode::~TransformNode()
 
 void TransformNode::setPosition(const rviz_math::Vector3& pos)
 {
-  scene_node_->setPosition(convert(pos));
+  scene_node_->setPosition(fromRobot(pos));
 }
 
 void TransformNode::setOrientation(const rviz_math::Quaternion& orient)
 {
-  scene_node_->setOrientation(convert(orient));
+  scene_node_->setOrientation(fromRobot(orient));
 }
 
 void TransformNode::setScale(const rviz_math::Vector3& scale)
 {
-  scene_node_->setScale(convert(scale));
+  scene_node_->setScale(fromRobot(scale));
 }
 
 } // namespace rviz_renderer_ogre

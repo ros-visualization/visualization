@@ -47,10 +47,13 @@ namespace rviz_renderer_ogre
 
 static const char* g_shape_meshes[] =
 {
-    "package://"ROS_PACKAGE_NAME"/media/models/cone.mesh",
+    //"package://"ROS_PACKAGE_NAME"/media/models/cone.mesh",
+  "package://"ROS_PACKAGE_NAME"/media/models/cone.dae",
     "package://"ROS_PACKAGE_NAME"/media/models/cube.mesh",
-    "package://"ROS_PACKAGE_NAME"/media/models/cylinder.mesh",
-    "package://"ROS_PACKAGE_NAME"/media/models/sphere.mesh"
+    //"package://"ROS_PACKAGE_NAME"/media/models/cylinder.mesh",
+    "package://"ROS_PACKAGE_NAME"/media/models/cylinder.dae",
+    //"package://"ROS_PACKAGE_NAME"/media/models/sphere.mesh"
+    "package://"ROS_PACKAGE_NAME"/media/models/sphere.dae"
 };
 
 SimpleShape::SimpleShape(Ogre::SceneManager* scene_manager, Type type, TransformNode* node)
