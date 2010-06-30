@@ -207,10 +207,18 @@ void buildMesh(const aiScene* scene, const aiNode* node, rviz_msgs::Mesh& out_me
   {
     // Don't convert to y-up orientation, which is what the root node in
     // Assimp does
-    //if (pnode->mParent != NULL)
+    if (pnode->mParent != NULL)
+    {
       transform = pnode->mTransformation * transform;
+    }
+
     pnode = pnode->mParent;
   }
+
+  aiMatrix3x3 rotation(transform);
+  aiMatrix3x3 inverse_transpose_rotation(rotation);
+  inverse_transpose_rotation.Inverse();
+  inverse_transpose_rotation.Transpose();
 
   for (uint32_t i = 0; i < node->mNumMeshes; i++)
   {
@@ -233,7 +241,7 @@ void buildMesh(const aiScene* scene, const aiNode* node, rviz_msgs::Mesh& out_me
 
       if (input_mesh->HasNormals())
       {
-        submesh.normals.push_back(assimpToMsg(input_mesh->mNormals[j]));
+        submesh.normals.push_back(assimpToMsg(inverse_transpose_rotation * input_mesh->mNormals[j]));
       }
 
       if (input_mesh->HasTangentsAndBitangents())

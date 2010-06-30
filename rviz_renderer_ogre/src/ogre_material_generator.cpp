@@ -350,7 +350,13 @@ Ogre::GpuProgramPtr generateFragmentShader(const rviz_msgs::Material& input_mat)
   {
   }
 
-  //params->setNamedAutoConstant("object_id", Ogre::GpuProgramParameters::ACT_CUSTOM, Material::CustomParam_ObjectID);
+  try
+  {
+    params->setNamedAutoConstant("object_id", Ogre::GpuProgramParameters::ACT_CUSTOM, Material::CustomParam_ObjectID);
+  }
+  catch (Ogre::Exception&)
+  {
+  }
 
   try
   {

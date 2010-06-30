@@ -35,21 +35,24 @@ float4 fp_main(
   }
   
   float d1 = sobel(dots[0], dots[1], dots[2], dots[3], dots[4], dots[5], dots[6], dots[7], dots[8], 1.0);
+  //return float4(d1.xxx, 1.0);
   
   // Check depth
-  float d2 = sobel(taps[0].a, taps[1].a, taps[2].a, taps[3].a, taps[4].a, taps[5].a, taps[6].a, taps[7].a, taps[8].a, in_far_clip_dist);
+  float d2 = sobel(abs(taps[0].a - mm.a), abs(taps[1].a - mm.a), abs(taps[2].a - mm.a), abs(taps[3].a - mm.a), 
+                   abs(taps[4].a - mm.a), abs(taps[5].a - mm.a), abs(taps[6].a - mm.a), abs(taps[7].a - mm.a), 
+                   abs(taps[8].a - mm.a), in_far_clip_dist);
+  d2 = step(0.3, d2);
+  //return float4(d2.xxx, 1.0);
   
   // Add the two together
-  float d = saturate(d1 + d2);
+  float d = d1 + d2;
+  
+  //return float4(d.xxx, 1.0);
+  
   discard(d < 1);
  
-  //float4 col = tex2D(tex0, in_color_uv);
-  //discard(col.a < 1);
-  //col.rgb = sign(0.7 - length(float3(col.rgb))) * float3(0.7, 0.7, 0.7) + col.rgb;
-  float3 col = float3(0.2, 0.2, 0.2);
-  
-  return float4(col.rgb, d);
-  //return float4(mm.xyz, 1.0);
+  float3 col = float3(0.2, 0.2, 0.2); 
+  return float4(col.rgb, saturate(d));
 }
 
 

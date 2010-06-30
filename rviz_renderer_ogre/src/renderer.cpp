@@ -128,7 +128,7 @@ void Renderer::init()
     throw std::runtime_error( "Could not find the opengl rendering subsystem!\n" );
   }
 
-  render_system->setConfigOption("FSAA","2");
+  render_system->setConfigOption("FSAA","4");
   render_system->setConfigOption("RTT Preferred Mode", "FBO");
 
   root->setRenderSystem( render_system );

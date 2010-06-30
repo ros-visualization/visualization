@@ -101,7 +101,7 @@ class MyFrame : public wxFrame
 {
 public:
   MyFrame(wxWindow* parent)
-  : wxFrame(parent, -1, _("rviz"), wxDefaultPosition, wxSize(800,600), wxDEFAULT_FRAME_STYLE)
+  : wxFrame(parent, -1, _("rviz"), wxDefaultPosition, wxSize(1024, 768), wxDEFAULT_FRAME_STYLE)
   , private_nh_("~")
   , left_mouse_down_( false )
   , middle_mouse_down_( false )
@@ -110,7 +110,7 @@ public:
   , mouse_y_( 0 )
   , timer_(this)
   {
-    render_window_ = rviz_renderer_client::createRenderWindow(getOgreHandle(this), 800, 600);
+    render_window_ = rviz_renderer_client::createRenderWindow(getOgreHandle(this), 1024, 768);
 
     rviz_renderer_client::Scene s = rviz_renderer_client::createScene();
     rviz_renderer_client::Camera c = s.createCamera();
@@ -138,10 +138,11 @@ public:
     shape.setColor(0.0, 0.0, 1.0, 1.0);
 
     n = s.createTransformNode();
-    n.setPosition(-2, 0, 2);
+    n.setPosition(-4, 0, 0);
     shape = s.createSimpleShape("cone", n);
-    shape.setColor(1.0, 0.0, 0.0, 0.75);
+    shape.setColor(1.0, 0.0, 0.0, 1.0);
 
+#if 01
     for (uint32_t x = 0; x < 10; ++x)
     {
       for (uint32_t y = 0; y < 10; ++y)
@@ -155,6 +156,7 @@ public:
         }
       }
     }
+#endif
 #endif
 
     n = s.createTransformNode();
