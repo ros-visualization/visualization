@@ -40,6 +40,8 @@ class MyTestServer : public TestServer
 public:
   MyTestServer(const std::string& name, const ros::NodeHandle& nh)
   : TestServer(name, nh)
+  , async_call_done(false)
+  , async_fastcall_done(false)
   {}
 
   virtual void triple( uint32_t val ,  uint32_t& out_val )
@@ -77,7 +79,22 @@ public:
 
   }
 
+  virtual rviz_interface_gen::Test_fastCallResponseConstPtr fastCall(const rviz_interface_gen::Test_fastCallRequestConstPtr& req)
+  {
+    rviz_interface_gen::Test_fastCallResponsePtr res(new rviz_interface_gen::Test_fastCallResponse);
+    res->bar = req->foo;
+    return res;
+  }
+
+  virtual void fastCallAsync(const rviz_interface_gen::Test_fastCallAsyncRequestConstPtr& req)
+  {
+    async_call_done = false;
+    ros::Duration(1.0).sleep();
+    async_call_done = true;
+  }
+
   bool async_call_done;
+  bool async_fastcall_done;
 };
 
 TEST(Interfaces, callWithReturn)
@@ -132,6 +149,33 @@ TEST(Interfaces, multipleReturn)
   p.multipleReturn(5, ret1, ret2);
   EXPECT_EQ(ret1, 5U);
   EXPECT_EQ(ret2, 10U);
+}
+
+TEST(Interfaces, fastcallWithReturn)
+{
+  ros::AsyncSpinner sp(1);
+  sp.start();
+  ros::NodeHandle nh;
+  MyTestServer s("test", nh);
+  TestProxy p("test", nh);
+
+  rviz_interface_gen::Test_fastCallRequestPtr req(new rviz_interface_gen::Test_fastCallRequest);
+  req->foo = 5;
+  rviz_interface_gen::Test_fastCallResponseConstPtr res = p.fastCall(req);
+  EXPECT_EQ(res->bar, 5U);
+}
+
+TEST(Interfaces, asyncFastCall)
+{
+  ros::AsyncSpinner sp(1);
+  sp.start();
+  ros::NodeHandle nh;
+  MyTestServer s("test", nh);
+  TestProxy p("test", nh);
+
+  rviz_interface_gen::Test_fastCallAsyncRequestPtr req(new rviz_interface_gen::Test_fastCallAsyncRequest);
+  p.fastCallAsync(req);
+  EXPECT_FALSE(s.async_call_done);
 }
 
 int main(int argc, char** argv)

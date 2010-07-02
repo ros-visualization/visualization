@@ -57,6 +57,10 @@ def write_header_includes(hs, i, pkg):
     
     headers = []
     for m in i.methods:
+        if ('fastcall' in m.attributes):
+            headers.append("%s/%s_%sRequest"%(pkg, i.name, m.name))
+            headers.append("%s/%s_%sResponse"%(pkg, i.name, m.name))
+        
         for f in m.fields + m.return_fields:
             (base_type, is_array, array_len) = msgs.parse_type(f[0])
             if (is_array):
@@ -115,12 +119,18 @@ def write_method_args(s, i, m):
         cpp_type = msg_to_cpp(type)
         print >> s, '%s& out_%s'%(cpp_type, name),
 
-def write_header_method_declaration(hs, i, m, pure_virtual):
-    print >> hs, '  virtual void %s('%(m.name),
-    
-    write_method_args(hs, i, m)
-             
-    print >> hs, ')',
+def write_header_method_declaration(hs, pkg, i, m, pure_virtual):
+    if ('fastcall' in m.attributes):
+        return_type = '%sResponseConstPtr'%(cpp_message_prefix(pkg, i, m))
+        if ('async' in m.attributes):
+            return_type = 'void';
+            
+        print >> hs, '  virtual %s %s(const %sRequestConstPtr& msg)'%(return_type, m.name, cpp_message_prefix(pkg, i, m)),
+    else:
+        print >> hs, '  virtual void %s('%(m.name),
+        write_method_args(hs, i, m)
+        print >> hs, ')',
+        
     if (pure_virtual):
         print >> hs, ' = 0',
     print >> hs, ';'
@@ -132,7 +142,7 @@ def write_header_interface_declaration(hs, i, pkg):
     print >> hs, '  virtual ~I%s() {}'%(i.name)
     
     for m in i.methods:
-        write_header_method_declaration(hs, i, m, True)
+        write_header_method_declaration(hs, pkg, i, m, True)
     
     print >> hs, '};\n'
     
@@ -142,7 +152,7 @@ def write_header_proxy_declaration(hs, i, pkg):
     print >> hs, '  %sProxy(const std::string& name, const ros::NodeHandle& nh);'%(i.name)
     
     for m in i.methods:
-        write_header_method_declaration(hs, i, m, False)
+        write_header_method_declaration(hs, pkg, i, m, False)
         
     print >> hs, 'private:'
     print >> hs, '  struct Impl;'
@@ -177,29 +187,42 @@ def write_cpp_includes(cpps, i, pkg):
     print >> cpps, 'using namespace %s;\n'%(pkg)
 
 def write_cpp_proxy_method(cpps, i, m, pkg):
-    print >> cpps, 'void %sProxy::%s('%(i.name, m.name),
-    write_method_args(cpps, i, m)
-    print >> cpps, ')',
-    cpp_prefix = cpp_message_prefix(pkg, i, m)
-    print >> cpps, """
+    if ('fastcall' in m.attributes):
+        return_type = '%sResponseConstPtr'%(cpp_message_prefix(pkg, i, m))
+        if ('async' in m.attributes):
+            return_type = 'void'
+            
+        print >> cpps, '%s %sProxy::%s(const %sRequestConstPtr& req)'%(return_type, i.name, m.name, cpp_message_prefix(pkg, i, m))
+        print >> cpps, '{'
+        if ('async' in m.attributes):
+            print >> cpps, '  impl_->%s_method_.callAsync(req);'%(m.name)
+        else:
+            print >> cpps, '  return impl_->%s_method_.call(req);'%(m.name)
+        print >> cpps, '}\n'
+    else:
+        print >> cpps, 'void %sProxy::%s('%(i.name, m.name),
+        write_method_args(cpps, i, m)
+        print >> cpps, ')',
+        cpp_prefix = cpp_message_prefix(pkg, i, m)
+        print >> cpps, """
 {
   %sRequestPtr req(new %sRequest);
-"""%(cpp_prefix, cpp_prefix)
-
-    for field in m.fields:
-        print >> cpps, '  req->%s = %s;'%(field[1], field[1])
-        
-    if ('async' in m.attributes):
-        if (len(m.return_fields) > 0):
-            raise Error('Calls with return values cannot be async (method %s_%s)'%(i.name, m.name))
-        
-        print >> cpps, '  impl_->%s_method_.callAsync(req);'%(m.name)
-    else:
-        print >> cpps, '  %sResponseConstPtr res = impl_->%s_method_.call(req);'%(cpp_prefix, m.name)
-        for field in m.return_fields:
-            print >> cpps, '  out_%s = res->%s;'%(field[1], field[1])
+    """%(cpp_prefix, cpp_prefix)
+    
+        for field in m.fields:
+            print >> cpps, '  req->%s = %s;'%(field[1], field[1])
             
-    print >> cpps, '}\n'
+        if ('async' in m.attributes):
+            if (len(m.return_fields) > 0):
+                raise Error('Calls with return values cannot be async (method %s_%s)'%(i.name, m.name))
+            
+            print >> cpps, '  impl_->%s_method_.callAsync(req);'%(m.name)
+        else:
+            print >> cpps, '  %sResponseConstPtr res = impl_->%s_method_.call(req);'%(cpp_prefix, m.name)
+            for field in m.return_fields:
+                print >> cpps, '  out_%s = res->%s;'%(field[1], field[1])
+                
+        print >> cpps, '}\n'
 
 def cpp_message_prefix(pkg, i, m):
     return '%s::%s_%s'%(pkg, i.name, m.name)
@@ -242,26 +265,33 @@ def write_cpp_server_definition(cpps, i, pkg):
     for m in i.methods:
         cpp_prefix = cpp_message_prefix(pkg, i, m)
         print >> cpps, '  %sResponseConstPtr %s_callback(const ros::MessageEvent<%sRequest>& evt)\n  {'%(cpp_prefix, m.name, cpp_prefix)
-        print >> cpps, '    %sRequestPtr req = evt.getMessage();'%(cpp_prefix)
-        print >> cpps, '    %sResponsePtr res(new %sResponse);'%(cpp_prefix, cpp_prefix)
-        print >> cpps, '    parent_->%s('%(m.name),
-        first = True
-        for f in m.fields:
-            if (first):
-                first = False
+        if ('fastcall' in m.attributes):
+            if ('async' in m.attributes):
+                print >> cpps, '    parent_->%s(evt.getMessage());'%(m.name)
+                print >> cpps, '    return %sResponseConstPtr();'%(cpp_prefix)
             else:
-                print >> cpps, ',',
-            print >> cpps, 'req->%s'%(f[1]),
-            
-        for f in m.return_fields:
-            if (first):
-                first = False
-            else:
-                print >> cpps, ',',
-            
-            print >> cpps, 'res->%s'%(f[1]),
-        print >> cpps, ');\n'
-        print >> cpps, '    return res;'
+                print >> cpps, '    return parent_->%s(evt.getMessage());'%(m.name)
+        else:
+            print >> cpps, '    %sRequestPtr req = evt.getMessage();'%(cpp_prefix)
+            print >> cpps, '    %sResponsePtr res(new %sResponse);'%(cpp_prefix, cpp_prefix)
+            print >> cpps, '    parent_->%s('%(m.name),
+            first = True
+            for f in m.fields:
+                if (first):
+                    first = False
+                else:
+                    print >> cpps, ',',
+                print >> cpps, 'req->%s'%(f[1]),
+                
+            for f in m.return_fields:
+                if (first):
+                    first = False
+                else:
+                    print >> cpps, ',',
+                
+                print >> cpps, 'res->%s'%(f[1]),
+            print >> cpps, ');\n'
+            print >> cpps, '    return res;'
         print >> cpps, '  }'
 
     print >> cpps

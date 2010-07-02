@@ -10,7 +10,7 @@ options {
 
 WHITESPACE : ( '\t' | ' ' | '\r' | '\n'| '\u000C' )+ 	{ $channel = HIDDEN; } ;
 
-ATTRIBUTE : ('sync' | 'async') ;
+ATTRIBUTE : ('sync' | 'async' | 'fastcall') ;
 
 OPENBRACKET :	 '{';
 CLOSEBRACKET :	 '}';

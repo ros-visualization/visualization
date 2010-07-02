@@ -8,6 +8,9 @@ interface Test
   
   multipleReturn(uint32 val) returns (uint32 val, uint32 val_doubled);
   withString(string str);
+  
+  fastcall fastCall(uint32 foo) returns (uint32 bar);
+  async fastcall fastCallAsync(uint32 foo) returns (uint32 bar);
 }
 
 message Foo

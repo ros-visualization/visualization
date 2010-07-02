@@ -1,4 +1,4 @@
-# $ANTLR 3.1.2 /wg/bgr/jfaust/ros/dev/visualization-2.0/visualization/rviz_interface_gen/antlr/InterfaceLexer.g 2010-04-22 17:11:19
+# $ANTLR 3.1.2 /wg/bgr/jfaust/ros/dev/visualization-2.0/visualization/rviz_interface_gen/antlr/InterfaceLexer.g 2010-07-02 11:59:16
 
 import sys
 from antlr3 import *
@@ -121,17 +121,18 @@ class InterfaceLexer(Lexer):
             _type = ATTRIBUTE
             _channel = DEFAULT_CHANNEL
 
-            # /wg/bgr/jfaust/ros/dev/visualization-2.0/visualization/rviz_interface_gen/antlr/InterfaceLexer.g:13:11: ( ( 'sync' | 'async' ) )
-            # /wg/bgr/jfaust/ros/dev/visualization-2.0/visualization/rviz_interface_gen/antlr/InterfaceLexer.g:13:13: ( 'sync' | 'async' )
+            # /wg/bgr/jfaust/ros/dev/visualization-2.0/visualization/rviz_interface_gen/antlr/InterfaceLexer.g:13:11: ( ( 'sync' | 'async' | 'fastcall' ) )
+            # /wg/bgr/jfaust/ros/dev/visualization-2.0/visualization/rviz_interface_gen/antlr/InterfaceLexer.g:13:13: ( 'sync' | 'async' | 'fastcall' )
             pass 
-            # /wg/bgr/jfaust/ros/dev/visualization-2.0/visualization/rviz_interface_gen/antlr/InterfaceLexer.g:13:13: ( 'sync' | 'async' )
-            alt2 = 2
-            LA2_0 = self.input.LA(1)
-
-            if (LA2_0 == 115) :
+            # /wg/bgr/jfaust/ros/dev/visualization-2.0/visualization/rviz_interface_gen/antlr/InterfaceLexer.g:13:13: ( 'sync' | 'async' | 'fastcall' )
+            alt2 = 3
+            LA2 = self.input.LA(1)
+            if LA2 == 115:
                 alt2 = 1
-            elif (LA2_0 == 97) :
+            elif LA2 == 97:
                 alt2 = 2
+            elif LA2 == 102:
+                alt2 = 3
             else:
                 nvae = NoViableAltException("", 2, 0, self.input)
 
@@ -147,6 +148,12 @@ class InterfaceLexer(Lexer):
                 # /wg/bgr/jfaust/ros/dev/visualization-2.0/visualization/rviz_interface_gen/antlr/InterfaceLexer.g:13:23: 'async'
                 pass 
                 self.match("async")
+
+
+            elif alt2 == 3:
+                # /wg/bgr/jfaust/ros/dev/visualization-2.0/visualization/rviz_interface_gen/antlr/InterfaceLexer.g:13:33: 'fastcall'
+                pass 
+                self.match("fastcall")
 
 
 
@@ -751,88 +758,99 @@ class InterfaceLexer(Lexer):
     # lookup tables for DFA #8
 
     DFA8_eot = DFA.unpack(
-        u"\2\uffff\2\16\6\uffff\1\22\3\16\1\uffff\2\16\2\uffff\10\16\1\40"
-        u"\4\16\1\uffff\1\40\7\16\1\54\1\55\1\16\2\uffff\1\57\1\uffff"
+        u"\2\uffff\3\17\6\uffff\1\24\3\17\1\uffff\3\17\2\uffff\11\17\1\44"
+        u"\5\17\1\uffff\1\44\12\17\1\64\1\65\1\44\1\17\2\uffff\1\67\1\uffff"
         )
 
     DFA8_eof = DFA.unpack(
-        u"\60\uffff"
+        u"\70\uffff"
         )
 
     DFA8_min = DFA.unpack(
-        u"\1\11\1\uffff\1\171\1\163\6\uffff\1\52\1\156\2\145\1\uffff\1\156"
-        u"\1\171\2\uffff\1\164\1\163\1\164\1\143\1\156\1\145\1\163\1\165"
-        u"\1\60\1\143\1\162\1\141\1\162\1\uffff\1\60\1\146\1\147\1\156\1"
-        u"\141\1\145\1\163\1\143\2\60\1\145\2\uffff\1\60\1\uffff"
+        u"\1\11\1\uffff\1\171\1\163\1\141\6\uffff\1\52\1\156\2\145\1\uffff"
+        u"\1\156\1\171\1\163\2\uffff\1\164\1\163\1\164\1\143\1\156\1\164"
+        u"\1\145\1\163\1\165\1\60\2\143\1\162\1\141\1\162\1\uffff\1\60\1"
+        u"\141\1\146\1\147\1\156\1\154\1\141\1\145\1\163\1\154\1\143\3\60"
+        u"\1\145\2\uffff\1\60\1\uffff"
         )
 
     DFA8_max = DFA.unpack(
-        u"\1\175\1\uffff\1\171\1\163\6\uffff\1\57\1\156\2\145\1\uffff\1\156"
-        u"\1\171\2\uffff\1\164\1\163\1\164\1\143\1\156\1\145\1\163\1\165"
-        u"\1\172\1\143\1\162\1\141\1\162\1\uffff\1\172\1\146\1\147\1\156"
-        u"\1\141\1\145\1\163\1\143\2\172\1\145\2\uffff\1\172\1\uffff"
+        u"\1\175\1\uffff\1\171\1\163\1\141\6\uffff\1\57\1\156\2\145\1\uffff"
+        u"\1\156\1\171\1\163\2\uffff\1\164\1\163\1\164\1\143\1\156\1\164"
+        u"\1\145\1\163\1\165\1\172\2\143\1\162\1\141\1\162\1\uffff\1\172"
+        u"\1\141\1\146\1\147\1\156\1\154\1\141\1\145\1\163\1\154\1\143\3"
+        u"\172\1\145\2\uffff\1\172\1\uffff"
         )
 
     DFA8_accept = DFA.unpack(
-        u"\1\uffff\1\1\2\uffff\1\3\1\4\1\5\1\6\1\7\1\10\4\uffff\1\15\2\uffff"
-        u"\1\16\1\11\15\uffff\1\2\13\uffff\1\13\1\14\1\uffff\1\12"
+        u"\1\uffff\1\1\3\uffff\1\3\1\4\1\5\1\6\1\7\1\10\4\uffff\1\15\3\uffff"
+        u"\1\16\1\11\17\uffff\1\2\17\uffff\1\13\1\14\1\uffff\1\12"
         )
 
     DFA8_special = DFA.unpack(
-        u"\60\uffff"
+        u"\70\uffff"
         )
 
             
     DFA8_transition = [
-        DFA.unpack(u"\2\1\1\uffff\2\1\22\uffff\1\1\7\uffff\1\6\1\7\2\uffff"
-        u"\1\11\2\uffff\1\12\13\uffff\1\10\5\uffff\32\16\4\uffff\1\16\1\uffff"
-        u"\1\3\7\16\1\13\3\16\1\14\4\16\1\15\1\2\7\16\1\4\1\uffff\1\5"),
+        DFA.unpack(u"\2\1\1\uffff\2\1\22\uffff\1\1\7\uffff\1\7\1\10\2\uffff"
+        u"\1\12\2\uffff\1\13\13\uffff\1\11\5\uffff\32\17\4\uffff\1\17\1\uffff"
+        u"\1\3\4\17\1\4\2\17\1\14\3\17\1\15\4\17\1\16\1\2\7\17\1\5\1\uffff"
+        u"\1\6"),
         DFA.unpack(u""),
-        DFA.unpack(u"\1\17"),
         DFA.unpack(u"\1\20"),
+        DFA.unpack(u"\1\21"),
+        DFA.unpack(u"\1\22"),
         DFA.unpack(u""),
         DFA.unpack(u""),
         DFA.unpack(u""),
         DFA.unpack(u""),
         DFA.unpack(u""),
         DFA.unpack(u""),
-        DFA.unpack(u"\1\21\4\uffff\1\21"),
-        DFA.unpack(u"\1\23"),
-        DFA.unpack(u"\1\24"),
+        DFA.unpack(u"\1\23\4\uffff\1\23"),
         DFA.unpack(u"\1\25"),
-        DFA.unpack(u""),
         DFA.unpack(u"\1\26"),
         DFA.unpack(u"\1\27"),
-        DFA.unpack(u""),
         DFA.unpack(u""),
         DFA.unpack(u"\1\30"),
         DFA.unpack(u"\1\31"),
         DFA.unpack(u"\1\32"),
+        DFA.unpack(u""),
+        DFA.unpack(u""),
         DFA.unpack(u"\1\33"),
         DFA.unpack(u"\1\34"),
         DFA.unpack(u"\1\35"),
         DFA.unpack(u"\1\36"),
         DFA.unpack(u"\1\37"),
-        DFA.unpack(u"\12\16\7\uffff\32\16\4\uffff\1\16\1\uffff\32\16"),
+        DFA.unpack(u"\1\40"),
         DFA.unpack(u"\1\41"),
         DFA.unpack(u"\1\42"),
         DFA.unpack(u"\1\43"),
-        DFA.unpack(u"\1\44"),
-        DFA.unpack(u""),
-        DFA.unpack(u"\12\16\7\uffff\32\16\4\uffff\1\16\1\uffff\32\16"),
+        DFA.unpack(u"\12\17\7\uffff\32\17\4\uffff\1\17\1\uffff\32\17"),
         DFA.unpack(u"\1\45"),
         DFA.unpack(u"\1\46"),
         DFA.unpack(u"\1\47"),
         DFA.unpack(u"\1\50"),
         DFA.unpack(u"\1\51"),
+        DFA.unpack(u""),
+        DFA.unpack(u"\12\17\7\uffff\32\17\4\uffff\1\17\1\uffff\32\17"),
         DFA.unpack(u"\1\52"),
         DFA.unpack(u"\1\53"),
-        DFA.unpack(u"\12\16\7\uffff\32\16\4\uffff\1\16\1\uffff\32\16"),
-        DFA.unpack(u"\12\16\7\uffff\32\16\4\uffff\1\16\1\uffff\32\16"),
+        DFA.unpack(u"\1\54"),
+        DFA.unpack(u"\1\55"),
         DFA.unpack(u"\1\56"),
+        DFA.unpack(u"\1\57"),
+        DFA.unpack(u"\1\60"),
+        DFA.unpack(u"\1\61"),
+        DFA.unpack(u"\1\62"),
+        DFA.unpack(u"\1\63"),
+        DFA.unpack(u"\12\17\7\uffff\32\17\4\uffff\1\17\1\uffff\32\17"),
+        DFA.unpack(u"\12\17\7\uffff\32\17\4\uffff\1\17\1\uffff\32\17"),
+        DFA.unpack(u"\12\17\7\uffff\32\17\4\uffff\1\17\1\uffff\32\17"),
+        DFA.unpack(u"\1\66"),
         DFA.unpack(u""),
         DFA.unpack(u""),
-        DFA.unpack(u"\12\16\7\uffff\32\16\4\uffff\1\16\1\uffff\32\16"),
+        DFA.unpack(u"\12\17\7\uffff\32\17\4\uffff\1\17\1\uffff\32\17"),
         DFA.unpack(u"")
     ]
 

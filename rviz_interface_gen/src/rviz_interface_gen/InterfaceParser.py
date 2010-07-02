@@ -1,4 +1,4 @@
-# $ANTLR 3.1.2 /wg/bgr/jfaust/ros/dev/visualization-2.0/visualization/rviz_interface_gen/antlr/InterfaceParser.g 2010-04-22 17:11:19
+# $ANTLR 3.1.2 /wg/bgr/jfaust/ros/dev/visualization-2.0/visualization/rviz_interface_gen/antlr/InterfaceParser.g 2010-07-02 11:59:16
 
 import sys
 from antlr3 import *
