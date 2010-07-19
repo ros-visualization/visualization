@@ -347,8 +347,8 @@ bool Renderer::meshExists(const std::string& resource_name)
 
 bool Renderer::useGeometryShaders()
 {
-  //return Ogre::Root::getSingleton().getRenderSystem()->getCapabilities()->hasCapability(Ogre::RSC_GEOMETRY_PROGRAM);
-  return false;
+  return Ogre::Root::getSingleton().getRenderSystem()->getCapabilities()->hasCapability(Ogre::RSC_GEOMETRY_PROGRAM);
+  //return false;
 }
 
 void Renderer::renderThread()

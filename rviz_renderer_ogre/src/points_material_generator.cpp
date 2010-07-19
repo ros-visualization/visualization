@@ -66,63 +66,82 @@ std::string descToStringID(const PointsRendererDesc& desc, bool alpha)
   return ss.str();
 }
 
+void generateGenericGPVP(std::stringstream& ss)
+{
+  ss <<
+"void vp(float4 position : POSITION,\n"
+"        float4 color : COLOR,\n"
+"        out float4 out_position : POSITION,\n"
+"        out float4 out_color : COLOR\n"
+")\n"
+"{\n"
+" out_position = position;\n"
+" out_color = color;\n"
+"}\n";
+}
+
 Ogre::GpuProgramPtr generateVertexShader(const PointsRendererDesc& desc, bool alpha)
 {
   std::stringstream ss;
-  if (desc.type == rviz_msgs::Points::TYPE_POINTS)
-  {
-    // nothing to do
-  }
-  else if (desc.type == rviz_msgs::Points::TYPE_BILLBOARDS
-        || desc.type == rviz_msgs::Points::TYPE_BILLBOARD_SPHERES)
-  {
-    ss << "#include <point_cloud_billboard_vp.cg>\n\n";
-  }
-  else if (desc.type == rviz_msgs::Points::TYPE_BOXES)
-  {
-    ss << "#include <point_cloud_box_vp.cg>\n\n";
-  }
-
-  ss << "void vp(" << std::endl;
-
-  ss << " float4 in_position : POSITION," << std::endl;
-  ss << " float4 in_color    : COLOR," << std::endl;
-  ss << " float3 in_normal   : NORMAL,\n";
-
-  uint32_t tex_coord_index = 0;
   bool supports_geometry_programs = getRenderer()->useGeometryShaders();
-  if (desc.type != rviz_msgs::Points::TYPE_POINTS)
-  {
-    if (!supports_geometry_programs)
-    {
-      ss << " float3 in_offset : TEXCOORD" << tex_coord_index++ << ",\n";
-    }
 
-    if (desc.has_orientation)
-    {
-      ss << " float4 in_orientation : TEXCOORD" << tex_coord_index++ << ",\n";
-    }
+  if (supports_geometry_programs && desc.type != rviz_msgs::Points::TYPE_POINTS)
+  {
+    generateGenericGPVP(ss);
   }
-
-  ss << std::endl;
-
-  ss << " out float4 out_position : POSITION," << std::endl;
-  ss << " out float3 out_view_pos : TEXCOORD0," << std::endl;
-  ss << " out float3 out_offset : TEXCOORD1," << std::endl;
-  ss << " out float3 out_normal : TEXCOORD2," << std::endl;
-  ss << " out float4 out_color : TEXCOORD3," << std::endl;
-
-  ss << " uniform float4 size," << std::endl;
-  ss << " uniform float4 camera_pos," << std::endl;
-  ss << " uniform float4x4 worldviewproj," << std::endl;
-  ss << " uniform float4x4 worldview" << std::endl;
-
-  ss << " )" << std::endl;
-
-  ss << "{" << std::endl;
-
-  if (!supports_geometry_programs)
+  else
   {
+    if (desc.type == rviz_msgs::Points::TYPE_POINTS)
+    {
+      // nothing to do
+    }
+    else if (desc.type == rviz_msgs::Points::TYPE_BILLBOARDS
+          || desc.type == rviz_msgs::Points::TYPE_BILLBOARD_SPHERES)
+    {
+      ss << "#include <point_cloud_billboard_vp.cg>\n\n";
+    }
+    else if (desc.type == rviz_msgs::Points::TYPE_BOXES)
+    {
+      ss << "#include <point_cloud_box_vp.cg>\n\n";
+    }
+
+    ss << "void vp(" << std::endl;
+
+    ss << " float4 in_position : POSITION," << std::endl;
+    ss << " float4 in_color    : COLOR," << std::endl;
+    ss << " float3 in_normal   : NORMAL,\n";
+
+    uint32_t tex_coord_index = 0;
+    if (desc.type != rviz_msgs::Points::TYPE_POINTS)
+    {
+      if (!supports_geometry_programs)
+      {
+        ss << " float3 in_offset : TEXCOORD" << tex_coord_index++ << ",\n";
+      }
+
+      if (desc.has_orientation)
+      {
+        ss << " float4 in_orientation : TEXCOORD" << tex_coord_index++ << ",\n";
+      }
+    }
+
+    ss << std::endl;
+
+    ss << " out float4 out_position : POSITION," << std::endl;
+    ss << " out float3 out_view_pos : TEXCOORD0," << std::endl;
+    ss << " out float3 out_offset : TEXCOORD1," << std::endl;
+    ss << " out float3 out_normal : TEXCOORD2," << std::endl;
+    ss << " out float4 out_color : TEXCOORD3," << std::endl;
+
+    ss << " uniform float4 size," << std::endl;
+    ss << " uniform float4 camera_pos," << std::endl;
+    ss << " uniform float4x4 worldviewproj," << std::endl;
+    ss << " uniform float4x4 worldview" << std::endl;
+
+    ss << " )" << std::endl;
+
+    ss << "{" << std::endl;
+
     if (desc.type == rviz_msgs::Points::TYPE_POINTS)
     {
       ss << " float4 pos = in_position;\n";
@@ -146,20 +165,18 @@ Ogre::GpuProgramPtr generateVertexShader(const PointsRendererDesc& desc, bool al
       ss << " float4 pos = posn.pos;\n";
       ss << " float3 normal = in_normal;\n";
     }
-  }
-  else
-  {
-    ss << " float4 pos = in_position;\n";
-    ss << " float3 normal = float3(1.0, 0.0, 0.0);\n";
-  }
 
-  ss << " out_position = mul(worldviewproj, pos);\n" << std::endl;
-  ss << " out_normal = mul(worldview, float4(normal, 0)).xyz;\n" << std::endl;
-  ss << " out_view_pos = mul(worldview, pos).xyz;\n" << std::endl;
-  ss << " out_color = in_color;\n";
-  ss << " out_offset = in_offset;\n";
+    ss << " out_position = mul(worldviewproj, pos);\n" << std::endl;
+    ss << " out_normal = mul(worldview, float4(normal, 0)).xyz;\n" << std::endl;
+    ss << " out_view_pos = mul(worldview, pos).xyz;\n" << std::endl;
+    ss << " out_color = in_color;\n";
+    if (!supports_geometry_programs)
+    {
+      ss << " out_offset = in_offset;\n";
+    }
 
-  ss << "}" << std::endl;
+    ss << "}" << std::endl;
+  }
 
   std::string program_source = ss.str();
   std::string program_name = descToStringID(desc, alpha) + "_VP";
@@ -175,8 +192,19 @@ Ogre::GpuProgramPtr generateVertexShader(const PointsRendererDesc& desc, bool al
   program->setParameter("profiles", "vs_1_1 arbvp1");
 
   const Ogre::GpuProgramParametersSharedPtr& params = program->getDefaultParameters();
-  params->setNamedAutoConstant("worldviewproj", Ogre::GpuProgramParameters::ACT_WORLDVIEWPROJ_MATRIX);
-  params->setNamedAutoConstant("worldview", Ogre::GpuProgramParameters::ACT_WORLDVIEW_MATRIX);
+  try
+  {
+    params->setNamedAutoConstant("worldviewproj", Ogre::GpuProgramParameters::ACT_WORLDVIEWPROJ_MATRIX);
+  }
+  catch (Ogre::Exception&)
+  {}
+
+  try
+  {
+    params->setNamedAutoConstant("worldview", Ogre::GpuProgramParameters::ACT_WORLDVIEW_MATRIX);
+  }
+  catch (Ogre::Exception&)
+  {}
 
   try
   {
@@ -194,6 +222,112 @@ Ogre::GpuProgramPtr generateVertexShader(const PointsRendererDesc& desc, bool al
 
   program->load();
 
+  return Ogre::GpuProgramPtr(program);
+}
+
+Ogre::GpuProgramPtr generateGeometryShader(const PointsRendererDesc& desc, bool alpha)
+{
+  std::stringstream ss;
+
+  if (desc.type == rviz_msgs::Points::TYPE_POINTS)
+  {
+    ROS_ASSERT_MSG(false, "Shouldn't be generating geometry shaders for TYPE_POINTS");
+    // nothing to do
+  }
+  else if (desc.type == rviz_msgs::Points::TYPE_BILLBOARDS
+        || desc.type == rviz_msgs::Points::TYPE_BILLBOARD_SPHERES)
+  {
+    ss << "#include <point_cloud_billboard_gp.cg>\n\n";
+  }
+  else if (desc.type == rviz_msgs::Points::TYPE_BOXES)
+  {
+    ss << "#include <point_cloud_box_gp.cg>\n\n";
+  }
+
+  ss << std::endl;
+
+  ss << "POINT TRIANGLE_OUT void gp(" << std::endl;
+  ss << " AttribArray<float4> in_position : POSITION,\n";
+  ss << " AttribArray<float4> in_color : COLOR,\n";
+
+  ss << std::endl;
+
+  ss << std::endl;
+
+  ss << " uniform float4 size," << std::endl;
+  ss << " uniform float4 camera_pos," << std::endl;
+  ss << " uniform float4x4 worldviewproj," << std::endl;
+  ss << " uniform float4x4 worldview" << std::endl;
+
+  ss << " )" << std::endl;
+
+  ss << "{" << std::endl;
+
+  if (desc.type == rviz_msgs::Points::TYPE_BILLBOARDS)
+  {
+    ss << " emitBillboardVertices(in_position[0], in_color[0], worldviewproj, worldview, camera_pos, size);\n";
+  }
+  else if (desc.type == rviz_msgs::Points::TYPE_BILLBOARD_SPHERES)
+  {
+    ss << " emitBillboardSphereVertices(in_position[0], in_color[0], worldviewproj, worldview, camera_pos, size);\n";
+  }
+  else if (desc.type == rviz_msgs::Points::TYPE_BOXES)
+  {
+    ss << " emitBoxVertices(in_position[0], in_color[0], worldviewproj, worldview, size);\n";
+  }
+
+
+  ss << "}" << std::endl;
+
+  Ogre::String program_source = ss.str();
+  Ogre::String program_name = descToStringID(desc, alpha) + "_GP";
+
+  ROS_DEBUG("%s", program_source.c_str());
+
+  // Create shader object
+  Ogre::HighLevelGpuProgramPtr program = Ogre::HighLevelGpuProgramManager::getSingleton().createProgram(
+                                                                                                  program_name,
+                                                                                                  ROS_PACKAGE_NAME,
+                                                                                                  "cg",
+                                                                                                  Ogre::GPT_GEOMETRY_PROGRAM);
+
+  program->setSource(program_source);
+  program->setParameter("entry_point", "gp");
+  program->setParameter("profiles", "gpu_gp gp4_gp");
+
+  const Ogre::GpuProgramParametersSharedPtr& params = program->getDefaultParameters();
+
+  try
+  {
+    params->setNamedAutoConstant("worldview", Ogre::GpuProgramParameters::ACT_WORLDVIEW_MATRIX);
+  }
+  catch (Ogre::Exception&)
+  {
+  }
+
+  try
+  {
+    params->setNamedAutoConstant("worldviewproj", Ogre::GpuProgramParameters::ACT_WORLDVIEWPROJ_MATRIX);
+  }
+  catch (Ogre::Exception&)
+  {
+  }
+
+  try
+  {
+    params->setNamedAutoConstant("camera_pos", Ogre::GpuProgramParameters::ACT_CAMERA_POSITION_OBJECT_SPACE);
+  }
+  catch (Ogre::Exception&)
+  {}
+
+  try
+  {
+    params->setNamedAutoConstant("size", Ogre::GpuProgramParameters::ACT_CUSTOM, PointsRendererDesc::CustomParam_Size);
+  }
+  catch (Ogre::Exception&)
+  {}
+
+  program->load();
   return Ogre::GpuProgramPtr(program);
 }
 
@@ -346,6 +480,13 @@ std::pair<Ogre::MaterialPtr, Ogre::MaterialPtr> generateMaterialsForPoints(const
                           Ogre::MaterialManager::getSingleton().getByName(material_name_alpha));
   }
 
+  bool supports_geometry_programs = getRenderer()->useGeometryShaders();
+  Ogre::GpuProgramPtr geometry_program;
+  if (supports_geometry_programs && desc.type != rviz_msgs::Points::TYPE_POINTS)
+  {
+    geometry_program = generateGeometryShader(desc, false);
+  }
+
   Ogre::MaterialPtr mat_opaque = Ogre::MaterialManager::getSingleton().create(material_name_opaque, ROS_PACKAGE_NAME);
   {
     mat_opaque->getTechnique(0)->setSchemeName("GBuffer");
@@ -357,6 +498,11 @@ std::pair<Ogre::MaterialPtr, Ogre::MaterialPtr> generateMaterialsForPoints(const
     Ogre::GpuProgramPtr fragment_program = generateFragmentShader(desc, false);
     pass->setVertexProgram(vertex_program->getName());
     pass->setFragmentProgram(fragment_program->getName());
+
+    if (!geometry_program.isNull())
+    {
+      pass->setGeometryProgram(geometry_program->getName());
+    }
   }
 
   Ogre::MaterialPtr mat_alpha = Ogre::MaterialManager::getSingleton().create(material_name_alpha, ROS_PACKAGE_NAME);
@@ -373,6 +519,11 @@ std::pair<Ogre::MaterialPtr, Ogre::MaterialPtr> generateMaterialsForPoints(const
     Ogre::GpuProgramPtr fragment_program = generateFragmentShader(desc, true);
     pass->setVertexProgram(vertex_program->getName());
     pass->setFragmentProgram(fragment_program->getName());
+
+    if (!geometry_program.isNull())
+    {
+      pass->setGeometryProgram(geometry_program->getName());
+    }
   }
 
   return std::make_pair(mat_opaque, mat_alpha);
