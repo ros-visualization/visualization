@@ -19,7 +19,6 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
 include_directories(include)
 
-#common commands for building c++ executables and libraries
 rosbuild_add_library(${PROJECT_NAME} src/camera.cpp
 									 src/convert.cpp
 									 src/mesh.cpp
@@ -31,11 +30,14 @@ rosbuild_add_library(${PROJECT_NAME} src/camera.cpp
 									 src/simple_shape.cpp
 									 src/material.cpp
 									 src/mesh_instance.cpp
+									 src/points_manager.cpp
+									 src/points_renderer.cpp
 									 src/server.cpp
 									 src/init.cpp
 									 src/disable_rendering_scheme_listener.cpp
 									 src/mesh_loader.cpp
-									 src/ogre_material_generator.cpp)
+									 src/ogre_material_generator.cpp
+									 src/points_material_generator.cpp)
+									 
 rosbuild_add_boost_directories()
 rosbuild_link_boost(${PROJECT_NAME} filesystem system)
-#rosbuild_add_executable(test_depth_peeling test/test_depth_peeling.cpp)

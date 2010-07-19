@@ -33,13 +33,18 @@
 #include "rviz_renderer_client/simple_shape.h"
 #include "rviz_renderer_client/mesh_instance.h"
 #include "rviz_renderer_client/transform_node.h"
+#include "rviz_renderer_client/points.h"
 
 #include <rviz_interfaces/Scene.h>
 
-using namespace rviz_uuid;
-using namespace rviz_renderer_client;
+#include <rviz_msgs/Points.h>
 
-Scene rviz_renderer_client::createScene()
+using namespace rviz_uuid;
+
+namespace rviz_renderer_client
+{
+
+Scene createScene()
 {
   rviz_interfaces::SceneProxy* proxy = getProxyInterface<rviz_interfaces::SceneProxy>("scene");
   UUID id = UUID::Generate();
@@ -47,7 +52,7 @@ Scene rviz_renderer_client::createScene()
   return Scene(id);
 }
 
-void rviz_renderer_client::destroyScene(const Scene& scene)
+void destroyScene(const Scene& scene)
 {
   rviz_interfaces::SceneProxy* proxy = getProxyInterface<rviz_interfaces::SceneProxy>("scene");
   proxy->destroy(scene.getID());
@@ -122,3 +127,27 @@ void Scene::destroyTransformNode(const TransformNode& node)
 {
   proxy_->destroyTransformNode(getID(), node.getID());
 }
+
+Points Scene::createPoints(rviz_msgs::Points& points)
+{
+  rviz_interfaces::Scene_createPointsRequestPtr req(new rviz_interfaces::Scene_createPointsRequest);
+  req->points.type = points.type;
+  req->points.scale = points.scale;
+  req->points.positions.swap(points.positions);
+  req->points.orientations.swap(points.orientations);
+  req->points.colors.swap(points.colors);
+
+  req->scene_id = getID();
+  req->points_id = UUID::Generate();
+
+  proxy_->createPoints(req);
+
+  return Points(req->points_id);
+}
+
+void Scene::destroyPoints(const Points& points)
+{
+  proxy_->destroyPoints(getID(), points.getID());
+}
+
+} // namespace rviz_renderer_client

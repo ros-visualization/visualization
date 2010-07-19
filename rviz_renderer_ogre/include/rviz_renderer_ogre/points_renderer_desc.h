@@ -27,64 +27,42 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef RVIZ_ROS_CLIENT_SCENE_H
-#define RVIZ_ROS_CLIENT_SCENE_H
+#ifndef RVIZ_RENDERER_OGRE_POINTS_RENDERER_DESC_H
+#define RVIZ_RENDERER_OGRE_POINTS_RENDERER_DESC_H
 
-#include "object.h"
+#include <OGRE/OgreVector3.h>
+#include <ros/types.h>
 
-#include <ros/message_forward.h>
-
-namespace rviz_msgs
-{
-ROS_DECLARE_MESSAGE(Points);
-}
-
-namespace rviz_interfaces
-{
-class SceneProxy;
-}
-
-namespace rviz_renderer_client
+namespace rviz_renderer_ogre
 {
 
-class RenderWindow;
-class Camera;
-class SimpleShape;
-class TransformNode;
-class MeshInstance;
-class Points;
-
-class Scene : public Object
+struct PointsRendererDesc
 {
-public:
-  Scene();
-  Scene(const rviz_uuid::UUID& id);
+  enum CustomParam
+  {
+    CustomParam_Size,
+  };
 
-  Camera createCamera();
-  void destroyCamera(const Camera& cam);
+  uint8_t type;
+  Ogre::Vector3 scale;
+  bool has_orientation;
 
-  SimpleShape createSimpleShape(const std::string& type, const TransformNode& node);
-  void destroySimpleShape(const SimpleShape& shape);
+  bool operator<(const PointsRendererDesc& rhs) const
+  {
+    if (type != rhs.type)
+    {
+      return type < rhs.type;
+    }
 
-  MeshInstance createMeshInstance(const std::string& mesh_resource, const TransformNode& node);
-  void destroyMeshInstance(const MeshInstance& inst);
+    if (!scale.positionEquals(rhs.scale, 0.005))
+    {
+      return scale < rhs.scale;
+    }
 
-  TransformNode createTransformNode();
-  TransformNode createTransformNode(const TransformNode& parent);
-  TransformNode createTransformNode(const rviz_uuid::UUID& parent);
-  void destroyTransformNode(const TransformNode& node);
-
-  Points createPoints(rviz_msgs::Points& points);
-  void destroyPoints(const Points& points);
-
-private:
-  rviz_interfaces::SceneProxy* proxy_;
+    return has_orientation < rhs.has_orientation;
+  }
 };
 
-Scene createScene();
-void destroyScene(const Scene& scene);
+} // namespace rviz_renderer_ogre
 
-} // namespace rviz_renderer_client
-
-#endif // RVIZ_ROS_CLIENT_SCENE_H
-
+#endif // RVIZ_RENDERER_OGRE_POINTS_RENDERER_DESC_H

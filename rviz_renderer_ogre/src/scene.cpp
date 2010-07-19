@@ -33,6 +33,7 @@
 #include "rviz_renderer_ogre/transform_node.h"
 #include "rviz_renderer_ogre/mesh_loader.h"
 #include "rviz_renderer_ogre/mesh_instance.h"
+#include "rviz_renderer_ogre/points_manager.h"
 
 #include <OGRE/OgreSceneManager.h>
 #include <OGRE/OgreCamera.h>
@@ -49,6 +50,7 @@ namespace rviz_renderer_ogre
 Scene::Scene(const UUID& id, Ogre::SceneManager* scene_manager)
 : id_(id)
 , scene_manager_(scene_manager)
+, points_manager_(new PointsManager(scene_manager))
 {
 }
 
@@ -58,6 +60,7 @@ Scene::~Scene()
   simple_shapes_.clear();
   mesh_instances_.clear();
   transform_nodes_.clear();
+  delete points_manager_;
   Ogre::Root::getSingleton().destroySceneManager(scene_manager_);
 }
 

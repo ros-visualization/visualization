@@ -27,64 +27,21 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef RVIZ_ROS_CLIENT_SCENE_H
-#define RVIZ_ROS_CLIENT_SCENE_H
+#ifndef RVIZ_RENDERER_CLIENT_POINTS_H
+#define RVIZ_RENDERER_CLIENT_POINTS_H
 
 #include "object.h"
-
-#include <ros/message_forward.h>
-
-namespace rviz_msgs
-{
-ROS_DECLARE_MESSAGE(Points);
-}
-
-namespace rviz_interfaces
-{
-class SceneProxy;
-}
 
 namespace rviz_renderer_client
 {
 
-class RenderWindow;
-class Camera;
-class SimpleShape;
-class TransformNode;
-class MeshInstance;
-class Points;
-
-class Scene : public Object
+class Points : public Object
 {
 public:
-  Scene();
-  Scene(const rviz_uuid::UUID& id);
-
-  Camera createCamera();
-  void destroyCamera(const Camera& cam);
-
-  SimpleShape createSimpleShape(const std::string& type, const TransformNode& node);
-  void destroySimpleShape(const SimpleShape& shape);
-
-  MeshInstance createMeshInstance(const std::string& mesh_resource, const TransformNode& node);
-  void destroyMeshInstance(const MeshInstance& inst);
-
-  TransformNode createTransformNode();
-  TransformNode createTransformNode(const TransformNode& parent);
-  TransformNode createTransformNode(const rviz_uuid::UUID& parent);
-  void destroyTransformNode(const TransformNode& node);
-
-  Points createPoints(rviz_msgs::Points& points);
-  void destroyPoints(const Points& points);
-
-private:
-  rviz_interfaces::SceneProxy* proxy_;
+  Points();
+  Points(const rviz_uuid::UUID& id);
 };
-
-Scene createScene();
-void destroyScene(const Scene& scene);
 
 } // namespace rviz_renderer_client
 
-#endif // RVIZ_ROS_CLIENT_SCENE_H
-
+#endif // RVIZ_RENDERER_CLIENT_POINTS_H

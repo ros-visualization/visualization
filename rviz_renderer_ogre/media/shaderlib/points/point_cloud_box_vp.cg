@@ -1,0 +1,17 @@
+struct PosAndNormal
+{
+  float4 pos;
+  float3 normal;
+};
+
+PosAndNormal calculateBoxVertexPositionAndNormal(float4 pos, float3 tex, float4x4 worldviewproj, float4 size)
+{
+  PosAndNormal out;
+  half4 s = half4(tex, 0.0) * size;
+  out.pos = mul(worldviewproj, (pos + half4( (s.xxx * half3(1.0, 0.0, 0.0)) + (s.yyy * half3(0.0, 1.0, 0.0)) + (s.zzz * half3(0.0, 0.0, -1.0)), 0.0 )));
+  
+  // TODO, figure out normal
+  out.normal = float3(1.0, 0.0, 0.0);
+  
+  return out;
+}

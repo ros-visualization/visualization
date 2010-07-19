@@ -91,6 +91,8 @@ public:
    MeshPtr getMesh(const std::string& resource_name);
    bool meshExists(const std::string& resource_name);
 
+   bool useGeometryShaders();
+
 private:
   void init();
   void renderThread();

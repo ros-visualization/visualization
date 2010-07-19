@@ -27,64 +27,60 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef RVIZ_ROS_CLIENT_SCENE_H
-#define RVIZ_ROS_CLIENT_SCENE_H
+#ifndef RVIZ_RENDERER_OGRE_POINTS_MANAGER_H
+#define RVIZ_RENDERER_OGRE_POINTS_MANAGER_H
 
-#include "object.h"
+#include "points_renderer_desc.h"
 
 #include <ros/message_forward.h>
+
+#include <rviz_uuid/uuid.h>
+
+#include <OGRE/OgreVector3.h>
 
 namespace rviz_msgs
 {
 ROS_DECLARE_MESSAGE(Points);
 }
 
-namespace rviz_interfaces
+namespace Ogre
 {
-class SceneProxy;
+class SceneManager;
 }
 
-namespace rviz_renderer_client
+namespace rviz_renderer_ogre
 {
 
-class RenderWindow;
-class Camera;
-class SimpleShape;
-class TransformNode;
-class MeshInstance;
-class Points;
+class PointsRenderer;
 
-class Scene : public Object
+class PointsManager
 {
 public:
-  Scene();
-  Scene(const rviz_uuid::UUID& id);
+  PointsManager(Ogre::SceneManager* scene_manager);
+  ~PointsManager();
 
-  Camera createCamera();
-  void destroyCamera(const Camera& cam);
-
-  SimpleShape createSimpleShape(const std::string& type, const TransformNode& node);
-  void destroySimpleShape(const SimpleShape& shape);
-
-  MeshInstance createMeshInstance(const std::string& mesh_resource, const TransformNode& node);
-  void destroyMeshInstance(const MeshInstance& inst);
-
-  TransformNode createTransformNode();
-  TransformNode createTransformNode(const TransformNode& parent);
-  TransformNode createTransformNode(const rviz_uuid::UUID& parent);
-  void destroyTransformNode(const TransformNode& node);
-
-  Points createPoints(rviz_msgs::Points& points);
-  void destroyPoints(const Points& points);
+  void addPoints(const rviz_uuid::UUID& id, const rviz_msgs::Points& points);
+  void removePoints(const rviz_uuid::UUID& id);
 
 private:
-  rviz_interfaces::SceneProxy* proxy_;
+  PointsRenderer* getOrCreateRendererForPoints(const rviz_msgs::Points& points);
+  PointsRendererDesc descFromPoints(const rviz_msgs::Points& points);
+
+  struct PointsInfo
+  {
+    rviz_uuid::UUID id;
+    uint32_t internal_id;
+    PointsRenderer* renderer;
+  };
+  typedef std::map<rviz_uuid::UUID, PointsInfo> M_PointsInfo;
+  M_PointsInfo points_to_renderer_;
+
+  typedef std::map<PointsRendererDesc, PointsRenderer*> M_DescToRenderer;
+  M_DescToRenderer renderers_;
+
+  Ogre::SceneManager* scene_manager_;
 };
 
-Scene createScene();
-void destroyScene(const Scene& scene);
+} // namespace rviz_renderer_ogre
 
-} // namespace rviz_renderer_client
-
-#endif // RVIZ_ROS_CLIENT_SCENE_H
-
+#endif // RVIZ_RENDERER_OGRE_POINTS_MANAGER_H

@@ -35,6 +35,7 @@
 #include <rviz_renderer_ogre/camera.h>
 #include <rviz_renderer_ogre/material.h>
 #include <rviz_renderer_ogre/mesh_instance.h>
+#include <rviz_renderer_ogre/points_manager.h>
 #include <rviz_uuid/uuid.h>
 #include <rviz_math/vector3.h>
 #include <rviz_math/quaternion.h>
@@ -307,6 +308,28 @@ public:
     }
 
     scene->destroyMeshInstance(inst_id);
+  }
+
+  virtual void createPoints(const rviz_interfaces::Scene_createPointsRequestConstPtr& request)
+  {
+    Scene* scene = renderer_->getScene(request->scene_id);
+    if (!scene)
+    {
+      throw std::runtime_error("Scene [" + UUID(request->scene_id).toString() + "] does not exist");
+    }
+
+    scene->getPointsManager()->addPoints(request->points_id, request->points);
+  }
+
+  virtual void destroyPoints(const rviz_msgs::UUID& scene_id, const rviz_msgs::UUID& points_id)
+  {
+    Scene* scene = renderer_->getScene(scene_id);
+    if (!scene)
+    {
+      throw std::runtime_error("Scene [" + UUID(scene_id).toString() + "] does not exist");
+    }
+
+    scene->getPointsManager()->removePoints(points_id);
   }
 
 private:

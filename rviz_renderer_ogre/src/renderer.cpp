@@ -157,6 +157,7 @@ void Renderer::oneTimeInit()
   Ogre::ResourceGroupManager::getSingleton().addResourceLocation( pkg_path + "/media/materials/scripts", "FileSystem", ROS_PACKAGE_NAME );
   Ogre::ResourceGroupManager::getSingleton().addResourceLocation( pkg_path + "/media/compositors", "FileSystem", ROS_PACKAGE_NAME );
   Ogre::ResourceGroupManager::getSingleton().addResourceLocation( pkg_path + "/media/shaderlib", "FileSystem", ROS_PACKAGE_NAME );
+  Ogre::ResourceGroupManager::getSingleton().addResourceLocation( pkg_path + "/media/shaderlib/points", "FileSystem", ROS_PACKAGE_NAME );
   Ogre::ResourceGroupManager::getSingleton().initialiseAllResourceGroups();
 
   // Create our 3d stipple pattern for stipple-alpha
@@ -342,6 +343,12 @@ MeshPtr Renderer::getMesh(const std::string& resource_name)
 bool Renderer::meshExists(const std::string& resource_name)
 {
   return meshes_.find(resource_name) != meshes_.end();
+}
+
+bool Renderer::useGeometryShaders()
+{
+  //return Ogre::Root::getSingleton().getRenderSystem()->getCapabilities()->hasCapability(Ogre::RSC_GEOMETRY_PROGRAM);
+  return false;
 }
 
 void Renderer::renderThread()

@@ -58,6 +58,8 @@ typedef boost::shared_ptr<TransformNode> TransformNodePtr;
 class MeshInstance;
 typedef boost::shared_ptr<MeshInstance> MeshInstancePtr;
 
+class PointsManager;
+
 class Scene
 {
 public:
@@ -79,6 +81,8 @@ public:
   void destroyTransformNode(const rviz_uuid::UUID& id);
   TransformNode* getTransformNode(const rviz_uuid::UUID& id);
 
+  PointsManager* getPointsManager() { return points_manager_; }
+
   Ogre::SceneManager* getSceneManager() { return scene_manager_; }
   const rviz_uuid::UUID& getID() { return id_; }
 
@@ -97,6 +101,8 @@ private:
 
   typedef std::map<rviz_uuid::UUID, TransformNodePtr> M_TransformNode;
   M_TransformNode transform_nodes_;
+
+  PointsManager* points_manager_;
 };
 
 } // namespace rviz_renderer_ogre

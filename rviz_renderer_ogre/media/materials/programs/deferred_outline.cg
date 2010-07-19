@@ -9,7 +9,7 @@ float4 fp_main(
         uniform float4 in_viewport_size,
         uniform float in_far_clip_dist) : COLOR 
 {
-  //discard(true);
+  discard(true);
   float dx = in_viewport_size.z;
   float dy = in_viewport_size.w;
   

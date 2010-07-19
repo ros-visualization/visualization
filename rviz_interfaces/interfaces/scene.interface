@@ -14,4 +14,7 @@ interface Scene
 	
 	async createMeshInstance(rviz_msgs/UUID scene_id, rviz_msgs/UUID inst_id, rviz_msgs/UUID transform_id, string mesh_resource);
 	async destroyMeshInstance(rviz_msgs/UUID scene_id, rviz_msgs/UUID inst_id);
+	
+	async fastcall createPoints(rviz_msgs/UUID scene_id, rviz_msgs/UUID points_id, rviz_msgs/Points points);
+	async destroyPoints(rviz_msgs/UUID scene_id, rviz_msgs/UUID points_id);
 }

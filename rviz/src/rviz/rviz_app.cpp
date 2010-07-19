@@ -36,8 +36,11 @@
 #include "rviz_renderer_client/transform_node.h"
 #include "rviz_renderer_client/mesh_instance.h"
 #include "rviz_renderer_client/simple_color_material.h"
+#include "rviz_renderer_client/points.h"
 #include "rviz_math/vector3.h"
 #include "rviz_math/quaternion.h"
+
+#include <rviz_msgs/Points.h>
 
 // TODO: remove use of these
 #include <OGRE/OgreQuaternion.h>
@@ -166,6 +169,38 @@ public:
     n = s.createTransformNode();
     n.setPosition(2, 0, 2);
     inst = s.createMeshInstance("package://pr2_description/meshes/base_v0/wheel.dae", n);
+
+    {
+      rviz_msgs::Points points;
+      points.type = rviz_msgs::Points::TYPE_BILLBOARDS;
+      points.scale.x = 0.5;
+      points.scale.y = 0.5;
+      points.scale.z = 0.5;
+
+      for (uint32_t x = 0; x < 10; ++x)
+      {
+        for (uint32_t y = 0; y < 10; ++y)
+        {
+          for (uint32_t z = 0; z < 10; ++z)
+          {
+            rviz_msgs::Vector3 pos;
+            pos.x = x - 10.0;
+            pos.y = y;
+            pos.z = z;
+            points.positions.push_back(pos);
+
+            std_msgs::ColorRGBA col;
+            col.r = x * 0.1;
+            col.g = y * 0.1;
+            col.b = z * 0.1;
+            col.a = 1.0;
+            points.colors.push_back(col);
+          }
+        }
+      }
+
+      rviz_renderer_client::Points p = s.createPoints(points);
+    }
 
 
     Connect(wxEVT_SIZE, wxSizeEventHandler(MyFrame::onSize));
