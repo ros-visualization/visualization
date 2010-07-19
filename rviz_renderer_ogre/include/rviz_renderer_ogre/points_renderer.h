@@ -76,6 +76,7 @@ public:
 private:
   uint32_t getVerticesPerPoint();
   float* getVertices();
+  float* getNormals();
   uint32_t getPointStride();
 
   PointsRenderer* parent_;
@@ -85,6 +86,7 @@ private:
   uint32_t point_count_;
 
   bool needs_offsets_;
+  bool needs_normals_;
 };
 typedef boost::shared_ptr<PointsRenderable> PointsRenderablePtr;
 typedef std::vector<PointsRenderablePtr> V_PointsRenderable;

@@ -25,6 +25,12 @@ PosAndNormal calculateBillboardVertexPositionAndNormal(float4 pos, float2 tex, f
   return OUT;
 }
 
+PosAndNormal calculateBillboardSpheresVertexPositionAndNormal(float4 pos, float2 tex, float4 camera_pos, float4 size)
+{
+  PosAndNormal OUT = calculateBillboardVertexPositionAndNormal(pos, tex, camera_pos, size);
+  return OUT;
+}
+
 float4 calculateCommonFacingBillboardVertexPosition(float4 pos, float2 tex, float4 up, float4 normal, float4 size)
 {
   float3 right = cross(up.xyz, normal.xyz);

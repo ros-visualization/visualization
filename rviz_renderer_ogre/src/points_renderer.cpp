@@ -60,12 +60,16 @@ static float g_billboard_vertices[6*3] =
   0.5f, -0.5f, 0.0f,
 };
 
+#if 01
+static float* g_billboard_sphere_vertices = g_billboard_vertices;
+#else
 static float g_billboard_sphere_vertices[3*3] =
 {
   0.0f, 1.5f, 0.0f,
   -1.5f, -1.5f, 0.0f,
   1.5f, -1.5f, 0.0f,
 };
+#endif
 
 static float g_box_vertices[6*6*3] =
 {
@@ -118,6 +122,57 @@ static float g_box_vertices[6*6*3] =
   0.5, -0.5, 0.5,
 };
 
+static float g_box_normals[6*6*3] =
+{
+  // front
+  0.0, 0.0, 1.0,
+  0.0, 0.0, 1.0,
+  0.0, 0.0, 1.0,
+  0.0, 0.0, 1.0,
+  0.0, 0.0, 1.0,
+  0.0, 0.0, 1.0,
+
+  // back
+  0.0, 0.0, -1.0,
+  0.0, 0.0, -1.0,
+  0.0, 0.0, -1.0,
+  0.0, 0.0, -1.0,
+  0.0, 0.0, -1.0,
+  0.0, 0.0, -1.0,
+
+  // right
+  1.0, 0.0, 0.0,
+  1.0, 0.0, 0.0,
+  1.0, 0.0, 0.0,
+  1.0, 0.0, 0.0,
+  1.0, 0.0, 0.0,
+  1.0, 0.0, 0.0,
+
+  // left
+  -1.0, 0.0, 0.0,
+  -1.0, 0.0, 0.0,
+  -1.0, 0.0, 0.0,
+  -1.0, 0.0, 0.0,
+  -1.0, 0.0, 0.0,
+  -1.0, 0.0, 0.0,
+
+  // top
+  0.0, 1.0, 0.0,
+  0.0, 1.0, 0.0,
+  0.0, 1.0, 0.0,
+  0.0, 1.0, 0.0,
+  0.0, 1.0, 0.0,
+  0.0, 1.0, 0.0,
+
+  // bottom
+  0.0, -1.0, 0.0,
+  0.0, -1.0, 0.0,
+  0.0, -1.0, 0.0,
+  0.0, -1.0, 0.0,
+  0.0, -1.0, 0.0,
+  0.0, -1.0, 0.0,
+};
+
 const Ogre::String PointsRenderer::sm_type("PointsRenderable");
 
 PointsRenderable::PointsRenderable(PointsRenderer* parent, const PointsRendererDesc& desc)
@@ -125,11 +180,9 @@ PointsRenderable::PointsRenderable(PointsRenderer* parent, const PointsRendererD
 , desc_(desc)
 , point_count_(0)
 {
-  // Initialize render operation
-  //mRenderOp.operationType = Ogre::RenderOperation::OT_POINT_LIST;
-
   supports_geometry_programs_ = getRenderer()->useGeometryShaders();
   needs_offsets_ = !supports_geometry_programs_ && desc.type != rviz_msgs::Points::TYPE_POINTS;
+  needs_normals_ = !supports_geometry_programs_ && desc.type == rviz_msgs::Points::TYPE_BOXES;
 
   if (supports_geometry_programs_)
   {
@@ -156,6 +209,12 @@ PointsRenderable::PointsRenderable(PointsRenderer* parent, const PointsRendererD
 
   decl->addElement(0, offset, Ogre::VET_FLOAT3, Ogre::VES_POSITION);
   offset += Ogre::VertexElement::getTypeSize(Ogre::VET_FLOAT3);
+
+  if (needs_normals_)
+  {
+    decl->addElement(0, offset, Ogre::VET_FLOAT3, Ogre::VES_NORMAL, 0);
+    offset += Ogre::VertexElement::getTypeSize(Ogre::VET_FLOAT3);
+  }
 
   uint32_t tex_coord_num = 0;
   if (needs_offsets_)
@@ -198,6 +257,7 @@ void PointsRenderable::add(const rviz_msgs::Points& points, uint32_t start, uint
   uint32_t verts_per_point = getVerticesPerPoint();
   uint32_t point_stride = getPointStride();
   float* vertices = getVertices();
+  float* normals = getNormals();
 
   Ogre::HardwareVertexBufferSharedPtr vbuf = mRenderOp.vertexData->vertexBufferBinding->getBuffer(0);
   out_start = (mRenderOp.vertexData->vertexStart / verts_per_point) + (mRenderOp.vertexData->vertexCount / verts_per_point);
@@ -232,6 +292,13 @@ void PointsRenderable::add(const rviz_msgs::Points& points, uint32_t start, uint
       *fptr++ = pos.x;
       *fptr++ = pos.y;
       *fptr++ = pos.z;
+
+      if (needs_normals_)
+      {
+        *fptr++ = normals[(j*3)];
+        *fptr++ = normals[(j*3) + 1];
+        *fptr++ = normals[(j*3) + 2];
+      }
 
       if (needs_offsets_)
       {
@@ -321,6 +388,43 @@ uint32_t PointsRenderable::getPointStride()
   return stride;
 }
 
+float* PointsRenderable::getNormals()
+{
+  if (supports_geometry_programs_)
+  {
+    return 0;
+  }
+  else
+  {
+    if (desc_.type == rviz_msgs::Points::TYPE_POINTS)
+    {
+      return 0;
+    }
+    else if (desc_.type == rviz_msgs::Points::TYPE_BILLBOARDS)
+    {
+      return 0;
+    }
+    else if (desc_.type == rviz_msgs::Points::TYPE_BILLBOARD_SPHERES)
+    {
+      return 0;
+    }
+#if 0
+    else if (desc_.type == RM_BILLBOARDS_COMMON_FACING)
+    {
+      return 0;
+    }
+#endif
+    else if (desc_.type == rviz_msgs::Points::TYPE_BOXES)
+    {
+      return g_box_normals;
+    }
+  }
+
+  ROS_ASSERT_MSG(false, "Unknown points type %d", desc_.type);
+
+  return 0;
+}
+
 float* PointsRenderable::getVertices()
 {
   if (supports_geometry_programs_)
@@ -384,7 +488,7 @@ uint32_t PointsRenderable::getVerticesPerPoint()
 
   if (desc_.type == rviz_msgs::Points::TYPE_BILLBOARD_SPHERES)
   {
-    return 3;
+    return 6;
   }
 
   if (desc_.type == rviz_msgs::Points::TYPE_BOXES)

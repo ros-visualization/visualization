@@ -86,7 +86,8 @@ Ogre::GpuProgramPtr generateVertexShader(const PointsRendererDesc& desc, bool al
   ss << "void vp(" << std::endl;
 
   ss << " float4 in_position : POSITION," << std::endl;
-  ss << " float4 in_color   : COLOR," << std::endl;
+  ss << " float4 in_color    : COLOR," << std::endl;
+  ss << " float3 in_normal   : NORMAL,\n";
 
   uint32_t tex_coord_index = 0;
   bool supports_geometry_programs = getRenderer()->useGeometryShaders();
@@ -127,18 +128,23 @@ Ogre::GpuProgramPtr generateVertexShader(const PointsRendererDesc& desc, bool al
       ss << " float4 pos = in_position;\n";
       ss << " float3 normal = normalize(camera_pos.xyz - pos.xyz);\n";
     }
-    else if (desc.type == rviz_msgs::Points::TYPE_BILLBOARDS
-          || desc.type == rviz_msgs::Points::TYPE_BILLBOARD_SPHERES)
+    else if (desc.type == rviz_msgs::Points::TYPE_BILLBOARDS)
     {
       ss << " PosAndNormal posn = calculateBillboardVertexPositionAndNormal(in_position, in_offset.xy, camera_pos, size);\n";
       ss << " float4 pos = posn.pos;\n";
       ss << " float3 normal = posn.normal;\n";
     }
+    else if (desc.type == rviz_msgs::Points::TYPE_BILLBOARD_SPHERES)
+      {
+        ss << " PosAndNormal posn = calculateBillboardSpheresVertexPositionAndNormal(in_position, in_offset.xy, camera_pos, size);\n";
+        ss << " float4 pos = posn.pos;\n";
+        ss << " float3 normal = posn.normal;\n";
+      }
     else if (desc.type == rviz_msgs::Points::TYPE_BOXES)
     {
       ss << " PosAndNormal posn = calculateBoxVertexPositionAndNormal(in_position, in_offset.xyz, worldviewproj, size);\n";
       ss << " float4 pos = posn.pos;\n";
-      ss << " float3 normal = posn.normal;\n";
+      ss << " float3 normal = in_normal;\n";
     }
   }
   else
@@ -151,6 +157,7 @@ Ogre::GpuProgramPtr generateVertexShader(const PointsRendererDesc& desc, bool al
   ss << " out_normal = mul(worldview, float4(normal, 0)).xyz;\n" << std::endl;
   ss << " out_view_pos = mul(worldview, pos).xyz;\n" << std::endl;
   ss << " out_color = in_color;\n";
+  ss << " out_offset = in_offset;\n";
 
   ss << "}" << std::endl;
 
@@ -170,7 +177,14 @@ Ogre::GpuProgramPtr generateVertexShader(const PointsRendererDesc& desc, bool al
   const Ogre::GpuProgramParametersSharedPtr& params = program->getDefaultParameters();
   params->setNamedAutoConstant("worldviewproj", Ogre::GpuProgramParameters::ACT_WORLDVIEWPROJ_MATRIX);
   params->setNamedAutoConstant("worldview", Ogre::GpuProgramParameters::ACT_WORLDVIEW_MATRIX);
-  params->setNamedAutoConstant("camera_pos", Ogre::GpuProgramParameters::ACT_CAMERA_POSITION_OBJECT_SPACE);
+
+  try
+  {
+    params->setNamedAutoConstant("camera_pos", Ogre::GpuProgramParameters::ACT_CAMERA_POSITION_OBJECT_SPACE);
+  }
+  catch (Ogre::Exception&)
+  {}
+
   try
   {
     params->setNamedAutoConstant("size", Ogre::GpuProgramParameters::ACT_CUSTOM, PointsRendererDesc::CustomParam_Size);
@@ -203,7 +217,9 @@ void generateGBufferShaderCode(std::stringstream& ss, const PointsRendererDesc& 
   }
   else if (desc.type == rviz_msgs::Points::TYPE_BILLBOARD_SPHERES)
   {
-    ss << "float4 color = calculateBillboardSphereColor(in_color, in_offset);\n";
+    ss << "ColorAndNormal can = calculateBillboardSphereColorAndNormal(in_color, in_offset);\n";
+    ss << "float4 color = can.color;\n";
+    ss << "normal = can.normal;\n";
   }
   else if (desc.type == rviz_msgs::Points::TYPE_BOXES)
   {
@@ -211,6 +227,7 @@ void generateGBufferShaderCode(std::stringstream& ss, const PointsRendererDesc& 
   }
 
   ss << " out_color0.rgb = color.rgb;" << std::endl;
+  //ss << " out_color0.rgb = normal;\n";
   ss << " out_color1.rgb = normal;" << std::endl;
   ss << " out_color1.a = length(in_view_pos) / far_distance;" << std::endl;
 }

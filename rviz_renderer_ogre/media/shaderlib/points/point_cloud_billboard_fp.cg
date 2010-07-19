@@ -1,3 +1,9 @@
+struct ColorAndNormal
+{
+  float4 color;
+  float3 normal;
+};
+
 float4 calculateBillboardColorWithEdge(float4 color, float3 tex)
 {
   float ax = 0.5 - tex.x;
@@ -9,13 +15,18 @@ float4 calculateBillboardColorWithEdge(float4 color, float3 tex)
   return float4(col, color.a);
 }
 
-float4 calculateBillboardSphereColor(float4 color, float3 tex)
+ColorAndNormal calculateBillboardSphereColorAndNormal(float4 color, float3 tex)
 {
   half rsquared = tex.x*tex.x + tex.y*tex.y;
-  half a = (0.25 - rsquared) * 4.0;
+  half a = 0.25 - rsquared;
 
-  float3 col = lerp(half3(0.8, 0.8, 0.8) * color.xyz, color.xyz, a);
-  return float4(col, color.a);
+  discard(a < 0);
+  
+  ColorAndNormal OUT;
+  OUT.color = color;
+  float z = 0.5 - rsquared;
+  OUT.normal = normalize(float3(tex.x, tex.y, z));
+  return OUT;
 }
 
 float4 calculateBillboardSpherePickColor(float4 color, float3 tex)

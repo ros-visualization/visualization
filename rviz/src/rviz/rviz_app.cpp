@@ -172,7 +172,7 @@ public:
 
     {
       rviz_msgs::Points points;
-      points.type = rviz_msgs::Points::TYPE_BILLBOARDS;
+      points.type = rviz_msgs::Points::TYPE_BOXES;
       points.scale.x = 0.5;
       points.scale.y = 0.5;
       points.scale.z = 0.5;
