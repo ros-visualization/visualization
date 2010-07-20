@@ -1,54 +1,91 @@
+static const half3 box_vertices[24] =
+{
+  // front
+  half3(-0.5, 0.5, -0.5),
+  half3(-0.5, -0.5, -0.5),
+  half3(0.5, 0.5, -0.5),
+  half3(0.5, -0.5, -0.5),
+
+  // back
+  half3(-0.5, 0.5, 0.5),
+  half3(0.5, 0.5, 0.5),
+  half3(-0.5, -0.5, 0.5),
+  half3(0.5, -0.5, 0.5),
+
+  // right
+  half3(0.5, 0.5, 0.5),
+  half3(0.5, 0.5, -0.5),
+  half3(0.5, -0.5, 0.5),
+  half3(0.5, -0.5, -0.5),
+
+  // left
+  half3(-0.5, 0.5, 0.5),
+  half3(-0.5, -0.5, 0.5),
+  half3(-0.5, 0.5, -0.5),
+  half3(-0.5, -0.5, -0.5),
+
+  // top
+  half3(-0.5, 0.5, -0.5),
+  half3(0.5, 0.5, -0.5),
+  half3(-0.5, 0.5, 0.5),
+  half3(0.5, 0.5, 0.5),
+
+  // bottom
+  half3(-0.5, -0.5, -0.5),
+  half3(-0.5, -0.5, 0.5),
+  half3(0.5, -0.5, -0.5),
+  half3(0.5, -0.5, 0.5)
+};
+
+static const half3 box_normals[6] =
+{
+  half3(0.0, 0.0, -1.0),
+  half3(0.0, 0.0, 1.0),
+  half3(1.0, 0.0, 0.0),
+  half3(-1.0, 0.0, 0.0),
+  half3(0.0, 1.0, 0.0),
+  half3(0.0, -1.0, 0.0)
+};
+
 float4 transform(float4x4 worldviewproj, half4 size, half3 dim, half4 pos)
 {
   half4 s = half4(dim, 0.0) * size;
-  return mul(worldviewproj, (pos + half4( (s.xxx * half3(1.0, 0.0, 0.0)) + (s.yyy * half3(0.0, 1.0, 0.0)) + (s.zzz * half3(0.0, 0.0, -1.0)), 0.0 )));
+  return mul(worldviewproj, pos + s); //half4(s.xyz * half3(1.0, 1.0, -1.0), 0.0));
+}
+
+void emitBoxSide(float4 pos, float4 color, float4x4 worldviewproj, float4x4 worldview, float3 view_pos, float4 size, int start_index)
+{
+  int i = start_index;
+
+  half3 n = box_normals[i];
+  half3 tri0 = box_vertices[i*4];
+  half3 tri1 = box_vertices[i*4 + 1];
+  half3 tri2 = box_vertices[i*4 + 2];
+  half3 tri3 = box_vertices[i*4 + 3];
+  
+  float4 v0 = transform(worldviewproj, size, tri0, pos);
+  float4 v1 = transform(worldviewproj, size, tri1, pos);
+  float4 v2 = transform(worldviewproj, size, tri2, pos);
+  float4 v3 = transform(worldviewproj, size, tri3, pos); 
+
+  float3 normal = mul(worldview, float4(n, 0)).xyz;
+  
+  emitVertex(v0 : POSITION, view_pos : TEXCOORD0, tri0 : TEXCOORD1, normal : TEXCOORD2, color : TEXCOORD3);
+  emitVertex(v2 : POSITION, view_pos : TEXCOORD0, tri2 : TEXCOORD1, normal : TEXCOORD2, color : TEXCOORD3);
+  emitVertex(v1 : POSITION, view_pos : TEXCOORD0, tri1 : TEXCOORD1, normal : TEXCOORD2, color : TEXCOORD3);
+  emitVertex(v3 : POSITION, view_pos : TEXCOORD0, tri3 : TEXCOORD1, normal : TEXCOORD2, color : TEXCOORD3);
+  
+  restartStrip();
 }
 
 void emitBoxVertices(float4 pos, float4 color, float4x4 worldviewproj, float4x4 worldview, float4 size)
 {
-  float3 fbldim = half3(-0.5, -0.5, -0.5);
-  float3 fbrdim = half3(0.5, -0.5, -0.5);
-  float3 ftldim = half3(-0.5, 0.5, -0.5);
-  float3 ftrdim = half3(0.5, 0.5, -0.5);
- 
-  float3 bbldim = half3(-0.5, -0.5, 0.5);
-  float3 bbrdim = half3(0.5, -0.5, 0.5);
-  float3 btldim = half3(-0.5, 0.5, 0.5);
-  float3 btrdim = half3(0.5, 0.5, 0.5);
-
-  // front
-  float4 fbl = transform(worldviewproj, size, fbldim, pos);
-  float4 fbr = transform(worldviewproj, size, fbrdim, pos);
-  float4 ftl = transform(worldviewproj, size, ftldim, pos);
-  float4 ftr = transform(worldviewproj, size, ftrdim, pos);
-  
-  // back
-  float4 bbl = transform(worldviewproj, size, bbldim, pos);
-  float4 bbr = transform(worldviewproj, size, bbrdim, pos);
-  float4 btl = transform(worldviewproj, size, btldim, pos);
-  float4 btr = transform(worldviewproj, size, btrdim, pos);
-  
-  // TODO figure out normal
-  float3 normal = float3(0.0, 0.0, 1.0);
   float3 view_pos = mul(worldview, pos).xyz;
- 
-  emitVertex(fbl : POSITION, color : TEXCOORD3, view_pos : TEXCOORD0, fbldim : TEXCOORD1, normal : TEXCOORD2);
-  emitVertex(fbr : POSITION, color : TEXCOORD3, view_pos : TEXCOORD0, fbrdim : TEXCOORD1, normal : TEXCOORD2);
-  emitVertex(ftl : POSITION, color : TEXCOORD3, view_pos : TEXCOORD0, ftldim : TEXCOORD1, normal : TEXCOORD2);
-  emitVertex(ftr : POSITION, color : TEXCOORD3, view_pos : TEXCOORD0, ftrdim : TEXCOORD1, normal : TEXCOORD2);
-  
-  emitVertex(btr : POSITION, color : TEXCOORD3, view_pos : TEXCOORD0, btrdim : TEXCOORD1, normal : TEXCOORD2);
-  emitVertex(fbr : POSITION, color : TEXCOORD3, view_pos : TEXCOORD0, fbrdim : TEXCOORD1, normal : TEXCOORD2);
-  
-  emitVertex(bbr : POSITION, color : TEXCOORD3, view_pos : TEXCOORD0, bbrdim : TEXCOORD1, normal : TEXCOORD2);
-  emitVertex(bbl : POSITION, color : TEXCOORD3, view_pos : TEXCOORD0, bbldim : TEXCOORD1, normal : TEXCOORD2);
-  
-  emitVertex(btr : POSITION, color : TEXCOORD3, view_pos : TEXCOORD0, btrdim : TEXCOORD1, normal : TEXCOORD2);
-  emitVertex(btl : POSITION, color : TEXCOORD3, view_pos : TEXCOORD0, btldim : TEXCOORD1, normal : TEXCOORD2);
-  
-  emitVertex(ftl : POSITION, color : TEXCOORD3, view_pos : TEXCOORD0, ftldim : TEXCOORD1, normal : TEXCOORD2);
-  emitVertex(bbl : POSITION, color : TEXCOORD3, view_pos : TEXCOORD0, bbldim : TEXCOORD1, normal : TEXCOORD2);
-  
-  emitVertex(fbl : POSITION, color : TEXCOORD3, view_pos : TEXCOORD0, fbldim : TEXCOORD1, normal : TEXCOORD2);
-  emitVertex(fbr : POSITION, color : TEXCOORD3, view_pos : TEXCOORD0, fbrdim : TEXCOORD1, normal : TEXCOORD2);
+
+  emitBoxSide(pos, color, worldviewproj, worldview, view_pos, size, 0);
+  emitBoxSide(pos, color, worldviewproj, worldview, view_pos, size, 1);
+  emitBoxSide(pos, color, worldviewproj, worldview, view_pos, size, 2);
+  emitBoxSide(pos, color, worldviewproj, worldview, view_pos, size, 3);
+  emitBoxSide(pos, color, worldviewproj, worldview, view_pos, size, 4);
+  emitBoxSide(pos, color, worldviewproj, worldview, view_pos, size, 5);
 }
