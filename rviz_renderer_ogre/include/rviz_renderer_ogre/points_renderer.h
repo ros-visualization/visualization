@@ -59,13 +59,14 @@ class PointsRenderer;
 class PointsRenderable : public Ogre::SimpleRenderable
 {
 public:
-  PointsRenderable(PointsRenderer* parent, const PointsRendererDesc& desc);
+  PointsRenderable(PointsRenderer* parent, const PointsRendererDesc& desc, bool alpha);
   ~PointsRenderable();
 
   void add(const rviz_msgs::Points& points, uint32_t start, uint32_t& out_start, uint32_t& out_count);
   void remove(uint32_t start, uint32_t count);
   bool isEmpty();
   bool isFull();
+  bool isAlpha() { return alpha_; }
 
   virtual Ogre::Real getBoundingRadius(void) const;
   virtual Ogre::Real getSquaredViewDepth(const Ogre::Camera* cam) const;
@@ -87,6 +88,8 @@ private:
 
   bool needs_offsets_;
   bool needs_normals_;
+
+  bool alpha_;
 };
 typedef boost::shared_ptr<PointsRenderable> PointsRenderablePtr;
 typedef std::vector<PointsRenderablePtr> V_PointsRenderable;
@@ -111,7 +114,7 @@ public:
   virtual void visitRenderables(Ogre::Renderable::Visitor* visitor, bool debugRenderables);
 
 private:
-  PointsRenderablePtr getOrCreateRenderable();
+  PointsRenderablePtr getOrCreateRenderable(bool alpha);
   void shrinkRenderables();
   void recalculateBounds();
 
@@ -119,9 +122,13 @@ private:
   {
     struct RenderableInfo
     {
-      PointsRenderablePtr rend;
-      uint32_t start;
-      uint32_t count;
+      PointsRenderablePtr opaque_rend;
+      uint32_t opaque_start;
+      uint32_t opaque_count;
+
+      PointsRenderablePtr alpha_rend;
+      uint32_t alpha_start;
+      uint32_t alpha_count;
     };
 
     std::vector<RenderableInfo> rends;

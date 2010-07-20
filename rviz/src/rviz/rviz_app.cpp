@@ -193,7 +193,7 @@ public:
             col.r = x * 0.1;
             col.g = y * 0.1;
             col.b = z * 0.1;
-            col.a = 1.0;
+            col.a = (z % 2 == 0) ? 1.0 : 0.5;
             points.colors.push_back(col);
           }
         }

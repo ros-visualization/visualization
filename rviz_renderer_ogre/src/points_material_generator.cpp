@@ -333,7 +333,6 @@ Ogre::GpuProgramPtr generateGeometryShader(const PointsRendererDesc& desc, bool 
 
 void generateWeightedAverageAlphaShaderCode(std::stringstream& ss, const PointsRendererDesc& desc)
 {
-  ss << "float4 color = in_color;\n";
   ss << "float3 gooch_color = gooch98(color.rgb, normal, float3(0.0, 0.0, 1.0));\n";
   ss << "out_color0 = float4(gooch_color * color.a, color.a);\n";
   ss << "out_color1 = float4(1.0, 0.0, 0.0, 0.0);\n";
@@ -341,27 +340,7 @@ void generateWeightedAverageAlphaShaderCode(std::stringstream& ss, const PointsR
 
 void generateGBufferShaderCode(std::stringstream& ss, const PointsRendererDesc& desc)
 {
-  if (desc.type == rviz_msgs::Points::TYPE_POINTS)
-  {
-    ss << "float4 color = in_color;\n";
-  }
-  else if (desc.type == rviz_msgs::Points::TYPE_BILLBOARDS)
-  {
-    ss << "float4 color = calculateBillboardColorWithEdge(in_color, in_offset);\n";
-  }
-  else if (desc.type == rviz_msgs::Points::TYPE_BILLBOARD_SPHERES)
-  {
-    ss << "ColorAndNormal can = calculateBillboardSphereColorAndNormal(in_color, in_offset);\n";
-    ss << "float4 color = can.color;\n";
-    ss << "normal = can.normal;\n";
-  }
-  else if (desc.type == rviz_msgs::Points::TYPE_BOXES)
-  {
-    ss << "float4 color = calculateBoxColorWithEdge(in_color, in_offset);\n";
-  }
-
   ss << " out_color0.rgb = color.rgb;" << std::endl;
-  //ss << " out_color0.rgb = normal;\n";
   ss << " out_color1.rgb = normal;" << std::endl;
   ss << " out_color1.a = length(in_view_pos) / far_distance;" << std::endl;
 }
@@ -412,6 +391,24 @@ Ogre::GpuProgramPtr generateFragmentShader(const PointsRendererDesc& desc, bool 
   ss << "{" << std::endl;
 
   ss << " float3 normal = in_normal;" << std::endl;
+  if (desc.type == rviz_msgs::Points::TYPE_POINTS)
+  {
+    ss << "float4 color = in_color;\n";
+  }
+  else if (desc.type == rviz_msgs::Points::TYPE_BILLBOARDS)
+  {
+    ss << "float4 color = calculateBillboardColorWithEdge(in_color, in_offset);\n";
+  }
+  else if (desc.type == rviz_msgs::Points::TYPE_BILLBOARD_SPHERES)
+  {
+    ss << "ColorAndNormal can = calculateBillboardSphereColorAndNormal(in_color, in_offset);\n";
+    ss << "float4 color = can.color;\n";
+    ss << "normal = can.normal;\n";
+  }
+  else if (desc.type == rviz_msgs::Points::TYPE_BOXES)
+  {
+    ss << "float4 color = calculateBoxColorWithEdge(in_color, in_offset);\n";
+  }
 
   if (alpha)
   {

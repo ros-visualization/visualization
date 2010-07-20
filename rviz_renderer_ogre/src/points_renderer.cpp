@@ -175,10 +175,11 @@ static float g_box_normals[6*6*3] =
 
 const Ogre::String PointsRenderer::sm_type("PointsRenderable");
 
-PointsRenderable::PointsRenderable(PointsRenderer* parent, const PointsRendererDesc& desc)
+PointsRenderable::PointsRenderable(PointsRenderer* parent, const PointsRendererDesc& desc, bool alpha)
 : parent_(parent)
 , desc_(desc)
 , point_count_(0)
+, alpha_(alpha)
 {
   supports_geometry_programs_ = getRenderer()->useGeometryShaders();
   needs_offsets_ = !supports_geometry_programs_ && desc.type != rviz_msgs::Points::TYPE_POINTS;
@@ -258,17 +259,16 @@ void PointsRenderable::add(const rviz_msgs::Points& points, uint32_t start, uint
   uint32_t point_stride = getPointStride();
   float* vertices = getVertices();
   float* normals = getNormals();
+  bool alpha = alpha_;
 
   Ogre::HardwareVertexBufferSharedPtr vbuf = mRenderOp.vertexData->vertexBufferBinding->getBuffer(0);
   out_start = (mRenderOp.vertexData->vertexStart / verts_per_point) + (mRenderOp.vertexData->vertexCount / verts_per_point);
 
   uint32_t end = std::min((size_t)POINTS_PER_VBO, out_start + (points.positions.size() - start));
-  out_count = end - out_start;
-  mRenderOp.vertexData->vertexCount += out_count * verts_per_point;
-  point_count_ += out_count;
+  out_count = 0;
 
   uint32_t lock_start = out_start * point_stride * verts_per_point;
-  uint32_t lock_size = out_count * point_stride * verts_per_point;
+  uint32_t lock_size = end * point_stride * verts_per_point;
   void* data = vbuf->lock(lock_start, lock_size, Ogre::HardwareVertexBuffer::HBL_NO_OVERWRITE);
   float* fptr = (float*)data;
 
@@ -277,15 +277,23 @@ void PointsRenderable::add(const rviz_msgs::Points& points, uint32_t start, uint
   rviz_msgs::Points::_colors_type::const_iterator col_it = points.colors.begin();
   for (uint32_t i = out_start; i < end; ++i, ++pos_it, ++orient_it, ++col_it)
   {
+    float a = col_it->a;
+    if ((a < 0.99) != alpha)
+    {
+      continue;
+    }
+
     Ogre::Vector3 pos = fromRobot(Ogre::Vector3(pos_it->x, pos_it->y, pos_it->z));
     mBox.merge(pos);
 
     float r = col_it->r;
     float g = col_it->g;
     float b = col_it->b;
-    float a = col_it->a;
+
     uint32_t color = 0;
     root->convertColourValue(Ogre::ColourValue(r, g, b, a), &color);
+
+    ++out_count;
 
     for (uint32_t j = 0; j < verts_per_point; ++j)
     {
@@ -322,6 +330,9 @@ void PointsRenderable::add(const rviz_msgs::Points& points, uint32_t start, uint
   }
 
   vbuf->unlock();
+
+  mRenderOp.vertexData->vertexCount += out_count * verts_per_point;
+  point_count_ += out_count;
 }
 
 void PointsRenderable::remove(uint32_t start, uint32_t count)
@@ -568,25 +579,37 @@ uint32_t PointsRenderer::add(const rviz_msgs::Points& points)
   PointsInfo pinfo;
 
   uint32_t total_count = 0;
+  uint32_t total_opaque_count = 0;
+  uint32_t total_alpha_count = 0;
   uint32_t point_count = points.positions.size();
   while (total_count < point_count)
   {
-    PointsRenderablePtr rend = getOrCreateRenderable();
+    // Add opaque points
+    PointsRenderablePtr opaque_rend = getOrCreateRenderable(false);
 
-    uint32_t count = 0;
-    uint32_t start = 0;
+    uint32_t opaque_count = 0;
+    uint32_t opaque_start = 0;
+    opaque_rend->add(points, total_opaque_count, opaque_start, opaque_count);
+    total_opaque_count += opaque_count;
 
-    rend->add(points, total_count, start, count);
+    // Add transparent points
+    PointsRenderablePtr alpha_rend = getOrCreateRenderable(true);
+
+    uint32_t alpha_count = 0;
+    uint32_t alpha_start = 0;
+    alpha_rend->add(points, total_alpha_count, alpha_start, alpha_count);
+    total_alpha_count += alpha_count;
+
+    total_count = total_alpha_count + total_opaque_count;
 
     PointsInfo::RenderableInfo rinfo;
-    rinfo.rend = rend;
-    rinfo.start = start;
-    rinfo.count = count;
+    rinfo.opaque_rend = opaque_rend;
+    rinfo.opaque_start = opaque_start;
+    rinfo.opaque_count = opaque_count;
+    rinfo.alpha_rend = alpha_rend;
+    rinfo.alpha_start = alpha_start;
+    rinfo.alpha_count = alpha_count;
     pinfo.rends.push_back(rinfo);
-
-    total_count += count;
-
-    bounding_box_.merge(rend->getBoundingBox());
   }
 
   uint32_t id = 0;
@@ -617,7 +640,8 @@ void PointsRenderer::remove(uint32_t id)
   for (size_t i = 0; i < pinfo.rends.size(); ++i)
   {
     const PointsInfo::RenderableInfo& rinfo = pinfo.rends[i];
-    rinfo.rend->remove(rinfo.start, rinfo.count);
+    rinfo.opaque_rend->remove(rinfo.opaque_start, rinfo.opaque_count);
+    rinfo.alpha_rend->remove(rinfo.alpha_start, rinfo.alpha_count);
   }
 
   points_.erase(it);
@@ -666,23 +690,22 @@ void PointsRenderer::shrinkRenderables()
   scene_node_->needUpdate();
 }
 
-PointsRenderablePtr PointsRenderer::getOrCreateRenderable()
+PointsRenderablePtr PointsRenderer::getOrCreateRenderable(bool alpha)
 {
   V_PointsRenderable::iterator it = renderables_.begin();
   V_PointsRenderable::iterator end = renderables_.end();
   for (; it != end; ++it)
   {
     const PointsRenderablePtr& rend = *it;
-    if (!rend->isFull())
+    if (!rend->isFull() && alpha == rend->isAlpha())
     {
       return rend;
     }
   }
 
-  PointsRenderablePtr rend(new PointsRenderable(this, desc_));
-  rend->setMaterial(opaque_material_->getName());
+  PointsRenderablePtr rend(new PointsRenderable(this, desc_, alpha));
+  rend->setMaterial(alpha ? alpha_material_->getName() : opaque_material_->getName());
   Ogre::Vector4 size(desc_.scale.x, desc_.scale.y, desc_.scale.z, 0.0f);
-  Ogre::Vector4 alpha(1.0, 1.0, 1.0, 1.0);
   rend->setCustomParameter(PointsRendererDesc::CustomParam_Size, size);
   scene_node_->attachObject(rend.get());
   renderables_.push_back(rend);
