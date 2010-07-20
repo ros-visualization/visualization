@@ -172,19 +172,19 @@ public:
 
     {
       rviz_msgs::Points points;
-      points.type = rviz_msgs::Points::TYPE_BOXES;
+      points.type = rviz_msgs::Points::TYPE_BILLBOARDS;
       points.scale.x = 0.5;
       points.scale.y = 0.5;
       points.scale.z = 0.5;
 
-      for (uint32_t x = 0; x < 10; ++x)
+      for (uint32_t x = 0; x < 100; ++x)
       {
-        for (uint32_t y = 0; y < 10; ++y)
+        for (uint32_t y = 0; y < 100; ++y)
         {
-          for (uint32_t z = 0; z < 10; ++z)
+          for (uint32_t z = 0; z < 100; ++z)
           {
             rviz_msgs::Vector3 pos;
-            pos.x = x - 10.0;
+            pos.x = -10.0 - x;
             pos.y = y;
             pos.z = z;
             points.positions.push_back(pos);
@@ -193,7 +193,7 @@ public:
             col.r = x * 0.1;
             col.g = y * 0.1;
             col.b = z * 0.1;
-            col.a = (z % 2 == 0) ? 1.0 : 0.5;
+            col.a = 1.0;//(z % 2 == 0) ? 1.0 : 0.5;
             points.colors.push_back(col);
           }
         }

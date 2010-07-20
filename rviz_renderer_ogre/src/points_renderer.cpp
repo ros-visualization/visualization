@@ -40,7 +40,7 @@
 #include <OGRE/OgreHardwareBufferManager.h>
 #include <OGRE/OgreHardwareVertexBuffer.h>
 
-#define POINTS_PER_VBO (1024 * 32)
+#define POINTS_PER_VBO (1024 * 8)
 
 namespace rviz_renderer_ogre
 {
@@ -272,9 +272,9 @@ void PointsRenderable::add(const rviz_msgs::Points& points, uint32_t start, uint
   void* data = vbuf->lock(lock_start, lock_size, Ogre::HardwareVertexBuffer::HBL_NO_OVERWRITE);
   float* fptr = (float*)data;
 
-  rviz_msgs::Points::_positions_type::const_iterator pos_it = points.positions.begin();
-  rviz_msgs::Points::_orientations_type::const_iterator orient_it = points.orientations.begin();
-  rviz_msgs::Points::_colors_type::const_iterator col_it = points.colors.begin();
+  rviz_msgs::Points::_positions_type::const_iterator pos_it = points.positions.begin() + start;
+  rviz_msgs::Points::_orientations_type::const_iterator orient_it = points.orientations.begin() + start;
+  rviz_msgs::Points::_colors_type::const_iterator col_it = points.colors.begin() + start;
   for (uint32_t i = out_start; i < end; ++i, ++pos_it, ++orient_it, ++col_it)
   {
     float a = col_it->a;
@@ -610,6 +610,9 @@ uint32_t PointsRenderer::add(const rviz_msgs::Points& points)
     rinfo.alpha_start = alpha_start;
     rinfo.alpha_count = alpha_count;
     pinfo.rends.push_back(rinfo);
+
+    bounding_box_.merge(opaque_rend->getBoundingBox());
+    bounding_box_.merge(alpha_rend->getBoundingBox());
   }
 
   uint32_t id = 0;
@@ -672,6 +675,10 @@ void PointsRenderer::shrinkRenderables()
     if (rend->isEmpty())
     {
       ++empty_count;
+    }
+    else
+    {
+      continue;
     }
 
     // Keep one empty renderable at any given time
