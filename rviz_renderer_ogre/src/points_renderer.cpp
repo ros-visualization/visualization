@@ -224,6 +224,13 @@ PointsRenderable::PointsRenderable(PointsRenderer* parent, const PointsRendererD
     offset += Ogre::VertexElement::getTypeSize(Ogre::VET_FLOAT3);
   }
 
+  if (desc.has_normals)
+  {
+    // We use a texture coordinate set here because boxes need another per-vertex normal
+    decl->addElement(0, offset, Ogre::VET_FLOAT3, Ogre::VES_TEXTURE_COORDINATES, tex_coord_num++);
+    offset += Ogre::VertexElement::getTypeSize(Ogre::VET_FLOAT3);
+  }
+
   if (desc.has_orientation)
   {
     decl->addElement(0, offset, Ogre::VET_FLOAT4, Ogre::VES_TEXTURE_COORDINATES, tex_coord_num++);
@@ -252,6 +259,7 @@ void PointsRenderable::add(const rviz_msgs::Points& points, uint32_t start, uint
 {
   ROS_ASSERT(points.positions.size() == points.colors.size());
   ROS_ASSERT(!desc_.has_orientation || points.positions.size() == points.orientations.size());
+  ROS_ASSERT(!desc_.has_normals || points.positions.size() == points.normals.size());
 
   Ogre::Root* root = Ogre::Root::getSingletonPtr();
 
@@ -275,7 +283,8 @@ void PointsRenderable::add(const rviz_msgs::Points& points, uint32_t start, uint
   rviz_msgs::Points::_positions_type::const_iterator pos_it = points.positions.begin() + start;
   rviz_msgs::Points::_orientations_type::const_iterator orient_it = points.orientations.begin() + start;
   rviz_msgs::Points::_colors_type::const_iterator col_it = points.colors.begin() + start;
-  for (uint32_t i = out_start; i < end; ++i, ++pos_it, ++orient_it, ++col_it)
+  rviz_msgs::Points::_normals_type::const_iterator norm_it = points.normals.begin() + start;
+  for (uint32_t i = out_start; i < end; ++i, ++pos_it, ++col_it)
   {
     float a = col_it->a;
     if ((a < 0.99) != alpha)
@@ -315,6 +324,15 @@ void PointsRenderable::add(const rviz_msgs::Points& points, uint32_t start, uint
         *fptr++ = vertices[(j*3) + 2];
       }
 
+      if (desc_.has_normals)
+      {
+        Ogre::Vector3 norm(normalFromRobot(Ogre::Vector3(norm_it->x, norm_it->y, norm_it->z)));
+
+        *fptr++ = norm.x;
+        *fptr++ = norm.y;
+        *fptr++ = norm.z;
+      }
+
       if (desc_.has_orientation)
       {
         *fptr++ = orient_it->x;
@@ -326,6 +344,16 @@ void PointsRenderable::add(const rviz_msgs::Points& points, uint32_t start, uint
       uint32_t* iptr = (uint32_t*)fptr;
       *iptr = color;
       ++fptr;
+    }
+
+    if (desc_.has_normals)
+    {
+      ++norm_it;
+    }
+
+    if (desc_.has_orientation)
+    {
+      ++orient_it;
     }
   }
 
@@ -381,22 +409,7 @@ bool PointsRenderable::isFull()
 
 uint32_t PointsRenderable::getPointStride()
 {
-  uint32_t stride = 12; // xyz
-
-  if (needs_offsets_)
-  {
-    // xyz offset for this vertex.  Used by the vertex program to transform the vertices.
-    stride += 12;
-  }
-
-  if (desc_.has_orientation)
-  {
-    stride += 16; // xyzw
-  }
-
-  stride += 4; // color
-
-  return stride;
+  return mRenderOp.vertexData->vertexDeclaration->getVertexSize(0);
 }
 
 float* PointsRenderable::getNormals()

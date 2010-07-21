@@ -46,8 +46,17 @@ static Ogre::Quaternion matToQuat(const Ogre::Matrix3& mat)
   return q;
 }
 
+static Ogre::Matrix3 inverseTranspose(const Ogre::Matrix3& mat)
+{
+  Ogre::Matrix3 out(mat);
+  out.Inverse();
+  out.Transpose();
+  return out;
+}
+
 Ogre::Matrix3 g_ogre_to_robot_matrix(fromEulersYXZ(-90, 0, -90));
 Ogre::Matrix3 g_robot_to_ogre_matrix(g_ogre_to_robot_matrix.Inverse());
+Ogre::Matrix3 g_robot_to_ogre_normal_matrix(inverseTranspose(g_robot_to_ogre_matrix));
 
 Ogre::Quaternion g_ogre_to_robot_quat(matToQuat(g_ogre_to_robot_matrix));
 Ogre::Quaternion g_robot_to_ogre_quat(matToQuat(g_robot_to_ogre_matrix));

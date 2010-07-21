@@ -46,6 +46,7 @@ namespace rviz_renderer_ogre
 
 extern Ogre::Matrix3 g_ogre_to_robot_matrix;
 extern Ogre::Matrix3 g_robot_to_ogre_matrix;
+extern Ogre::Matrix3 g_robot_to_ogre_normal_matrix;
 
 extern Ogre::Quaternion g_ogre_to_robot_quat;
 extern Ogre::Quaternion g_robot_to_ogre_quat;
@@ -74,19 +75,29 @@ inline Ogre::Vector3 fromRobot( const Ogre::Vector3& point )
   return g_robot_to_ogre_matrix * point;
 }
 
+inline Ogre::Vector3 normalFromRobot(const Ogre::Vector3& normal)
+{
+  return g_robot_to_ogre_normal_matrix * normal;
+}
+
 /**
  * \brief Convert a scale xyz from robot space to ogre space
  * @param scale Converts this scale xyz in-place
  */
-inline Ogre::Vector3 scaleFromRobot( const rviz_math::Vector3& scale )
+inline Ogre::Vector3 scaleFromRobot( const Ogre::Vector3& scale )
 {
-  Ogre::Vector3 s = g_robot_to_ogre_matrix * convert(scale);
+  Ogre::Vector3 s = g_robot_to_ogre_matrix * scale;
 
   s.x = fabsf( s.x );
   s.y = fabsf( s.y );
   s.z = fabsf( s.z );
 
   return s;
+}
+
+inline Ogre::Vector3 scaleFromRobot( const rviz_math::Vector3& scale )
+{
+  return scaleFromRobot(convert(scale));
 }
 
 /**

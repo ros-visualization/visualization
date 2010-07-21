@@ -71,12 +71,15 @@ void generateGenericGPVP(std::stringstream& ss)
   ss <<
 "void vp(float4 position : POSITION,\n"
 "        float4 color : COLOR,\n"
+"        float3 normal : TEXCOORD0,\n"
 "        out float4 out_position : POSITION,\n"
-"        out float4 out_color : COLOR\n"
+"        out float4 out_color : COLOR,\n"
+"        out float3 out_normal : TEXCOORD0\n"
 ")\n"
 "{\n"
 " out_position = position;\n"
 " out_color = color;\n"
+" out_normal = normal;\n"
 "}\n";
 }
 
@@ -119,9 +122,21 @@ Ogre::GpuProgramPtr generateVertexShader(const PointsRendererDesc& desc, bool al
         ss << " float3 in_offset : TEXCOORD" << tex_coord_index++ << ",\n";
       }
 
+      if (desc.has_normals)
+      {
+        ss << " float3 in_face_normal : TEXCOORD" << tex_coord_index++ << ",\n";
+      }
+
       if (desc.has_orientation)
       {
         ss << " float4 in_orientation : TEXCOORD" << tex_coord_index++ << ",\n";
+      }
+    }
+    else
+    {
+      if (desc.has_normals)
+      {
+        ss << " float3 in_face_normal : TEXCOORD" << tex_coord_index++ << ",\n";
       }
     }
 
@@ -145,20 +160,41 @@ Ogre::GpuProgramPtr generateVertexShader(const PointsRendererDesc& desc, bool al
     if (desc.type == rviz_msgs::Points::TYPE_POINTS)
     {
       ss << " float4 pos = in_position;\n";
-      ss << " float3 normal = normalize(camera_pos.xyz - pos.xyz);\n";
+      if (desc.has_normals)
+      {
+        ss << " float3 normal = in_face_normal;\n";
+      }
+      else
+      {
+        ss << " float3 normal = normalize(camera_pos.xyz - pos.xyz);\n";
+      }
     }
     else if (desc.type == rviz_msgs::Points::TYPE_BILLBOARDS)
     {
-      ss << " PosAndNormal posn = calculateBillboardVertexPositionAndNormal(in_position, in_offset.xy, camera_pos, size);\n";
+      if (desc.has_normals)
+      {
+        ss << " PosAndNormal posn = calculateBillboardVertexPositionAndNormal(in_position, in_offset.xy, in_face_normal, camera_pos, size);\n";
+      }
+      else
+      {
+        ss << " PosAndNormal posn = calculateBillboardVertexPositionAndNormal(in_position, in_offset.xy, camera_pos, size);\n";
+      }
       ss << " float4 pos = posn.pos;\n";
       ss << " float3 normal = posn.normal;\n";
     }
     else if (desc.type == rviz_msgs::Points::TYPE_BILLBOARD_SPHERES)
+    {
+      if (desc.has_normals)
+      {
+        ss << " PosAndNormal posn = calculateBillboardSpheresVertexPositionAndNormal(in_position, in_offset.xy, in_face_normal, camera_pos, size);\n";
+      }
+      else
       {
         ss << " PosAndNormal posn = calculateBillboardSpheresVertexPositionAndNormal(in_position, in_offset.xy, camera_pos, size);\n";
-        ss << " float4 pos = posn.pos;\n";
-        ss << " float3 normal = posn.normal;\n";
       }
+      ss << " float4 pos = posn.pos;\n";
+      ss << " float3 normal = posn.normal;\n";
+    }
     else if (desc.type == rviz_msgs::Points::TYPE_BOXES)
     {
       ss << " PosAndNormal posn = calculateBoxVertexPositionAndNormal(in_position, in_offset.xyz, worldviewproj, size);\n";
@@ -170,7 +206,7 @@ Ogre::GpuProgramPtr generateVertexShader(const PointsRendererDesc& desc, bool al
     ss << " out_normal = mul(worldview, float4(normal, 0)).xyz;\n" << std::endl;
     ss << " out_view_pos = mul(worldview, pos).xyz;\n" << std::endl;
     ss << " out_color = in_color;\n";
-    if (!supports_geometry_programs)
+    if (!supports_geometry_programs && desc.type != rviz_msgs::Points::TYPE_POINTS)
     {
       ss << " out_offset = in_offset;\n";
     }
@@ -250,6 +286,11 @@ Ogre::GpuProgramPtr generateGeometryShader(const PointsRendererDesc& desc, bool 
   ss << " AttribArray<float4> in_position : POSITION,\n";
   ss << " AttribArray<float4> in_color : COLOR,\n";
 
+  if (desc.has_normals)
+  {
+    ss << " AttribArray<float3> in_normal : TEXCOORD0,\n";
+  }
+
   ss << std::endl;
 
   ss << std::endl;
@@ -263,19 +304,36 @@ Ogre::GpuProgramPtr generateGeometryShader(const PointsRendererDesc& desc, bool 
 
   ss << "{" << std::endl;
 
-  if (desc.type == rviz_msgs::Points::TYPE_BILLBOARDS)
+  if (desc.has_normals)
   {
-    ss << " emitBillboardVertices(in_position[0], in_color[0], worldviewproj, worldview, camera_pos, size);\n";
+    if (desc.type == rviz_msgs::Points::TYPE_BILLBOARDS)
+    {
+      ss << " emitBillboardVertices(in_position[0], in_color[0], in_normal[0], worldviewproj, worldview, camera_pos, size);\n";
+    }
+    else if (desc.type == rviz_msgs::Points::TYPE_BILLBOARD_SPHERES)
+    {
+      ss << " emitBillboardSphereVertices(in_position[0], in_color[0], in_normal[0], worldviewproj, worldview, camera_pos, size);\n";
+    }
+    else if (desc.type == rviz_msgs::Points::TYPE_BOXES)
+    {
+      ss << " emitBoxVertices(in_position[0], in_color[0], worldviewproj, worldview, size);\n";
+    }
   }
-  else if (desc.type == rviz_msgs::Points::TYPE_BILLBOARD_SPHERES)
+  else
   {
-    ss << " emitBillboardSphereVertices(in_position[0], in_color[0], worldviewproj, worldview, camera_pos, size);\n";
+    if (desc.type == rviz_msgs::Points::TYPE_BILLBOARDS)
+    {
+      ss << " emitBillboardVertices(in_position[0], in_color[0], worldviewproj, worldview, camera_pos, size);\n";
+    }
+    else if (desc.type == rviz_msgs::Points::TYPE_BILLBOARD_SPHERES)
+    {
+      ss << " emitBillboardSphereVertices(in_position[0], in_color[0], worldviewproj, worldview, camera_pos, size);\n";
+    }
+    else if (desc.type == rviz_msgs::Points::TYPE_BOXES)
+    {
+      ss << " emitBoxVertices(in_position[0], in_color[0], worldviewproj, worldview, size);\n";
+    }
   }
-  else if (desc.type == rviz_msgs::Points::TYPE_BOXES)
-  {
-    ss << " emitBoxVertices(in_position[0], in_color[0], worldviewproj, worldview, size);\n";
-  }
-
 
   ss << "}" << std::endl;
 
@@ -488,6 +546,7 @@ std::pair<Ogre::MaterialPtr, Ogre::MaterialPtr> generateMaterialsForPoints(const
   {
     mat_opaque->getTechnique(0)->setSchemeName("GBuffer");
     mat_opaque->setPointSize(5);
+    mat_opaque->setCullingMode(Ogre::CULL_NONE);
 
     Ogre::Pass* pass = mat_opaque->getTechnique(0)->getPass(0);
     pass->setLightingEnabled(false);
@@ -504,6 +563,7 @@ std::pair<Ogre::MaterialPtr, Ogre::MaterialPtr> generateMaterialsForPoints(const
 
   Ogre::MaterialPtr mat_alpha = Ogre::MaterialManager::getSingleton().create(material_name_alpha, ROS_PACKAGE_NAME);
   {
+    mat_alpha->setCullingMode(Ogre::CULL_NONE);
     mat_alpha->setPointSize(5);
 
     mat_alpha->getTechnique(0)->setSchemeName("WeightedAverageAlpha");

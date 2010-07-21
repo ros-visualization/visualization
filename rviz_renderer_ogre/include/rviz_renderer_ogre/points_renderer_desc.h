@@ -45,6 +45,7 @@ struct PointsRendererDesc
 
   uint8_t type;
   Ogre::Vector3 scale;
+  bool has_normals;
   bool has_orientation;
 
   bool operator<(const PointsRendererDesc& rhs) const
@@ -57,6 +58,11 @@ struct PointsRendererDesc
     if (!scale.positionEquals(rhs.scale, 0.005))
     {
       return scale < rhs.scale;
+    }
+
+    if (has_normals != rhs.has_normals)
+    {
+      return has_normals < rhs.has_normals;
     }
 
     return has_orientation < rhs.has_orientation;

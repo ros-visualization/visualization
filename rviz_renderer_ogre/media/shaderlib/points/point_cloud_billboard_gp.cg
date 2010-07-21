@@ -4,11 +4,10 @@ float4 transform(float4x4 worldviewproj, half3 at, half3 right, half3 up, half4 
   return mul(worldviewproj, pos + half4( (s.xxx * right) + (s.yyy * up), 0.0 ));
 }
 
-void emitBillboardVertices(float4 pos, float4 color, float4x4 worldviewproj, float4x4 worldview, float4 camera_pos, float4 size)
+void emitBillboardVertices(float4 pos, float4 color, float3 normal, float4x4 worldviewproj, float4x4 worldview, float4 camera_pos, float4 size)
 {
-  half3 at = camera_pos.xyz - pos.xyz;
-  at = normalize(at);
-  half3 right = cross(half3( 0.0, 1.0, 0.0 ), at);
+  half3 at = normal;
+  half3 right = cross(half3(0.0, 1.0, 0.0 ), at);
   half3 up = cross(at, right);
   right = normalize(right);
   up = normalize(up);
@@ -22,9 +21,9 @@ void emitBillboardVertices(float4 pos, float4 color, float4x4 worldviewproj, flo
   float4 bl = transform(worldviewproj, at, right, up, size, tex2, pos);
   float4 br = transform(worldviewproj, at, right, up, size, tex3, pos);
   
-  //float3 normal = mul(worldview, float4(0.0, 0.0, 1.0, 0.0)).xyz;
-  float3 normal = float3(0.0, 0.0, 1.0);
   float3 view_pos = mul(worldview, pos).xyz;
+
+  normal = mul(worldview, float4(normal, 0)).xyz;
 
   emitVertex(tl : POSITION, color : TEXCOORD3, view_pos : TEXCOORD0, tex0 : TEXCOORD1, normal : TEXCOORD2);
   emitVertex(bl : POSITION, color : TEXCOORD3, view_pos : TEXCOORD0, tex1 : TEXCOORD1, normal : TEXCOORD2);
@@ -34,8 +33,19 @@ void emitBillboardVertices(float4 pos, float4 color, float4x4 worldviewproj, flo
   restartStrip();
 }
 
+void emitBillboardVertices(float4 pos, float4 color, float4x4 worldviewproj, float4x4 worldview, float4 camera_pos, float4 size)
+{
+  half3 at = normalize(camera_pos.xyz - pos.xyz);
+  emitBillboardVertices(pos, color, at, worldviewproj, worldview, camera_pos, size);
+}
+
 void emitBillboardSphereVertices(float4 pos, float4 color, float4x4 worldviewproj, float4x4 worldview, float4 camera_pos, float4 size)
 {
   emitBillboardVertices(pos, color, worldviewproj, worldview, camera_pos, size);
+}
+
+void emitBillboardSphereVertices(float4 pos, float4 color, float3 normal, float4x4 worldviewproj, float4x4 worldview, float4 camera_pos, float4 size)
+{
+  emitBillboardVertices(pos, color, normal, worldviewproj, worldview, camera_pos, size);
 }
 

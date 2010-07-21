@@ -170,6 +170,7 @@ public:
     n.setPosition(2, 0, 2);
     inst = s.createMeshInstance("package://pr2_description/meshes/base_v0/wheel.dae", n);
 
+#if 0
     {
       rviz_msgs::Points points;
       points.type = rviz_msgs::Points::TYPE_BILLBOARDS;
@@ -196,6 +197,50 @@ public:
             col.a = 1.0;//(z % 2 == 0) ? 1.0 : 0.5;
             points.colors.push_back(col);
           }
+        }
+      }
+
+      rviz_renderer_client::Points p = s.createPoints(points);
+    }
+#endif
+
+    {
+      rviz_msgs::Points points;
+      points.type = rviz_msgs::Points::TYPE_BILLBOARD_SPHERES;
+      points.scale.x = 0.05;
+      points.scale.y = 0.1;
+      points.scale.z = 0.1;
+
+      for (float th = 0.0; th <= M_PI * 2.0; th += 0.1)
+      {
+        for (float phi = 0.0; phi <= M_PI; phi += 0.1)
+        {
+          float x = cos(th) * sin(phi);
+          float y = sin(th) * sin(phi);
+          float z = cos(phi);
+
+          rviz_msgs::Vector3 pos;
+          pos.x = 5*x;
+          pos.y = 5*y;
+          pos.z = 5*z;
+          points.positions.push_back(pos);
+
+          std_msgs::ColorRGBA col;
+          col.r = x * 0.1;
+          col.g = y * 0.1;
+          col.b = z * 0.1;
+          col.a = 1.0;//(z % 2 == 0) ? 1.0 : 0.5;
+          points.colors.push_back(col);
+
+#if 01
+          rviz_msgs::Vector3 norm;
+          Ogre::Vector3 n(x, y, z);
+          n.normalise();
+          norm.x = n.x;
+          norm.y = n.y;
+          norm.z = n.z;
+          points.normals.push_back(norm);
+#endif
         }
       }
 

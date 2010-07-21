@@ -7,5 +7,6 @@ uint8 type
 Vector3 scale
 
 Vector3[] positions
+Vector3[] normals
 Quaternion[] orientations
 std_msgs/ColorRGBA[] colors

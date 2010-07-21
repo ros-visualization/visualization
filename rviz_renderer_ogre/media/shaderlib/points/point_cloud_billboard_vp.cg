@@ -4,10 +4,9 @@ struct PosAndNormal
   float3 normal;
 };
 
-PosAndNormal calculateBillboardVertexPositionAndNormal(float4 pos, float2 tex, float4 camera_pos, float4 size)
+PosAndNormal calculateBillboardVertexPositionAndNormal(float4 pos, float2 tex, float3 normal, float4 camera_pos, float4 size)
 {
-  float3 at = camera_pos.xyz - pos.xyz;
-  at = normalize(at);
+  float3 at = normal;
   float3 right = cross(float3( 0.0, 1.0, 0.0 ), at);
   float3 up = cross(at, right);
   right = normalize(right);
@@ -25,10 +24,20 @@ PosAndNormal calculateBillboardVertexPositionAndNormal(float4 pos, float2 tex, f
   return OUT;
 }
 
+PosAndNormal calculateBillboardVertexPositionAndNormal(float4 pos, float2 tex, float4 camera_pos, float4 size)
+{
+  float3 at = normalize(camera_pos.xyz - pos.xyz);
+  return calculateBillboardVertexPositionAndNormal(pos, tex, at, camera_pos, size);
+}
+
 PosAndNormal calculateBillboardSpheresVertexPositionAndNormal(float4 pos, float2 tex, float4 camera_pos, float4 size)
 {
-  PosAndNormal OUT = calculateBillboardVertexPositionAndNormal(pos, tex, camera_pos, size);
-  return OUT;
+  return calculateBillboardVertexPositionAndNormal(pos, tex, camera_pos, size);
+}
+
+PosAndNormal calculateBillboardSpheresVertexPositionAndNormal(float4 pos, float2 tex, float3 normal, float4 camera_pos, float4 size)
+{
+  return calculateBillboardVertexPositionAndNormal(pos, tex, normal, camera_pos, size);
 }
 
 float4 calculateCommonFacingBillboardVertexPosition(float4 pos, float2 tex, float4 up, float4 normal, float4 size)

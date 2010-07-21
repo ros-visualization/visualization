@@ -29,6 +29,7 @@
 
 #include <rviz_renderer_ogre/points_manager.h>
 #include <rviz_renderer_ogre/points_renderer.h>
+#include <rviz_renderer_ogre/convert.h>
 
 #include <rviz_msgs/Points.h>
 
@@ -95,6 +96,8 @@ PointsRendererDesc PointsManager::descFromPoints(const rviz_msgs::Points& points
   desc.scale.x = points.scale.x;
   desc.scale.y = points.scale.y;
   desc.scale.z = points.scale.z;
+  desc.scale = scaleFromRobot(desc.scale);
+  desc.has_normals = !points.normals.empty();
   desc.has_orientation = !points.orientations.empty() && points.type != rviz_msgs::Points::TYPE_POINTS;
   return desc;
 }
