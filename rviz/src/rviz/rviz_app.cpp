@@ -44,6 +44,7 @@
 
 // TODO: remove use of these
 #include <OGRE/OgreQuaternion.h>
+#include <OGRE/OgreMatrix3.h>
 #include <OGRE/OgreVector3.h>
 
 #include <ros/package.h>
@@ -204,6 +205,7 @@ public:
     }
 #endif
 
+#if 0
     {
       rviz_msgs::Points points;
       points.type = rviz_msgs::Points::TYPE_BOXES;
@@ -244,6 +246,42 @@ public:
         }
       }
 
+      rviz_renderer_client::Points p = s.createPoints(points);
+    }
+#endif
+
+    {
+      rviz_msgs::Points points;
+      points.type = rviz_msgs::Points::TYPE_BOXES;
+      points.scale.x = 0.05;
+      points.scale.y = 0.2;
+      points.scale.z = 0.5;
+
+      rviz_msgs::Vector3 pos;
+      pos.x = -5;
+      pos.y = 0;
+      pos.z = 0;
+      points.positions.push_back(pos);
+
+#if 01
+      Ogre::Matrix3 orient;
+      orient.FromEulerAnglesZYX(Ogre::Degree(0), Ogre::Degree(0), Ogre::Degree(30));
+      Ogre::Quaternion quat(orient);
+      //quat = Ogre::Quaternion::IDENTITY;
+      rviz_msgs::Quaternion quatm;
+      quatm.x = quat.x;
+      quatm.y = quat.y;
+      quatm.z = quat.z;
+      quatm.w = quat.w;
+      points.orientations.push_back(quatm);
+#endif
+
+      std_msgs::ColorRGBA col;
+      col.r = 1.0;
+      col.g = 0.0;
+      col.b = 0.0;
+      col.a = 1.0;
+      points.colors.push_back(col);
       rviz_renderer_client::Points p = s.createPoints(points);
     }
 

@@ -340,22 +340,21 @@ void PointsRenderable::add(const rviz_msgs::Points& points, uint32_t start, uint
 #if 01
       if (desc_.has_orientations)
       {
+        Ogre::Quaternion quat;
         if (orientation_from_normal)
         {
           Ogre::Vector3 norm(normalFromRobot(Ogre::Vector3(norm_it->x, norm_it->y, norm_it->z)));
-          Ogre::Quaternion quat(Ogre::Vector3::UNIT_Z.getRotationTo(norm));
-          *fptr++ = quat.x;
-          *fptr++ = quat.y;
-          *fptr++ = quat.z;
-          *fptr++ = quat.w;
+          quat = Ogre::Quaternion(Ogre::Vector3::UNIT_Z.getRotationTo(norm));
         }
         else
         {
-          *fptr++ = orient_it->x;
-          *fptr++ = orient_it->y;
-          *fptr++ = orient_it->z;
-          *fptr++ = orient_it->w;
+          quat = fromRobotRelative(Ogre::Quaternion(orient_it->w, orient_it->x, orient_it->y, orient_it->z));
         }
+
+        *fptr++ = quat.x;
+        *fptr++ = quat.y;
+        *fptr++ = quat.z;
+        *fptr++ = quat.w;
       }
 #endif
 

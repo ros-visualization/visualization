@@ -114,5 +114,11 @@ inline Ogre::Quaternion fromRobot(const Ogre::Quaternion& quat)
   return g_robot_to_ogre_quat * quat;
 }
 
+inline Ogre::Quaternion fromRobotRelative(const Ogre::Quaternion& quat)
+{
+  return Ogre::Quaternion(quat.w, -quat.y, quat.z, -quat.x);
+
+}
+
 } // namespace rviz_renderer_ogre
 #endif
