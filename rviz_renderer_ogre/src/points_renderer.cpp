@@ -231,11 +231,13 @@ PointsRenderable::PointsRenderable(PointsRenderer* parent, const PointsRendererD
     offset += Ogre::VertexElement::getTypeSize(Ogre::VET_FLOAT3);
   }
 
-  if (desc.has_orientation)
+#if 01
+  if (desc.has_orientations)
   {
     decl->addElement(0, offset, Ogre::VET_FLOAT4, Ogre::VES_TEXTURE_COORDINATES, tex_coord_num++);
     offset += Ogre::VertexElement::getTypeSize(Ogre::VET_FLOAT4);
   }
+#endif
 
   decl->addElement(0, offset, Ogre::VET_COLOUR, Ogre::VES_DIFFUSE);
 
@@ -258,8 +260,10 @@ PointsRenderable::~PointsRenderable()
 void PointsRenderable::add(const rviz_msgs::Points& points, uint32_t start, uint32_t& out_start, uint32_t& out_count)
 {
   ROS_ASSERT(points.positions.size() == points.colors.size());
-  ROS_ASSERT(!desc_.has_orientation || points.positions.size() == points.orientations.size());
+  ROS_ASSERT(!desc_.has_orientations || (points.positions.size() == points.orientations.size() || points.positions.size() == points.normals.size()));
   ROS_ASSERT(!desc_.has_normals || points.positions.size() == points.normals.size());
+
+  bool orientation_from_normal = desc_.has_orientations && points.orientations.empty() && points.positions.size() == points.normals.size();
 
   Ogre::Root* root = Ogre::Root::getSingletonPtr();
 
@@ -333,25 +337,39 @@ void PointsRenderable::add(const rviz_msgs::Points& points, uint32_t start, uint
         *fptr++ = norm.z;
       }
 
-      if (desc_.has_orientation)
+#if 01
+      if (desc_.has_orientations)
       {
-        *fptr++ = orient_it->x;
-        *fptr++ = orient_it->y;
-        *fptr++ = orient_it->z;
-        *fptr++ = orient_it->w;
+        if (orientation_from_normal)
+        {
+          Ogre::Vector3 norm(normalFromRobot(Ogre::Vector3(norm_it->x, norm_it->y, norm_it->z)));
+          Ogre::Quaternion quat(Ogre::Vector3::UNIT_Z.getRotationTo(norm));
+          *fptr++ = quat.x;
+          *fptr++ = quat.y;
+          *fptr++ = quat.z;
+          *fptr++ = quat.w;
+        }
+        else
+        {
+          *fptr++ = orient_it->x;
+          *fptr++ = orient_it->y;
+          *fptr++ = orient_it->z;
+          *fptr++ = orient_it->w;
+        }
       }
+#endif
 
       uint32_t* iptr = (uint32_t*)fptr;
       *iptr = color;
       ++fptr;
     }
 
-    if (desc_.has_normals)
+    if (desc_.has_normals || orientation_from_normal)
     {
       ++norm_it;
     }
 
-    if (desc_.has_orientation)
+    if (desc_.has_orientations && !orientation_from_normal)
     {
       ++orient_it;
     }

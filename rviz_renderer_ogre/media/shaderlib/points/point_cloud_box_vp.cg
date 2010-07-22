@@ -4,14 +4,23 @@ struct PosAndNormal
   float3 normal;
 };
 
-PosAndNormal calculateBoxVertexPositionAndNormal(float4 pos, float3 tex, float4x4 worldviewproj, float4 size)
+PosAndNormal calculateBoxVertexPositionAndNormal(float4 pos, float3 tex, float3 normal, float4x4 worldviewproj, float4 size)
 {
   PosAndNormal OUT;
   half4 s = half4(tex, 0.0) * size;
   OUT.pos = pos + half4( (s.xxx * half3(1.0, 0.0, 0.0)) + (s.yyy * half3(0.0, 1.0, 0.0)) + (s.zzz * half3(0.0, 0.0, -1.0)), 0.0 );
   
-  // TODO, figure out normal
-  OUT.normal = float3(0.0, 0.0, 1.0);
+  OUT.normal = normal;
+  return OUT;
+}
+
+PosAndNormal calculateBoxVertexPositionAndNormal(float4 pos, float3 tex, float3 normal, float4 rotation, float4x4 worldviewproj, float4 size)
+{
+  PosAndNormal OUT;
+  half4 s = half4(tex, 0.0) * size;
+  OUT.pos = pos + half4(quaternionRotate(rotation, s * half4(1.0, 1.0, -1.0, 0.0)), 0.0);
+  //OUT.pos = pos + half4( (s.xxx * half3(1.0, 0.0, 0.0)) + (s.yyy * half3(0.0, 1.0, 0.0)) + (s.zzz * half3(0.0, 0.0, -1.0)), 0.0 );
   
+  OUT.normal = quaternionRotate(rotation, normal);
   return OUT;
 }

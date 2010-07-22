@@ -206,14 +206,14 @@ public:
 
     {
       rviz_msgs::Points points;
-      points.type = rviz_msgs::Points::TYPE_BILLBOARD_SPHERES;
+      points.type = rviz_msgs::Points::TYPE_BOXES;
       points.scale.x = 0.05;
-      points.scale.y = 0.1;
-      points.scale.z = 0.1;
+      points.scale.y = 0.3;
+      points.scale.z = 0.3;
 
-      for (float th = 0.0; th <= M_PI * 2.0; th += 0.1)
+      for (float th = 0.0; th <= M_PI * 2.0; th += 0.2)
       {
-        for (float phi = 0.0; phi <= M_PI; phi += 0.1)
+        for (float phi = 0.0; phi <= M_PI; phi += 0.2)
         {
           float x = cos(th) * sin(phi);
           float y = sin(th) * sin(phi);

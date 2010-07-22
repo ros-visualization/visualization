@@ -98,7 +98,16 @@ PointsRendererDesc PointsManager::descFromPoints(const rviz_msgs::Points& points
   desc.scale.z = points.scale.z;
   desc.scale = scaleFromRobot(desc.scale);
   desc.has_normals = !points.normals.empty();
-  desc.has_orientation = !points.orientations.empty() && points.type != rviz_msgs::Points::TYPE_POINTS;
+  desc.has_orientations = !points.orientations.empty();
+
+  ROS_ASSERT(!(desc.has_normals && desc.has_orientations));
+
+  if (desc.type == rviz_msgs::Points::TYPE_BOXES && desc.has_normals)
+  {
+    desc.has_orientations = true;
+    desc.has_normals = false;
+  }
+
   return desc;
 }
 

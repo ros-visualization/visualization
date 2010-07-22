@@ -1,3 +1,4 @@
+
 static const half3 box_vertices[24] =
 {
   // front
@@ -47,14 +48,14 @@ static const half3 box_normals[6] =
   half3(0.0, -1.0, 0.0)
 };
 
-float4 transform(float4x4 worldviewproj, half4 size, half3 dim, half4 pos)
+float4 transform(float4x4 worldviewproj, float4 rotation, half4 size, half3 dim, half4 pos)
 {
   half4 s = half4(dim, 0.0) * size;
-  return mul(worldviewproj, pos + s);
+  return mul(worldviewproj, pos + half4(quaternionRotate(rotation, s), 0.0 ));
 }
 
-void emitBoxSide(float4 pos, float4 color, float4x4 worldviewproj, float4x4 worldview, float3 view_pos, float4 size, int start_index)
-{
+void emitBoxSide(float4 pos, float4 color, float4x4 worldviewproj, float4x4 worldview, float4 rotation, float3 view_pos, float4 size, int start_index)
+{ 
   int i = start_index;
 
   half3 n = box_normals[i];
@@ -63,12 +64,12 @@ void emitBoxSide(float4 pos, float4 color, float4x4 worldviewproj, float4x4 worl
   half3 tri2 = box_vertices[i*4 + 2];
   half3 tri3 = box_vertices[i*4 + 3];
   
-  float4 v0 = transform(worldviewproj, size, tri0, pos);
-  float4 v1 = transform(worldviewproj, size, tri1, pos);
-  float4 v2 = transform(worldviewproj, size, tri2, pos);
-  float4 v3 = transform(worldviewproj, size, tri3, pos); 
+  float4 v0 = transform(worldviewproj, rotation, size, tri0, pos);
+  float4 v1 = transform(worldviewproj, rotation, size, tri1, pos);
+  float4 v2 = transform(worldviewproj, rotation, size, tri2, pos);
+  float4 v3 = transform(worldviewproj, rotation, size, tri3, pos); 
 
-  float3 normal = mul(worldview, float4(n, 0)).xyz;
+  float3 normal = mul(worldview, float4(normalize(quaternionRotate(rotation, n)), 0)).xyz;
   
   emitVertex(v0 : POSITION, view_pos : TEXCOORD0, tri0 : TEXCOORD1, normal : TEXCOORD2, color : TEXCOORD3);
   emitVertex(v2 : POSITION, view_pos : TEXCOORD0, tri2 : TEXCOORD1, normal : TEXCOORD2, color : TEXCOORD3);
@@ -78,14 +79,28 @@ void emitBoxSide(float4 pos, float4 color, float4x4 worldviewproj, float4x4 worl
   restartStrip();
 }
 
-void emitBoxVertices(float4 pos, float4 color, float4x4 worldviewproj, float4x4 worldview, float4 size)
+void emitBoxVertices(float4 pos, float4 color, float4 orientation, float4x4 worldviewproj, float4x4 worldview, float4 size)
 {
+  float4 rotation = orientation;
   float3 view_pos = mul(worldview, pos).xyz;
 
-  emitBoxSide(pos, color, worldviewproj, worldview, view_pos, size, 0);
-  emitBoxSide(pos, color, worldviewproj, worldview, view_pos, size, 1);
-  emitBoxSide(pos, color, worldviewproj, worldview, view_pos, size, 2);
-  emitBoxSide(pos, color, worldviewproj, worldview, view_pos, size, 3);
-  emitBoxSide(pos, color, worldviewproj, worldview, view_pos, size, 4);
-  emitBoxSide(pos, color, worldviewproj, worldview, view_pos, size, 5);
+  emitBoxSide(pos, color, worldviewproj, worldview, rotation, view_pos, size, 0);
+  emitBoxSide(pos, color, worldviewproj, worldview, rotation, view_pos, size, 1);
+  emitBoxSide(pos, color, worldviewproj, worldview, rotation, view_pos, size, 2);
+  emitBoxSide(pos, color, worldviewproj, worldview, rotation, view_pos, size, 3);
+  emitBoxSide(pos, color, worldviewproj, worldview, rotation, view_pos, size, 4);
+  emitBoxSide(pos, color, worldviewproj, worldview, rotation, view_pos, size, 5);
+}
+
+void emitBoxVertices(float4 pos, float4 color, float4x4 worldviewproj, float4x4 worldview, float4 size)
+{
+  float4 rotation = float4(0.0, 0.0, 0.0, 1.0);
+  float3 view_pos = mul(worldview, pos).xyz;
+
+  emitBoxSide(pos, color, worldviewproj, worldview, rotation, view_pos, size, 0);
+  emitBoxSide(pos, color, worldviewproj, worldview, rotation, view_pos, size, 1);
+  emitBoxSide(pos, color, worldviewproj, worldview, rotation, view_pos, size, 2);
+  emitBoxSide(pos, color, worldviewproj, worldview, rotation, view_pos, size, 3);
+  emitBoxSide(pos, color, worldviewproj, worldview, rotation, view_pos, size, 4);
+  emitBoxSide(pos, color, worldviewproj, worldview, rotation, view_pos, size, 5);
 }

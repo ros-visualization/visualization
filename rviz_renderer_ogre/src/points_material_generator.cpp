@@ -53,7 +53,7 @@ std::string descToStringID(const PointsRendererDesc& desc, bool alpha)
   std::stringstream ss;
   ss << "GenPoints_" << desc.type;
 
-  if (desc.has_orientation)
+  if (desc.has_orientations)
   {
     ss << "Orientation";
   }
@@ -66,20 +66,20 @@ std::string descToStringID(const PointsRendererDesc& desc, bool alpha)
   return ss.str();
 }
 
-void generateGenericGPVP(std::stringstream& ss)
+void generateGenericGPVP(std::stringstream& ss, const PointsRendererDesc& desc)
 {
   ss <<
 "void vp(float4 position : POSITION,\n"
 "        float4 color : COLOR,\n"
-"        float3 normal : TEXCOORD0,\n"
+"        float4 t0 : TEXCOORD0,\n"
 "        out float4 out_position : POSITION,\n"
 "        out float4 out_color : COLOR,\n"
-"        out float3 out_normal : TEXCOORD0\n"
+"        out float4 out_t0 : TEXCOORD0\n"
 ")\n"
 "{\n"
 " out_position = position;\n"
 " out_color = color;\n"
-" out_normal = normal;\n"
+" out_t0 = t0;\n"
 "}\n";
 }
 
@@ -90,10 +90,12 @@ Ogre::GpuProgramPtr generateVertexShader(const PointsRendererDesc& desc, bool al
 
   if (supports_geometry_programs && desc.type != rviz_msgs::Points::TYPE_POINTS)
   {
-    generateGenericGPVP(ss);
+    generateGenericGPVP(ss, desc);
   }
   else
   {
+    ss << "#include <quaternion.cg>\n";
+
     if (desc.type == rviz_msgs::Points::TYPE_POINTS)
     {
       // nothing to do
@@ -127,7 +129,7 @@ Ogre::GpuProgramPtr generateVertexShader(const PointsRendererDesc& desc, bool al
         ss << " float3 in_face_normal : TEXCOORD" << tex_coord_index++ << ",\n";
       }
 
-      if (desc.has_orientation)
+      if (desc.has_orientations)
       {
         ss << " float4 in_orientation : TEXCOORD" << tex_coord_index++ << ",\n";
       }
@@ -197,9 +199,16 @@ Ogre::GpuProgramPtr generateVertexShader(const PointsRendererDesc& desc, bool al
     }
     else if (desc.type == rviz_msgs::Points::TYPE_BOXES)
     {
-      ss << " PosAndNormal posn = calculateBoxVertexPositionAndNormal(in_position, in_offset.xyz, worldviewproj, size);\n";
+      if (desc.has_orientations)
+      {
+        ss << " PosAndNormal posn = calculateBoxVertexPositionAndNormal(in_position, in_offset.xyz, in_normal, in_orientation, worldviewproj, size);\n";
+      }
+      else
+      {
+        ss << " PosAndNormal posn = calculateBoxVertexPositionAndNormal(in_position, in_offset.xyz, in_normal, worldviewproj, size);\n";
+      }
       ss << " float4 pos = posn.pos;\n";
-      ss << " float3 normal = in_normal;\n";
+      ss << " float3 normal = posn.normal;\n";
     }
 
     ss << " out_position = mul(worldviewproj, pos);\n" << std::endl;
@@ -265,6 +274,8 @@ Ogre::GpuProgramPtr generateGeometryShader(const PointsRendererDesc& desc, bool 
 {
   std::stringstream ss;
 
+  ss << " #include <quaternion.cg>\n";
+
   if (desc.type == rviz_msgs::Points::TYPE_POINTS)
   {
     ROS_ASSERT_MSG(false, "Shouldn't be generating geometry shaders for TYPE_POINTS");
@@ -290,6 +301,10 @@ Ogre::GpuProgramPtr generateGeometryShader(const PointsRendererDesc& desc, bool 
   {
     ss << " AttribArray<float3> in_normal : TEXCOORD0,\n";
   }
+  else if (desc.has_orientations)
+  {
+    ss << " AttribArray<float4> in_orientation : TEXCOORD0,\n";
+  }
 
   ss << std::endl;
 
@@ -304,32 +319,35 @@ Ogre::GpuProgramPtr generateGeometryShader(const PointsRendererDesc& desc, bool 
 
   ss << "{" << std::endl;
 
-  if (desc.has_normals)
+  if (desc.type == rviz_msgs::Points::TYPE_BILLBOARDS)
   {
-    if (desc.type == rviz_msgs::Points::TYPE_BILLBOARDS)
+    if (desc.has_normals)
     {
       ss << " emitBillboardVertices(in_position[0], in_color[0], in_normal[0], worldviewproj, worldview, camera_pos, size);\n";
     }
-    else if (desc.type == rviz_msgs::Points::TYPE_BILLBOARD_SPHERES)
-    {
-      ss << " emitBillboardSphereVertices(in_position[0], in_color[0], in_normal[0], worldviewproj, worldview, camera_pos, size);\n";
-    }
-    else if (desc.type == rviz_msgs::Points::TYPE_BOXES)
-    {
-      ss << " emitBoxVertices(in_position[0], in_color[0], worldviewproj, worldview, size);\n";
-    }
-  }
-  else
-  {
-    if (desc.type == rviz_msgs::Points::TYPE_BILLBOARDS)
+    else
     {
       ss << " emitBillboardVertices(in_position[0], in_color[0], worldviewproj, worldview, camera_pos, size);\n";
     }
-    else if (desc.type == rviz_msgs::Points::TYPE_BILLBOARD_SPHERES)
+  }
+  else if (desc.type == rviz_msgs::Points::TYPE_BILLBOARD_SPHERES)
+  {
+    if (desc.has_normals)
+    {
+      ss << " emitBillboardSphereVertices(in_position[0], in_color[0], in_normal[0], worldviewproj, worldview, camera_pos, size);\n";
+    }
+    else
     {
       ss << " emitBillboardSphereVertices(in_position[0], in_color[0], worldviewproj, worldview, camera_pos, size);\n";
     }
-    else if (desc.type == rviz_msgs::Points::TYPE_BOXES)
+  }
+  else if (desc.type == rviz_msgs::Points::TYPE_BOXES)
+  {
+    if (desc.has_orientations)
+    {
+      ss << " emitBoxVertices(in_position[0], in_color[0], in_orientation[0], worldviewproj, worldview, size);\n";
+    }
+    else
     {
       ss << " emitBoxVertices(in_position[0], in_color[0], worldviewproj, worldview, size);\n";
     }
