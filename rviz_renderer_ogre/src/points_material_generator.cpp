@@ -162,7 +162,11 @@ Ogre::GpuProgramPtr generateVertexShader(const PointsRendererDesc& desc, bool al
     if (desc.type == rviz_msgs::Points::TYPE_POINTS)
     {
       ss << " float4 pos = in_position;\n";
-      if (desc.has_normals)
+      if (desc.has_orientations)
+      {
+        ss << " float3 normal = quaternionRotate(in_orientation, float3(0.0, 0.0, -1.0));\n";
+      }
+      else if (desc.has_normals)
       {
         ss << " float3 normal = in_face_normal;\n";
       }
@@ -173,7 +177,11 @@ Ogre::GpuProgramPtr generateVertexShader(const PointsRendererDesc& desc, bool al
     }
     else if (desc.type == rviz_msgs::Points::TYPE_BILLBOARDS)
     {
-      if (desc.has_normals)
+      if (desc.has_orientations)
+      {
+        ss << " PosAndNormal posn = calculateBillboardVertexPositionAndNormalQuat(in_position, in_offset.xy, in_orientation, camera_pos, size);\n";
+      }
+      else if (desc.has_normals)
       {
         ss << " PosAndNormal posn = calculateBillboardVertexPositionAndNormal(in_position, in_offset.xy, in_face_normal, camera_pos, size);\n";
       }
@@ -186,7 +194,11 @@ Ogre::GpuProgramPtr generateVertexShader(const PointsRendererDesc& desc, bool al
     }
     else if (desc.type == rviz_msgs::Points::TYPE_BILLBOARD_SPHERES)
     {
-      if (desc.has_normals)
+      if (desc.has_orientations)
+      {
+        ss << " PosAndNormal posn = calculateBillboardSpheresVertexPositionAndNormalQuat(in_position, in_offset.xy, in_orientation, camera_pos, size);\n";
+      }
+      else if (desc.has_normals)
       {
         ss << " PosAndNormal posn = calculateBillboardSpheresVertexPositionAndNormal(in_position, in_offset.xy, in_face_normal, camera_pos, size);\n";
       }
@@ -321,7 +333,11 @@ Ogre::GpuProgramPtr generateGeometryShader(const PointsRendererDesc& desc, bool 
 
   if (desc.type == rviz_msgs::Points::TYPE_BILLBOARDS)
   {
-    if (desc.has_normals)
+    if (desc.has_orientations)
+    {
+      ss << " emitBillboardVerticesQuat(in_position[0], in_color[0], in_orientation[0], worldviewproj, worldview, camera_pos, size);\n";
+    }
+    else if (desc.has_normals)
     {
       ss << " emitBillboardVertices(in_position[0], in_color[0], in_normal[0], worldviewproj, worldview, camera_pos, size);\n";
     }
@@ -332,7 +348,11 @@ Ogre::GpuProgramPtr generateGeometryShader(const PointsRendererDesc& desc, bool 
   }
   else if (desc.type == rviz_msgs::Points::TYPE_BILLBOARD_SPHERES)
   {
-    if (desc.has_normals)
+    if (desc.has_orientations)
+    {
+      ss << " emitBillboardSphereVerticesQuat(in_position[0], in_color[0], in_orientation[0], worldviewproj, worldview, camera_pos, size);\n";
+    }
+    else if (desc.has_normals)
     {
       ss << " emitBillboardSphereVertices(in_position[0], in_color[0], in_normal[0], worldviewproj, worldview, camera_pos, size);\n";
     }

@@ -49,3 +49,38 @@ void emitBillboardSphereVertices(float4 pos, float4 color, float3 normal, float4
   emitBillboardVertices(pos, color, normal, worldviewproj, worldview, camera_pos, size);
 }
 
+////////////// Quaternion versions
+float4 transform(float4x4 worldviewproj, float4 rotation, half4 size, half2 dim, half4 pos)
+{
+  half4 s = half4(quaternionRotate(rotation, half3(dim, 0.0) * size.xyz), 0.0);
+  return mul(worldviewproj, pos + s);
+}
+
+void emitBillboardVerticesQuat(float4 pos, float4 color, float4 rotation, float4x4 worldviewproj, float4x4 worldview, float4 camera_pos, float4 size)
+{
+  float2 tex0 = float2(-0.5, 0.5);
+  float2 tex1 = float2(0.5, 0.5);
+  float2 tex2 = float2(-0.5, -0.5);
+  float2 tex3 = float2(0.5, -0.5);
+  float4 tl = transform(worldviewproj, rotation, size, tex0, pos);
+  float4 tr = transform(worldviewproj, rotation, size, tex1, pos);
+  float4 bl = transform(worldviewproj, rotation, size, tex2, pos);
+  float4 br = transform(worldviewproj, rotation, size, tex3, pos);
+  
+  float3 view_pos = mul(worldview, pos).xyz;
+
+  float3 normal = quaternionRotate(rotation, float3(0.0, 0.0, 1.0));
+  normal = mul(worldview, float4(normal, 0)).xyz;
+
+  emitVertex(tl : POSITION, color : TEXCOORD3, view_pos : TEXCOORD0, tex0 : TEXCOORD1, normal : TEXCOORD2);
+  emitVertex(bl : POSITION, color : TEXCOORD3, view_pos : TEXCOORD0, tex1 : TEXCOORD1, normal : TEXCOORD2);
+  emitVertex(tr : POSITION, color : TEXCOORD3, view_pos : TEXCOORD0, tex2 : TEXCOORD1, normal : TEXCOORD2);
+  emitVertex(br : POSITION, color : TEXCOORD3, view_pos : TEXCOORD0, tex3 : TEXCOORD1, normal : TEXCOORD2);
+
+  restartStrip();
+}
+
+void emitBillboardSphereVerticesQuat(float4 pos, float4 color, float4 rotation, float4x4 worldviewproj, float4x4 worldview, float4 camera_pos, float4 size)
+{
+  emitBillboardVerticesQuat(pos, color, rotation, worldviewproj, worldview, camera_pos, size);
+}
