@@ -1,0 +1,11 @@
+float3 quaternionRotate(float4 q, float3 v)
+{
+  float3 uv;
+  float3 uuv;
+  float3 qvec = float3(q.xyz);
+  uv = cross(qvec, v);
+  uuv = cross(qvec, uv);
+  uv = uv * (2.0 * w);
+  uuv = uuv * 2.0;
+  return v + uv + uuv;
+}
