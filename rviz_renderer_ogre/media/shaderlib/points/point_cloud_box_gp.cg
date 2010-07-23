@@ -51,7 +51,7 @@ static const half3 box_normals[6] =
 float4 transform(float4x4 worldviewproj, float4 rotation, half4 size, half3 dim, half4 pos)
 {
   half4 s = half4(dim, 0.0) * size;
-  return mul(worldviewproj, pos + half4(quaternionRotate(rotation, s), 0.0 ));
+  return mul(worldviewproj, pos + half4(quaternionRotate(rotation, s.xyz), 0.0 ));
 }
 
 void emitBoxSide(float4 pos, float4 color, float4x4 worldviewproj, float4x4 worldview, float4 rotation, float3 view_pos, float4 size, int start_index)

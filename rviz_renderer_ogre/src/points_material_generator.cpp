@@ -51,11 +51,20 @@ namespace rviz_renderer_ogre
 std::string descToStringID(const PointsRendererDesc& desc, bool alpha)
 {
   std::stringstream ss;
-  ss << "GenPoints_" << desc.type;
+  ss << "GenPoints_" << (uint32_t)desc.type;
 
   if (desc.has_orientations)
   {
     ss << "Orientation";
+  }
+
+  if (desc.has_scales)
+  {
+    ss << "Scales";
+  }
+  else
+  {
+    ss << "Scale " << std::setprecision(3) << desc.scale.x << desc.scale.y << desc.scale.z;
   }
 
   if (alpha)
@@ -72,14 +81,17 @@ void generateGenericGPVP(std::stringstream& ss, const PointsRendererDesc& desc)
 "void vp(float4 position : POSITION,\n"
 "        float4 color : COLOR,\n"
 "        float4 t0 : TEXCOORD0,\n"
+"        float4 t1 : TEXCOORD1,\n"
 "        out float4 out_position : POSITION,\n"
 "        out float4 out_color : COLOR,\n"
-"        out float4 out_t0 : TEXCOORD0\n"
+"        out float4 out_t0 : TEXCOORD0,\n"
+"        out float4 out_t1 : TEXCOORD1\n"
 ")\n"
 "{\n"
 " out_position = position;\n"
 " out_color = color;\n"
 " out_t0 = t0;\n"
+" out_t1 = t1;\n"
 "}\n";
 }
 
@@ -142,6 +154,11 @@ Ogre::GpuProgramPtr generateVertexShader(const PointsRendererDesc& desc, bool al
       }
     }
 
+    if (desc.has_scales)
+    {
+      ss << " float4 in_scale : TEXCOORD" << tex_coord_index++ << ",\n";
+    }
+
     ss << std::endl;
 
     ss << " out float4 out_position : POSITION," << std::endl;
@@ -150,7 +167,11 @@ Ogre::GpuProgramPtr generateVertexShader(const PointsRendererDesc& desc, bool al
     ss << " out float3 out_normal : TEXCOORD2," << std::endl;
     ss << " out float4 out_color : TEXCOORD3," << std::endl;
 
-    ss << " uniform float4 size," << std::endl;
+    if (!desc.has_scales)
+    {
+      ss << " uniform float4 size," << std::endl;
+    }
+
     ss << " uniform float4 camera_pos," << std::endl;
     ss << " uniform float4x4 worldviewproj," << std::endl;
     ss << " uniform float4x4 worldview" << std::endl;
@@ -158,6 +179,11 @@ Ogre::GpuProgramPtr generateVertexShader(const PointsRendererDesc& desc, bool al
     ss << " )" << std::endl;
 
     ss << "{" << std::endl;
+
+    if (desc.has_scales)
+    {
+      ss << " float4 size = in_scale;\n";
+    }
 
     if (desc.type == rviz_msgs::Points::TYPE_POINTS)
     {
@@ -309,20 +335,30 @@ Ogre::GpuProgramPtr generateGeometryShader(const PointsRendererDesc& desc, bool 
   ss << " AttribArray<float4> in_position : POSITION,\n";
   ss << " AttribArray<float4> in_color : COLOR,\n";
 
+  uint32_t tex_coord_num = 0;
+
   if (desc.has_normals)
   {
-    ss << " AttribArray<float3> in_normal : TEXCOORD0,\n";
+    ss << " AttribArray<float3> in_normal : TEXCOORD" << tex_coord_num++ << ",\n";
   }
   else if (desc.has_orientations)
   {
-    ss << " AttribArray<float4> in_orientation : TEXCOORD0,\n";
+    ss << " AttribArray<float4> in_orientation : TEXCOORD" << tex_coord_num++ << ",\n";
+  }
+
+  if (desc.has_scales)
+  {
+    ss << "AttribArray<float4> in_scale : TEXCOORD" << tex_coord_num++ << ",\n";
   }
 
   ss << std::endl;
-
   ss << std::endl;
 
-  ss << " uniform float4 size," << std::endl;
+  if (!desc.has_scales)
+  {
+    ss << " uniform float4 size," << std::endl;
+  }
+
   ss << " uniform float4 camera_pos," << std::endl;
   ss << " uniform float4x4 worldviewproj," << std::endl;
   ss << " uniform float4x4 worldview" << std::endl;
@@ -330,6 +366,11 @@ Ogre::GpuProgramPtr generateGeometryShader(const PointsRendererDesc& desc, bool 
   ss << " )" << std::endl;
 
   ss << "{" << std::endl;
+
+  if (desc.has_scales)
+  {
+    ss << " float4 size = in_scale[0];\n";
+  }
 
   if (desc.type == rviz_msgs::Points::TYPE_BILLBOARDS)
   {

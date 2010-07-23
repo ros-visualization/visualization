@@ -239,6 +239,12 @@ PointsRenderable::PointsRenderable(PointsRenderer* parent, const PointsRendererD
   }
 #endif
 
+  if (desc.has_scales)
+  {
+    decl->addElement(0, offset, Ogre::VET_FLOAT3, Ogre::VES_TEXTURE_COORDINATES, tex_coord_num++);
+    offset += Ogre::VertexElement::getTypeSize(Ogre::VET_FLOAT3);
+  }
+
   decl->addElement(0, offset, Ogre::VET_COLOUR, Ogre::VES_DIFFUSE);
 
   Ogre::HardwareVertexBufferSharedPtr vbuf =
@@ -262,6 +268,7 @@ void PointsRenderable::add(const rviz_msgs::Points& points, uint32_t start, uint
   ROS_ASSERT(points.positions.size() == points.colors.size());
   ROS_ASSERT(!desc_.has_orientations || (points.positions.size() == points.orientations.size() || points.positions.size() == points.normals.size()));
   ROS_ASSERT(!desc_.has_normals || points.positions.size() == points.normals.size());
+  ROS_ASSERT(!desc_.has_scales || points.positions.size() == points.scales.size());
 
   bool orientation_from_normal = desc_.has_orientations && points.orientations.empty() && points.positions.size() == points.normals.size();
 
@@ -288,6 +295,7 @@ void PointsRenderable::add(const rviz_msgs::Points& points, uint32_t start, uint
   rviz_msgs::Points::_orientations_type::const_iterator orient_it = points.orientations.begin() + start;
   rviz_msgs::Points::_colors_type::const_iterator col_it = points.colors.begin() + start;
   rviz_msgs::Points::_normals_type::const_iterator norm_it = points.normals.begin() + start;
+  rviz_msgs::Points::_scales_type::const_iterator scales_it = points.scales.begin() + start;
   for (uint32_t i = out_start; i < end; ++i, ++pos_it, ++col_it)
   {
     float a = col_it->a;
@@ -358,6 +366,15 @@ void PointsRenderable::add(const rviz_msgs::Points& points, uint32_t start, uint
       }
 #endif
 
+      if (desc_.has_scales)
+      {
+        Ogre::Vector3 scale(scales_it->x, scales_it->y, scales_it->z);
+        scale = scaleFromRobot(scale);
+        *fptr++ = scale.x;
+        *fptr++ = scale.y;
+        *fptr++ = scale.z;
+      }
+
       uint32_t* iptr = (uint32_t*)fptr;
       *iptr = color;
       ++fptr;
@@ -371,6 +388,11 @@ void PointsRenderable::add(const rviz_msgs::Points& points, uint32_t start, uint
     if (desc_.has_orientations && !orientation_from_normal)
     {
       ++orient_it;
+    }
+
+    if (desc_.has_scales)
+    {
+      ++scales_it;
     }
   }
 

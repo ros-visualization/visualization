@@ -99,6 +99,7 @@ PointsRendererDesc PointsManager::descFromPoints(const rviz_msgs::Points& points
   desc.scale = scaleFromRobot(desc.scale);
   desc.has_normals = !points.normals.empty();
   desc.has_orientations = !points.orientations.empty();
+  desc.has_scales = !points.scales.empty();
 
   ROS_ASSERT(!(desc.has_normals && desc.has_orientations));
 

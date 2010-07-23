@@ -8,5 +8,6 @@ Vector3 scale
 
 Vector3[] positions
 Vector3[] normals
+Vector3[] scales
 Quaternion[] orientations
 std_msgs/ColorRGBA[] colors

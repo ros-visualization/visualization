@@ -205,13 +205,10 @@ public:
     }
 #endif
 
-#if 0
+#if 01
     {
       rviz_msgs::Points points;
-      points.type = rviz_msgs::Points::TYPE_BOXES;
-      points.scale.x = 0.05;
-      points.scale.y = 0.3;
-      points.scale.z = 0.3;
+      points.type = rviz_msgs::Points::TYPE_BILLBOARDS;
 
       for (float th = 0.0; th <= M_PI * 2.0; th += 0.2)
       {
@@ -243,6 +240,12 @@ public:
           norm.z = n.z;
           points.normals.push_back(norm);
 #endif
+
+          rviz_msgs::Vector3 scale;
+          scale.x = x * 0.5;
+          scale.y = y * 0.5;
+          scale.z = z * 0.5;
+          points.scales.push_back(scale);
         }
       }
 
@@ -250,6 +253,7 @@ public:
     }
 #endif
 
+#if 0
     {
       rviz_msgs::Points points;
       points.type = rviz_msgs::Points::TYPE_BILLBOARDS;
@@ -284,6 +288,7 @@ public:
       points.colors.push_back(col);
       rviz_renderer_client::Points p = s.createPoints(points);
     }
+#endif
 
 
     Connect(wxEVT_SIZE, wxSizeEventHandler(MyFrame::onSize));

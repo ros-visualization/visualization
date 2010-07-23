@@ -137,6 +137,7 @@ Points Scene::createPoints(rviz_msgs::Points& points)
   req->points.orientations.swap(points.orientations);
   req->points.colors.swap(points.colors);
   req->points.normals.swap(points.normals);
+  req->points.scales.swap(points.scales);
 
   req->scene_id = getID();
   req->points_id = UUID::Generate();
