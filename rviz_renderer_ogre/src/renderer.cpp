@@ -392,7 +392,7 @@ void Renderer::renderThread()
     }
 
     ros::WallTime end = ros::WallTime::now();
-    //ROS_INFO("Frame took %f", (end - start).toSec());
+    ROS_INFO("Frame took %f", (end - start).toSec());
   }
 }
 

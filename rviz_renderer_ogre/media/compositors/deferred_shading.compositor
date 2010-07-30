@@ -178,6 +178,34 @@ compositor DeferredShading/Gooch98StippleAlpha
   }
 }
 
+compositor DeferredShading/WeightedAverageAlpha
+{
+  technique
+  {
+    texture_ref opaque_output DeferredShading/Gooch98 color_output
+    texture rt0 target_width target_height PF_FLOAT16_RGBA PF_FLOAT16_RGBA
+    
+    target rt0
+    {
+      //input previous
+      
+      pass clear
+      {
+        clear
+        {
+          buffers colour
+        }
+      }
+    
+      material_scheme WeightedAverageAlpha
+      
+      pass render_scene
+      {
+      }
+    }
+  }
+}
+
 compositor DeferredShading/WeightedAverageAlphaBlend
 {
   technique

@@ -127,7 +127,7 @@ public:
 
     rviz_renderer_client::TransformNode n;
 
-#if 01
+#if 0
     rviz_renderer_client::SimpleShape shape = s.createSimpleShape("sphere", s.createTransformNode());
     shape.setColor(1.0, 1.0, 1.0, 1.0);
 
@@ -146,7 +146,7 @@ public:
     shape = s.createSimpleShape("cone", n);
     shape.setColor(1.0, 0.0, 0.0, 1.0);
 
-#if 01
+#if 0
     for (uint32_t x = 0; x < 10; ++x)
     {
       for (uint32_t y = 0; y < 10; ++y)
@@ -163,6 +163,8 @@ public:
 #endif
 #endif
 
+
+#if 0
     n = s.createTransformNode();
     n.setPosition(0, 0, 2);
     rviz_renderer_client::MeshInstance inst = s.createMeshInstance("package://pr2_description/meshes/base_v0/base.dae", n);
@@ -170,6 +172,7 @@ public:
     n = s.createTransformNode();
     n.setPosition(2, 0, 2);
     inst = s.createMeshInstance("package://pr2_description/meshes/base_v0/wheel.dae", n);
+#endif
 
 #if 0
     {
@@ -205,7 +208,7 @@ public:
     }
 #endif
 
-#if 01
+#if 0
     {
       rviz_msgs::Points points;
       points.type = rviz_msgs::Points::TYPE_BILLBOARDS;

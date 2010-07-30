@@ -32,9 +32,14 @@
 
 #include <rviz_uuid/uuid.h>
 
+#include <OGRE/OgreTexture.h>
+
 namespace Ogre
 {
 class RenderWindow;
+class RenderTexture;
+class MultiRenderTarget;
+class Rectangle2D;
 }
 
 namespace rviz_renderer_ogre
@@ -58,10 +63,26 @@ public:
   void finishRender();
 
 private:
+  struct MultiTarget
+  {
+    Ogre::MultiRenderTarget* mrt;
+    std::vector<Ogre::RenderTexture*> rtts;
+    std::vector<Ogre::TexturePtr> textures;
+    Ogre::Rectangle2D* rect; // optional
+  };
+
+  struct Target
+  {
+
+  };
+
   rviz_uuid::UUID id_;
   Ogre::RenderWindow* render_window_;
+  Ogre::Rectangle2D* screen_quad_;
   Renderer* renderer_;
   Camera* cam_;
+
+  MultiTarget gbuffer_target_;
 };
 
 } // namespace rviz_renderer_ogre
