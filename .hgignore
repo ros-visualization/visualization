@@ -1,0 +1,13 @@
+syntax: glob
+*/build/*
+*/src/*/msg/*.py
+*/msg_gen/*
+*/msg/lisp/*
+*/lib/*.so
+rviz_interfaces/msg/*_*.msg
+rviz_interface_gen/msg/*_*.msg
+*/interface_gen/*
+*.pyc
+*~
+*/Ogre.log
+rviz/bin/rviz
