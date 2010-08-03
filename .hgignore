@@ -11,3 +11,5 @@ rviz_interface_gen/msg/*_*.msg
 *~
 */Ogre.log
 rviz/bin/rviz
+*/rosconfig.cmake
+*/core

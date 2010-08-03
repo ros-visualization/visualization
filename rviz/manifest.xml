@@ -19,7 +19,6 @@
     <depend package="nav_msgs"/>
     <depend package="tf"/>
     <depend package="laser_geometry"/>
-    <depend package="wxpropgrid"/>
     <depend package="rxtools"/>
     <depend package="wxswig"/>
     <depend package="wxPython_swig_interface"/>

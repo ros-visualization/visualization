@@ -33,13 +33,16 @@
 #include <rviz_uuid/uuid.h>
 
 #include <OGRE/OgreTexture.h>
+#include <OGRE/OgreRenderTargetListener.h>
 
 namespace Ogre
 {
 class RenderWindow;
 class RenderTexture;
+class RenderTarget;
 class MultiRenderTarget;
 class Rectangle2D;
+class SceneNode;
 }
 
 namespace rviz_renderer_ogre
@@ -48,10 +51,11 @@ namespace rviz_renderer_ogre
 class Camera;
 class Renderer;
 
-class RenderWindow
+class RenderWindow : public Ogre::RenderTargetListener
 {
 public:
   RenderWindow(const rviz_uuid::UUID& id, Ogre::RenderWindow* wnd, Renderer* rend);
+  ~RenderWindow();
 
    const rviz_uuid::UUID& getID();
    void resized(uint32_t width, uint32_t height);
@@ -63,26 +67,52 @@ public:
   void finishRender();
 
 private:
-  struct MultiTarget
+  virtual void preRenderTargetUpdate(const Ogre::RenderTargetEvent& evt);
+  virtual void postRenderTargetUpdate(const Ogre::RenderTargetEvent& evt);
+
+  typedef std::vector<Ogre::RenderTexture*> V_OgreRenderTexture;
+  typedef std::vector<Ogre::TexturePtr> V_OgreTexture;
+  struct MRT
   {
+    MRT()
+    : mrt(0)
+    //, rect(0)
+    {}
+
     Ogre::MultiRenderTarget* mrt;
-    std::vector<Ogre::RenderTexture*> rtts;
-    std::vector<Ogre::TexturePtr> textures;
-    Ogre::Rectangle2D* rect; // optional
+    V_OgreRenderTexture rtts;
+    V_OgreTexture textures;
   };
 
-  struct Target
+  struct RTT
   {
+    RTT()
+    : rt(0)
+    //, rect(0)
+    {}
 
+    Ogre::RenderTexture* rt;
+    Ogre::TexturePtr texture;
   };
+
+  void destroyResources();
+  void createResources();
+
+  void destroyMRT(MRT& mrt);
+  void destroyRTT(RTT& rtt);
+
+  void setupRT(Ogre::RenderTarget* rt);
 
   rviz_uuid::UUID id_;
   Ogre::RenderWindow* render_window_;
-  Ogre::Rectangle2D* screen_quad_;
   Renderer* renderer_;
   Camera* cam_;
+  uint32_t width_;
+  uint32_t height_;
+  Ogre::Rectangle2D* screen_rect_;
+  Ogre::SceneNode* rect_node_;
 
-  MultiTarget gbuffer_target_;
+  MRT gbuffer_target_;
 };
 
 } // namespace rviz_renderer_ogre
