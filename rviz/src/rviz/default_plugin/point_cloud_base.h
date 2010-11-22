@@ -39,8 +39,13 @@
 
 #include "ogre_tools/point_cloud.h"
 
+#include <message_filters/time_sequencer.h>
+
 #include "sensor_msgs/PointCloud.h"
 #include "sensor_msgs/PointCloud2.h"
+
+#include <ros/spinner.h>
+#include <ros/callback_queue.h>
 
 #include <boost/shared_ptr.hpp>
 #include <boost/thread.hpp>
@@ -82,7 +87,7 @@ private:
     float time_;
 
     Ogre::Matrix4 transform_;
-    sensor_msgs::PointCloud2Ptr message_;
+    sensor_msgs::PointCloud2ConstPtr message_;
     uint32_t num_points_;
 
     PointCloud transformed_points_;
@@ -170,24 +175,27 @@ protected:
    */
   bool transformCloud(const CloudInfoPtr& cloud, V_Point& points, bool fully_update_transformers);
 
-  void processMessage(const sensor_msgs::PointCloud2Ptr& cloud);
+  void processMessage(const sensor_msgs::PointCloud2ConstPtr& cloud);
   void addMessage(const sensor_msgs::PointCloudConstPtr& cloud);
-  void addMessage(const sensor_msgs::PointCloud2Ptr& cloud);
+  void addMessage(const sensor_msgs::PointCloud2ConstPtr& cloud);
   void updateStatus();
 
   void setXYZTransformer(const std::string& name);
   void setColorTransformer(const std::string& name);
   const std::string& getXYZTransformer() { return xyz_transformer_; }
   const std::string& getColorTransformer() { return color_transformer_; }
-  PointCloudTransformerPtr getXYZTransformer(const sensor_msgs::PointCloud2Ptr& cloud);
-  PointCloudTransformerPtr getColorTransformer(const sensor_msgs::PointCloud2Ptr& cloud);
-  void updateTransformers(const sensor_msgs::PointCloud2Ptr& cloud, bool fully_update);
+  PointCloudTransformerPtr getXYZTransformer(const sensor_msgs::PointCloud2ConstPtr& cloud);
+  PointCloudTransformerPtr getColorTransformer(const sensor_msgs::PointCloud2ConstPtr& cloud);
+  void updateTransformers(const sensor_msgs::PointCloud2ConstPtr& cloud, bool fully_update);
   void retransform();
   void onTransformerOptions(V_string& ops, uint32_t mask);
 
   void onPluginLoaded(const PluginStatus& status);
   void onPluginUnloading(const PluginStatus& status);
   void loadTransformers(Plugin* plugin);
+
+  ros::AsyncSpinner spinner_;
+  ros::CallbackQueue cbqueue_;
 
   D_CloudInfo clouds_;
   boost::mutex clouds_mutex_;
