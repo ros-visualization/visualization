@@ -54,6 +54,7 @@ rosbuild_add_library(${PROJECT_NAME} plugin/plugin.cpp
                                     tools/goal_tool.cpp
                                     tools/initial_pose_tool.cpp
                                     tools/selection_tool.cpp
+                                    tools/interaction_tool.cpp
                                     mesh_loader.cpp
                                     splash_screen.cpp
                                     loading_dialog.cpp
@@ -83,6 +84,7 @@ rosbuild_add_library(${PROJECT_NAME} plugin/plugin.cpp
                                     robot/robot_link.cpp
                                     robot/robot.cpp
                                     selection/selection_manager.cpp
+                                    selection/selection_handler.cpp
                                     generated/rviz_generated.cpp)
 target_link_libraries(${PROJECT_NAME} ${wxWidgets_LIBRARIES} ${OGRE_LIBRARIES})
 rosbuild_link_boost(${PROJECT_NAME} thread signals filesystem system program_options)

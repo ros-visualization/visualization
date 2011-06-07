@@ -29,13 +29,15 @@
 
 #include "marker_base.h"
 #include "rviz/default_plugin/marker_display.h"
-#include "rviz/common.h"
 #include "rviz/visualization_manager.h"
 #include "rviz/selection/selection_manager.h"
+#include "marker_selection_handler.h"
 #include "rviz/frame_manager.h"
 
 #include <OGRE/OgreSceneNode.h>
 #include <OGRE/OgreSceneManager.h>
+#include <OGRE/OgreEntity.h>
+#include <OGRE/OgreSubEntity.h>
 
 #include <tf/tf.h>
 #include <tf/transform_listener.h>
@@ -46,14 +48,21 @@ namespace rviz
 MarkerBase::MarkerBase(MarkerDisplay* owner, VisualizationManager* manager, Ogre::SceneNode* parent_node)
 : owner_(owner)
 , vis_manager_(manager)
-, parent_node_(parent_node->createChildSceneNode())
+, scene_node_(parent_node->createChildSceneNode())
 , coll_(0)
 {}
 
 MarkerBase::~MarkerBase()
 {
   vis_manager_->getSelectionManager()->removeObject(coll_);
-  vis_manager_->getSceneManager()->destroySceneNode(parent_node_);
+  vis_manager_->getSceneManager()->destroySceneNode(scene_node_);
+}
+
+void MarkerBase::setMessage(const Marker& message)
+{
+  // copy and save to shared pointer
+  MarkerConstPtr message_ptr( new Marker(message) );
+  setMessage( message_ptr );
 }
 
 void MarkerBase::setMessage(const MarkerConstPtr& message)
@@ -77,7 +86,7 @@ bool MarkerBase::expired()
   return ros::Time::now() >= expiration_;
 }
 
-bool MarkerBase::transform(const MarkerConstPtr& message, Ogre::Vector3& pos, Ogre::Quaternion& orient, Ogre::Vector3& scale, bool relative_orientation)
+bool MarkerBase::transform(const MarkerConstPtr& message, Ogre::Vector3& pos, Ogre::Quaternion& orient, Ogre::Vector3& scale)
 {
   ros::Time stamp = message->header.stamp;
   if (message->frame_locked)
@@ -85,18 +94,63 @@ bool MarkerBase::transform(const MarkerConstPtr& message, Ogre::Vector3& pos, Og
     stamp = ros::Time();
   }
 
-  if (!FrameManager::instance()->transform(message->header.frame_id, stamp, message->pose, pos, orient, relative_orientation))
+  if (!FrameManager::instance()->transform(message->header.frame_id, stamp, message->pose, pos, orient))
   {
     std::string error;
     FrameManager::instance()->transformHasProblems(message->header.frame_id, message->header.stamp, error);
-    owner_->setMarkerStatus(getID(), status_levels::Error, error);
+    if ( owner_ )
+    {
+      owner_->setMarkerStatus(getID(), status_levels::Error, error);
+    }
     return false;
   }
 
   scale = Ogre::Vector3(message->scale.x, message->scale.y, message->scale.z);
-  scaleRobotToOgre( scale );
 
   return true;
 }
+
+void MarkerBase::setControl( InteractiveMarkerControl* control )
+{
+  SelectionHandlerPtr handler_ptr = vis_manager_->getSelectionManager()->getHandler( coll_ );
+  MarkerSelectionHandler* handler = dynamic_cast<MarkerSelectionHandler*>( handler_ptr.get() );
+  if ( handler )
+  {
+    handler->setControl( control );
+  }
+}
+
+void MarkerBase::setPosition( const Ogre::Vector3& position )
+{
+  scene_node_->setPosition( position );
+}
+
+void MarkerBase::setOrientation( const Ogre::Quaternion& orientation )
+{
+  scene_node_->setOrientation( orientation );
+}
+
+const Ogre::Vector3& MarkerBase::getPosition()
+{
+  return scene_node_->getPosition();
+}
+
+const Ogre::Quaternion& MarkerBase::getOrientation()
+{
+  return scene_node_->getOrientation();
+}
+
+void MarkerBase::extractMaterials( Ogre::Entity *entity, S_MaterialPtr &materials )
+{
+  uint32_t num_sub_entities = entity->getNumSubEntities();
+  for (uint32_t i = 0; i < num_sub_entities; ++i)
+  {
+    Ogre::SubEntity* sub = entity->getSubEntity(i);
+    Ogre::MaterialPtr material = sub->getMaterial();
+    materials.insert( material );
+  }
+}
+
+
 
 } // namespace rviz

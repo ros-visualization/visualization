@@ -29,7 +29,6 @@
 
 #include "points_marker.h"
 #include "rviz/default_plugin/marker_display.h"
-#include "rviz/common.h"
 #include "rviz/visualization_manager.h"
 
 #include <ogre_tools/point_cloud.h>
@@ -46,26 +45,18 @@ PointsMarker::PointsMarker(MarkerDisplay* owner, VisualizationManager* manager, 
 : MarkerBase(owner, manager, parent_node)
 , points_(0)
 {
-  if (parent_node)
-  {
-    scene_node_ = parent_node->createChildSceneNode();
-  }
-  else
-  {
-    scene_node_ = vis_manager_->getSceneManager()->getRootSceneNode()->createChildSceneNode();
-  }
 }
 
 PointsMarker::~PointsMarker()
 {
-  vis_manager_->getSceneManager()->destroySceneNode(scene_node_->getName());
   delete points_;
 }
 
 void PointsMarker::onNewMessage(const MarkerConstPtr& old_message, const MarkerConstPtr& new_message)
 {
   ROS_ASSERT(new_message->type == visualization_msgs::Marker::POINTS ||
-             new_message->type == visualization_msgs::Marker::CUBE_LIST);
+             new_message->type == visualization_msgs::Marker::CUBE_LIST ||
+             new_message->type == visualization_msgs::Marker::SPHERE_LIST);
 
   if (!points_)
   {
@@ -87,10 +78,14 @@ void PointsMarker::onNewMessage(const MarkerConstPtr& old_message, const MarkerC
     points_->setRenderMode(ogre_tools::PointCloud::RM_BOXES);
     points_->setDimensions(scale.x, scale.y, scale.z);
     break;
+  case visualization_msgs::Marker::SPHERE_LIST:
+    points_->setRenderMode(ogre_tools::PointCloud::RM_BILLBOARD_SPHERES);
+    points_->setDimensions(scale.x, scale.y, scale.z);
+    break;
   }
 
-  scene_node_->setPosition(pos);
-  scene_node_->setOrientation(orient);
+  setPosition(pos);
+  setOrientation(orient);
 
   points_->clear();
 
@@ -118,7 +113,6 @@ void PointsMarker::onNewMessage(const MarkerConstPtr& old_message, const MarkerC
     ogre_tools::PointCloud::Point& point = points[i];
 
     Ogre::Vector3 v(p.x, p.y, p.z);
-    robotToOgre(v);
 
     point.x = v.x;
     point.y = v.y;

@@ -31,24 +31,21 @@
 #define RVIZ_SELECTION_MANAGER_H
 
 #include "forwards.h"
+#include "selection_handler.h"
+#include "selection_args.h"
 #include "rviz/properties/forwards.h"
 
 #include <boost/shared_ptr.hpp>
 #include <boost/unordered_map.hpp>
-#include <boost/signals.hpp>
 #include <boost/thread/recursive_mutex.hpp>
 
 #include <OGRE/OgreTexture.h>
 #include <OGRE/OgreMaterial.h>
-#include <OGRE/OgrePixelFormat.h>
+#include <OGRE/OgreMaterialManager.h>
 #include <OGRE/OgreMovableObject.h>
 
 #include <vector>
 #include <set>
-
-#include <ros/console.h>
-
-//#define PICKING_DEBUG
 
 namespace ogre_tools
 {
@@ -69,145 +66,12 @@ class MovableObject;
 
 namespace rviz
 {
-
 class ViewportMouseEvent;
 class VisualizationManager;
 class PropertyManager;
 
-inline uint32_t colorToHandle(Ogre::PixelFormat fmt, uint32_t col)
-{
-  uint32_t handle = 0;
-  if (fmt == Ogre::PF_A8R8G8B8 || fmt == Ogre::PF_X8R8G8B8)
-  {
-    handle = col & 0x00ffffff;
-  }
-  else if (fmt == Ogre::PF_R8G8B8A8)
-  {
-    handle = col >> 8;
-  }
-  else
-  {
-    ROS_DEBUG("Incompatible pixel format [%d]", fmt);
-  }
 
-  return handle;
-}
-
-typedef std::vector<Ogre::AxisAlignedBox> V_AABB;
-
-class SelectionHandler
-{
-public:
-  typedef std::vector<PropertyBaseWPtr> V_Property;
-
-  SelectionHandler();
-  virtual ~SelectionHandler();
-
-  void initialize(VisualizationManager* manager);
-  void addTrackedObject(Ogre::MovableObject* object);
-  void removeTrackedObject(Ogre::MovableObject* object);
-
-  virtual void updateTrackedBoxes();
-
-  virtual void createProperties(const Picked& obj, PropertyManager* property_manager) {}
-  virtual void destroyProperties(const Picked& obj, PropertyManager* property_manager);
-  virtual void updateProperties();
-
-  virtual bool needsAdditionalRenderPass(uint32_t pass)
-  {
-    return false;
-  }
-
-  virtual void preRenderPass(uint32_t pass);
-  virtual void postRenderPass(uint32_t pass);
-
-  virtual void getAABBs(const Picked& obj, V_AABB& aabbs);
-
-  virtual void onSelect(const Picked& obj);
-  virtual void onDeselect(const Picked& obj);
-
-protected:
-  void createBox(const std::pair<CollObjectHandle, uint64_t>& handles, const Ogre::AxisAlignedBox& aabb, const std::string& material_name);
-  void destroyBox(const std::pair<CollObjectHandle, uint64_t>& handles);
-
-  V_Property properties_;
-
-  typedef std::map<std::pair<CollObjectHandle, uint64_t>, std::pair<Ogre::SceneNode*, Ogre::WireBoundingBox*> > M_HandleToBox;
-  M_HandleToBox boxes_;
-
-  VisualizationManager* manager_;
-
-  typedef std::set<Ogre::MovableObject*> S_Movable;
-  S_Movable tracked_objects_;
-
-  class Listener : public Ogre::MovableObject::Listener
-  {
-  public:
-    Listener(SelectionHandler* handler)
-    : handler_(handler)
-    {}
-    virtual void objectMoved(Ogre::MovableObject* object)
-    {
-      handler_->updateTrackedBoxes();
-    }
-
-    virtual void objectDestroyed(Ogre::MovableObject* object)
-    {
-      handler_->removeTrackedObject(object);
-    }
-
-    SelectionHandler* handler_;
-  };
-  typedef boost::shared_ptr<Listener> ListenerPtr;
-  ListenerPtr listener_;
-
-  friend class SelectionManager;
-};
-typedef boost::shared_ptr<SelectionHandler> SelectionHandlerPtr;
-typedef std::vector<SelectionHandlerPtr> V_SelectionHandler;
-typedef std::set<SelectionHandlerPtr> S_SelectionHandler;
-
-
-struct SelectionSettingArgs
-{
-  SelectionSettingArgs()
-  {}
-};
-typedef boost::signal<void (const SelectionSettingArgs&)> SelectionSettingSignal;
-
-struct SelectionSetArgs
-{
-  SelectionSetArgs(const M_Picked& old_selection, const M_Picked& new_selection)
-  : old_selection_(old_selection)
-  , new_selection_(new_selection)
-  {}
-
-  const M_Picked& old_selection_;
-  const M_Picked& new_selection_;
-};
-typedef boost::signal<void (const SelectionSetArgs&)> SelectionSetSignal;
-
-struct SelectionAddedArgs
-{
-  SelectionAddedArgs(const M_Picked& added)
-  : added_(added)
-  {}
-
-  const M_Picked& added_;
-};
-typedef boost::signal<void (const SelectionAddedArgs&)> SelectionAddedSignal;
-
-struct SelectionRemovedArgs
-{
-  SelectionRemovedArgs(const M_Picked& removed)
-  : removed_(removed)
-  {}
-
-  const M_Picked& removed_;
-};
-typedef boost::signal<void (const SelectionRemovedArgs&)> SelectionRemovedSignal;
-
-class SelectionManager
+class SelectionManager : public Ogre::MaterialManager::Listener
 {
 public:
   enum SelectType
@@ -226,16 +90,23 @@ public:
   void addObject(CollObjectHandle obj, const SelectionHandlerPtr& handler);
   void removeObject(CollObjectHandle obj);
 
+  // control the highlight box being displayed while selecting
   void highlight(Ogre::Viewport* viewport, int x1, int y1, int x2, int y2);
   void removeHighlight();
 
+  // select all objects in bounding box
   void select(Ogre::Viewport* viewport, int x1, int y1, int x2, int y2, SelectType type);
 
+  // @return handles of all objects in the given bounding box
+  void pick(Ogre::Viewport* viewport, int x1, int y1, int x2, int y2, M_Picked& results);
+
+  // create handle, add or modify the picking scheme of the object's material accordingly
   CollObjectHandle createCollisionForObject(ogre_tools::Object* obj, const SelectionHandlerPtr& handler, CollObjectHandle coll = 0);
   CollObjectHandle createCollisionForEntity(Ogre::Entity* entity, const SelectionHandlerPtr& handler, CollObjectHandle coll = 0);
 
   void update();
 
+  // modify the list of currently selected objects
   void setSelection(const M_Picked& objs);
   void addSelection(const M_Picked& objs);
   void removeSelection(const M_Picked& objs);
@@ -243,8 +114,20 @@ public:
 
   SelectionHandlerPtr getHandler(CollObjectHandle obj);
 
-  void addPickTechnique(CollObjectHandle handle, const Ogre::MaterialPtr& material);
+  // modify the given material so it contains a technique for the picking scheme that uses the given handle
+  Ogre::Technique *addPickTechnique(CollObjectHandle handle, const Ogre::MaterialPtr& material);
 
+  // modify the given material so it contains a technique for the picking scheme that uses the given handle
+  void addHighlightPass(const Ogre::MaterialPtr& material);
+
+  // if a material does not support the picking scheme, paint it black
+  virtual Ogre::Technique* handleSchemeNotFound(unsigned short scheme_index,
+      const Ogre::String& scheme_name,
+      Ogre::Material* original_material,
+      unsigned short lod_index,
+      const Ogre::Renderable* rend);
+
+  // create a new unique handle
   inline CollObjectHandle createHandle()
   {
     if (uid_counter_ > 0x00ffffff)
@@ -259,11 +142,16 @@ public:
       handle = (++uid_counter_)<<4;
       handle ^= 0x00707070;
       handle &= 0x00ffffff;
-    } while (objects_.find(handle) != objects_.end());
+    } while ( objects_.find(handle) != objects_.end());
 
     return handle;
   }
 
+  // tell all handlers that interactive mode is active/inactive
+  void enableInteraction( bool enable );
+  bool getInteractionEnabled() { return interaction_enabled_; }
+
+  // tell the view controller to look at the selection
   void focusOnSelection();
 
 protected:
@@ -271,9 +159,8 @@ protected:
   void removeSelection(const Picked& obj);
 
   void setHighlightRect(Ogre::Viewport* viewport, int x1, int y1, int x2, int y2);
-  void pick(Ogre::Viewport* viewport, int x1, int y1, int x2, int y2, M_Picked& results);
   void renderAndUnpack(Ogre::Viewport* viewport, uint32_t pass, int x1, int y1, int x2, int y2, V_Pixel& pixels);
-  void unpackColors(Ogre::Viewport* pick_viewport, Ogre::Viewport* render_viewport, const Ogre::PixelBox& box, int x1, int y1, int x2, int y2, V_Pixel& pixels);
+  void unpackColors(const Ogre::PixelBox& box, V_Pixel& pixels);
 
   VisualizationManager* vis_manager_;
 
@@ -297,7 +184,6 @@ protected:
   M_Picked selection_;
 
   const static uint32_t s_num_render_textures_ = 2; // If you want to change this number to something > 3 you must provide more width for extra handles in the Picked structure (currently a u64)
-  const static uint32_t s_render_texture_size_ = 1024;
   Ogre::TexturePtr render_textures_[s_num_render_textures_];
   Ogre::PixelBox pixel_boxes_[s_num_render_textures_];
 
@@ -305,12 +191,14 @@ protected:
 
   Ogre::Rectangle2D* highlight_rectangle_;
   Ogre::SceneNode* highlight_node_;
+  Ogre::Camera *camera_;
 
   V_Pixel pixel_buffer_;
 
-#if defined(PICKING_DEBUG)
+  bool interaction_enabled_;
+
   Ogre::SceneNode* debug_nodes_[s_num_render_textures_];
-#endif
+  Ogre::MaterialPtr debug_material_[s_num_render_textures_];
 
 public:
   SelectionSetSignal& getSelectionSetSignal() { return selection_set_; }

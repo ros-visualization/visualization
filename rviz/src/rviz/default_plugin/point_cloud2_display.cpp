@@ -29,7 +29,6 @@
 
 #include "point_cloud2_display.h"
 #include "point_cloud_transformers.h"
-#include "rviz/common.h"
 #include "rviz/visualization_manager.h"
 #include "rviz/properties/property.h"
 #include "rviz/properties/property_manager.h"
@@ -122,7 +121,6 @@ void PointCloud2Display::incomingCloudCallback(const sensor_msgs::PointCloud2Con
   const uint32_t xoff = cloud->fields[xi].offset;
   const uint32_t yoff = cloud->fields[yi].offset;
   const uint32_t zoff = cloud->fields[zi].offset;
-  const uint8_t type = cloud->fields[xi].datatype;
   const uint32_t point_step = cloud->point_step;
   const size_t point_count = cloud->width * cloud->height;
   filtered->data.resize(cloud->data.size());

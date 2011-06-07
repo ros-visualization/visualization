@@ -32,7 +32,6 @@
 #include "rviz/render_panel.h"
 #include "rviz/properties/property.h"
 #include "rviz/properties/property_manager.h"
-#include "rviz/common.h"
 #include "rviz/window_manager_interface.h"
 #include "rviz/frame_manager.h"
 #include "rviz/validate_floats.h"
@@ -77,7 +76,7 @@ ImageDisplay::ImageDisplay( const std::string& name, VisualizationManager* manag
   {
     static int count = 0;
     std::stringstream ss;
-    ss << "CameraDisplayObject" << count++;
+    ss << "ImageDisplayObject" << count++;
 
     screen_rect_ = new Ogre::Rectangle2D(true);
     screen_rect_->setRenderQueueGroup(Ogre::RENDER_QUEUE_OVERLAY - 1);
@@ -85,9 +84,8 @@ ImageDisplay::ImageDisplay( const std::string& name, VisualizationManager* manag
 
     ss << "Material";
     material_ = Ogre::MaterialManager::getSingleton().create( ss.str(), Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME );
-    material_->setSceneBlending( Ogre::SBT_TRANSPARENT_ALPHA );
+    material_->setSceneBlending( Ogre::SBT_REPLACE );
     material_->setDepthWriteEnabled(false);
-
     material_->setReceiveShadows(false);
     material_->setDepthCheckEnabled(false);
 
@@ -259,6 +257,29 @@ void ImageDisplay::update(float wall_dt, float ros_dt)
   try
   {
     texture_.update();
+
+    //make sure the aspect ratio of the image is preserved
+    float win_width = render_panel_->getViewport()->getActualWidth();
+    float win_height = render_panel_->getViewport()->getActualHeight();
+
+    float img_width = texture_.getWidth();
+    float img_height = texture_.getHeight();
+
+    if ( img_width != 0 && img_height != 0 && win_width !=0 && win_height != 0 )
+    {
+      float img_aspect = img_width / img_height;
+      float win_aspect = win_width / win_height;
+
+      if ( img_aspect > win_aspect )
+      {
+        screen_rect_->setCorners(-1.0f, 1.0f * win_aspect/img_aspect, 1.0f, -1.0f * win_aspect/img_aspect, false);
+      }
+      else
+      {
+        screen_rect_->setCorners(-1.0f * img_aspect/win_aspect, 1.0f, 1.0f * img_aspect/win_aspect, -1.0f, false);
+      }
+    }
+
     render_panel_->getRenderWindow()->update();
   }
   catch (UnsupportedImageEncoding& e)

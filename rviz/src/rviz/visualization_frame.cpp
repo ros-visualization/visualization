@@ -39,7 +39,6 @@
 #include "plugin_manager_dialog.h"
 #include "splash_screen.h"
 #include "loading_dialog.h"
-#include "common.h"
 
 #include <ros/package.h>
 #include <ros/console.h>
@@ -122,7 +121,7 @@ void VisualizationFrame::onSplashLoadStatus(const std::string& status, SplashScr
   splash->setState(status);
 }
 
-void VisualizationFrame::initialize(const std::string& display_config_file, const std::string& fixed_frame, const std::string& target_frame)
+void VisualizationFrame::initialize(const std::string& display_config_file, const std::string& fixed_frame, const std::string& target_frame, const std::string& splash_path )
 {
   initConfigs();
 
@@ -155,9 +154,19 @@ void VisualizationFrame::initialize(const std::string& display_config_file, cons
   SetSize(wxSize(width, height));
 
   package_path_ = ros::package::getPath("rviz");
-  std::string splash_path = (fs::path(package_path_) / "images/splash.png").file_string();
+
+  std::string final_splash_path = splash_path;
+
+  if ( splash_path.empty() )
+  {
+#if BOOST_FILESYSTEM_VERSION == 3
+    final_splash_path = (fs::path(package_path_) / "images/splash.png").string();
+#else
+    final_splash_path = (fs::path(package_path_) / "images/splash.png").file_string();
+#endif
+  }
   wxBitmap splash;
-  splash.LoadFile(wxString::FromAscii(splash_path.c_str()));
+  splash.LoadFile(wxString::FromAscii(final_splash_path.c_str()));
   splash_ = new SplashScreen(this, splash);
   splash_->Show();
   splash_->setState("Initializing");
@@ -250,7 +259,27 @@ void VisualizationFrame::initialize(const std::string& display_config_file, cons
     {
       if (general_config_->Read(CONFIG_AUIMANAGER_PERSPECTIVE, &auimanager_perspective))
       {
+        wxAuiPaneInfoArray panes_backup = aui_manager_->GetAllPanes();
         aui_manager_->LoadPerspective(auimanager_perspective);
+        //wxAUI overwrites the 'visible' state when loading the
+ 	//perspective, which we don't want for panes that were created
+ 	//by displays (those without a close button) so we have to
+ 	//restore it
+ 	wxAuiPaneInfoArray& panes = aui_manager_->GetAllPanes();
+ 	if (panes.GetCount() == panes_backup.GetCount())
+        {
+          for (uint32_t i = 0; i < panes.GetCount(); ++i)
+          {
+            if (!panes.Item(i).HasCloseButton())
+            {
+              panes.Item(i).Show( panes_backup.Item(i).IsShown() );
+            }
+          }
+        }
+        else
+        {
+          ROS_INFO("Number of panes changed during aui_manager_->LoadPerspective().  Can't update visibility of display windows.");
+        }
         aui_manager_->Update();
       }
     }
@@ -276,10 +305,17 @@ void VisualizationFrame::initialize(const std::string& display_config_file, cons
 void VisualizationFrame::initConfigs()
 {
   config_dir_ = (const char*)wxStandardPaths::Get().GetUserConfigDir().fn_str();
+#if BOOST_FILESYSTEM_VERSION == 3
+  std::string old_dir = (fs::path(config_dir_) / ".standalone_visualizer").string();
+  config_dir_ = (fs::path(config_dir_) / ".rviz").string();
+  general_config_file_ = (fs::path(config_dir_) / "config").string();
+  display_config_file_ = (fs::path(config_dir_) / "display_config").string();
+#else
   std::string old_dir = (fs::path(config_dir_) / ".standalone_visualizer").file_string();
   config_dir_ = (fs::path(config_dir_) / ".rviz").file_string();
   general_config_file_ = (fs::path(config_dir_) / "config").file_string();
   display_config_file_ = (fs::path(config_dir_) / "display_config").file_string();
+#endif
 
   if (fs::exists(old_dir) && !fs::exists(config_dir_))
   {
@@ -612,7 +648,7 @@ wxWindow* VisualizationFrame::getParentWindow()
 
 void VisualizationFrame::addPane(const std::string& name, wxWindow* panel)
 {
-  aui_manager_->AddPane(panel, wxAuiPaneInfo().Float().BestSize(panel->GetSize()).Name(wxString::FromAscii(name.c_str())).Caption(wxString::FromAscii(name.c_str())).CloseButton(false).Show(false).Dockable(true));
+  aui_manager_->AddPane(panel, wxAuiPaneInfo().Float().BestSize(panel->GetSize()).Name(wxString::FromAscii(name.c_str())).Caption(wxString::FromAscii(name.c_str())).CloseButton(false).Show(false).Dockable(true).FloatingPosition(30,30));
   aui_manager_->Update();
 }
 

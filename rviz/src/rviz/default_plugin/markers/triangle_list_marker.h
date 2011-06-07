@@ -49,11 +49,12 @@ public:
   TriangleListMarker(MarkerDisplay* owner, VisualizationManager* manager, Ogre::SceneNode* parent_node);
   ~TriangleListMarker();
 
+  virtual S_MaterialPtr getMaterials();
+
 protected:
   virtual void onNewMessage(const MarkerConstPtr& old_message, const MarkerConstPtr& new_message);
 
   Ogre::ManualObject* manual_object_;
-  Ogre::SceneNode* scene_node_;
   Ogre::MaterialPtr material_;
   std::string material_name_;
 };

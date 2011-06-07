@@ -31,7 +31,6 @@
 #include "rviz/visualization_manager.h"
 #include "rviz/properties/property.h"
 #include "rviz/properties/property_manager.h"
-#include "rviz/common.h"
 #include "rviz/selection/selection_manager.h"
 #include "rviz/frame_manager.h"
 #include "rviz/validate_floats.h"
@@ -116,7 +115,6 @@ PoseDisplay::PoseDisplay( const std::string& name, VisualizationManager* manager
   setVisibility();
 
   Ogre::Quaternion quat(Ogre::Quaternion::IDENTITY);
-  robotToOgre(quat);
   axes_->setOrientation(quat);
 
   SelectionManager* sel_manager = vis_manager_->getSelectionManager();
@@ -391,7 +389,7 @@ void PoseDisplay::incomingMessage( const geometry_msgs::PoseStamped::ConstPtr& m
 
   Ogre::Vector3 position;
   Ogre::Quaternion orientation;
-  if (!vis_manager_->getFrameManager()->transform(message->header, message->pose, position, orientation, true))
+  if (!vis_manager_->getFrameManager()->transform(message->header, message->pose, position, orientation))
   {
     ROS_ERROR( "Error transforming pose '%s' from frame '%s' to frame '%s'", name_.c_str(), message->header.frame_id.c_str(), fixed_frame_.c_str() );
   }

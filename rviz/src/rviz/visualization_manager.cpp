@@ -35,6 +35,7 @@
 #include "displays_panel.h"
 #include "viewport_mouse_event.h"
 #include "frame_manager.h"
+
 #include "view_controller.h"
 #include "view_controllers/orbit_view_controller.h"
 #include "view_controllers/fps_view_controller.h"
@@ -44,7 +45,6 @@
 #include "display_wrapper.h"
 #include "properties/property_manager.h"
 #include "properties/property.h"
-#include "common.h"
 #include "new_display_dialog.h"
 
 #include "tools/tool.h"
@@ -52,6 +52,7 @@
 #include "tools/goal_tool.h"
 #include "tools/initial_pose_tool.h"
 #include "tools/selection_tool.h"
+#include "tools/interaction_tool.h"
 
 #include <ogre_tools/wx_ogre_render_window.h>
 
@@ -75,6 +76,12 @@
 #include <OGRE/OgreRenderWindow.h>
 
 #include <algorithm>
+
+//include deprecated header, supress compiler warning
+#define RVIZ_COMMON_H_NOWARN
+#include "common.h"
+#undef RVIZ_COMMON_H_NOWARN
+
 
 namespace rviz
 {
@@ -104,9 +111,15 @@ VisualizationManager::VisualizationManager( RenderPanel* render_panel, WindowMan
 
   scene_manager_ = ogre_root_->createSceneManager( Ogre::ST_GENERIC );
 
+  target_scene_node_ = scene_manager_->getRootSceneNode()->createChildSceneNode();
+
+  Ogre::Matrix3 g_ogre_to_robot_matrix;
+  g_ogre_to_robot_matrix.FromEulerAnglesYXZ( Ogre::Degree( -90 ), Ogre::Degree( 0 ), Ogre::Degree( -90 ) );
+  target_scene_node_->setOrientation( g_ogre_to_robot_matrix );
+
   Ogre::Light* directional_light = scene_manager_->createLight( "MainDirectional" );
   directional_light->setType( Ogre::Light::LT_DIRECTIONAL );
-  directional_light->setDirection( Ogre::Vector3( 0, -1, 1 ) );
+  directional_light->setDirection( Ogre::Vector3( -1, 0, -1 ) );
   directional_light->setDiffuseColour( Ogre::ColourValue( 1.0f, 1.0f, 1.0f ) );
 
   property_manager_ = new PropertyManager();
@@ -193,6 +206,8 @@ VisualizationManager::~VisualizationManager()
 
   delete selection_manager_;
 
+  scene_manager_->destroySceneNode( target_scene_node_ );
+
   if (ogre_root_)
   {
     ogre_root_->destroySceneManager( scene_manager_ );
@@ -218,9 +233,11 @@ void VisualizationManager::initialize(const StatusCallback& cb)
   addViewController(FixedOrientationOrthoViewController::getClassNameStatic(), "TopDownOrtho");
   setCurrentViewControllerType(OrbitViewController::getClassNameStatic());
 
-  MoveTool* move_tool = createTool< MoveTool >( "Move Camera", 'm' );
+  MoveTool *move_tool = createTool< MoveTool >( "Move Camera", 'm' );
   setCurrentTool( move_tool );
   setDefaultTool( move_tool );
+
+  createTool< InteractionTool >( "Interact", 'i' );
 
   createTool< SelectionTool >( "Select", 's' );
   createTool< GoalTool >( "2D Nav Goal", 'g' );
@@ -298,6 +315,34 @@ void VisualizationManager::onUpdate( wxTimerEvent& event )
 
   disable_update_ = true;
 
+  //process pending mouse events
+
+  std::deque<ViewportMouseEvent> event_queue;
+  {
+    boost::mutex::scoped_lock lock(vme_queue_mutex_);
+    event_queue.swap( vme_queue_ );
+  }
+
+  std::deque<ViewportMouseEvent>::iterator event_it;
+
+  for ( event_it= event_queue.begin(); event_it!=event_queue.end(); event_it++ )
+  {
+    ViewportMouseEvent &vme = *event_it;
+    int flags = getCurrentTool()->processMouseEvent(vme);
+
+    if ( flags & Tool::Render )
+    {
+      //ROS_INFO("rendering queued");
+      queueRender();
+    }
+
+    if ( flags & Tool::Finished )
+    {
+      setCurrentTool( getDefaultTool() );
+    }
+  }
+
+
   ros::WallTime update_start = ros::WallTime::now();
 
   ros::WallDuration wall_diff = ros::WallTime::now() - last_update_wall_time_;
@@ -361,8 +406,6 @@ void VisualizationManager::onUpdate( wxTimerEvent& event )
 
   disable_update_ = false;
 
-  ++frame_count_;
-
   wxWakeUpIdle();
 }
 
@@ -381,14 +424,15 @@ void VisualizationManager::onIdle(wxIdleEvent& evt)
   {
     render_requested_ = 0;
     last_render_ = cur;
+    frame_count_++;
 
     boost::mutex::scoped_lock lock(render_mutex_);
 
-    //ros::WallTime start = ros::WallTime::now();
+//    ros::WallTime start = ros::WallTime::now();
     ogre_root_->renderOneFrame();
-    //ros::WallTime end = ros::WallTime::now();
-    //ros::WallDuration d = end - start;
-    //ROS_INFO("Render took [%f] msec", d.toSec() * 1000.0f);
+//    ros::WallTime end = ros::WallTime::now();
+//    ros::WallDuration d = end - start;
+//    ROS_INFO("Render took [%f] msec", d.toSec() * 1000.0f);
   }
 
   evt.Skip();
@@ -856,7 +900,7 @@ void VisualizationManager::setTargetFrame( const std::string& _frame )
 
   if (view_controller_)
   {
-    view_controller_->setReferenceFrame(target_frame_);
+    view_controller_->setTargetFrame(target_frame_);
   }
 }
 
@@ -985,15 +1029,15 @@ bool VisualizationManager::setCurrentViewControllerType(const std::string& type)
   // hack hack hack hack until this becomes truly plugin based
   if (type == "rviz::OrbitViewController" || type == "Orbit")
   {
-    view_controller_ = new OrbitViewController(this, "Orbit");
+    view_controller_ = new OrbitViewController(this, "Orbit",target_scene_node_);
   }
   else if (type == "rviz::FPSViewController" || type == "FPS")
   {
-    view_controller_ = new FPSViewController(this, "FPS");
+    view_controller_ = new FPSViewController(this, "FPS",target_scene_node_);
   }
   else if (type == "rviz::FixedOrientationOrthoViewController" || type == "TopDownOrtho" || type == "Top-down Orthographic")
   {
-    FixedOrientationOrthoViewController* controller = new FixedOrientationOrthoViewController(this, "TopDownOrtho");
+    FixedOrientationOrthoViewController* controller = new FixedOrientationOrthoViewController(this, "TopDownOrtho",target_scene_node_);
     Ogre::Quaternion orient;
     orient.FromAngleAxis(Ogre::Degree(-90), Ogre::Vector3::UNIT_X);
     controller->setOrientation(orient);
@@ -1001,7 +1045,7 @@ bool VisualizationManager::setCurrentViewControllerType(const std::string& type)
   }
   else if (!view_controller_)
   {
-    view_controller_ = new OrbitViewController(this, "Orbit");
+    view_controller_ = new OrbitViewController(this, "Orbit",target_scene_node_);
   }
   else
   {
@@ -1010,6 +1054,7 @@ bool VisualizationManager::setCurrentViewControllerType(const std::string& type)
 
   if (found)
   {
+    view_controller_->setTargetFrame( target_frame_ );
     render_panel_->setViewController(view_controller_);
     view_controller_type_changed_(view_controller_);
   }
@@ -1024,17 +1069,8 @@ std::string VisualizationManager::getCurrentViewControllerType()
 
 void VisualizationManager::handleMouseEvent(ViewportMouseEvent& vme)
 {
-  int flags = getCurrentTool()->processMouseEvent(vme);
-
-  if ( flags & Tool::Render )
-  {
-    queueRender();
-  }
-
-  if ( flags & Tool::Finished )
-  {
-    setCurrentTool( getDefaultTool() );
-  }
+  boost::mutex::scoped_lock lock( vme_queue_mutex_ );
+  vme_queue_.push_back(vme);
 }
 
 void VisualizationManager::threadedQueueThreadFunc()

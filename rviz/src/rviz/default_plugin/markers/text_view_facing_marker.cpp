@@ -30,6 +30,8 @@
 #include "text_view_facing_marker.h"
 
 #include "rviz/visualization_manager.h"
+#include "rviz/selection/selection_manager.h"
+#include "marker_selection_handler.h"
 
 #include <ogre_tools/movable_text.h>
 
@@ -43,19 +45,10 @@ TextViewFacingMarker::TextViewFacingMarker(MarkerDisplay* owner, VisualizationMa
 : MarkerBase(owner, manager, parent_node)
 , text_(0)
 {
-  if (parent_node)
-  {
-    scene_node_ = parent_node->createChildSceneNode();
-  }
-  else
-  {
-    scene_node_ = vis_manager_->getSceneManager()->getRootSceneNode()->createChildSceneNode();
-  }
 }
 
 TextViewFacingMarker::~TextViewFacingMarker()
 {
-  vis_manager_->getSceneManager()->destroySceneNode(scene_node_->getName());
   delete text_;
 }
 
@@ -68,16 +61,31 @@ void TextViewFacingMarker::onNewMessage(const MarkerConstPtr& old_message, const
     text_ = new ogre_tools::MovableText(new_message->text);
     text_->setTextAlignment(ogre_tools::MovableText::H_CENTER, ogre_tools::MovableText::V_CENTER);
     scene_node_->attachObject(text_);
+
+    coll_ = vis_manager_->getSelectionManager()->createHandle();
+    vis_manager_->getSelectionManager()->addPickTechnique( coll_, text_->getMaterial() );
+    SelectionHandlerPtr handler( new MarkerSelectionHandler(this, MarkerID(new_message->ns, new_message->id)) );
+    vis_manager_->getSelectionManager()->addObject( coll_, handler );
   }
 
   Ogre::Vector3 pos, scale;
   Ogre::Quaternion orient;
   transform(new_message, pos, orient, scale);
 
-  scene_node_->setPosition(pos);
+  setPosition(pos);
   text_->setCharacterHeight(new_message->scale.z);
   text_->setColor(Ogre::ColourValue(new_message->color.r, new_message->color.g, new_message->color.b, new_message->color.a));
   text_->setCaption(new_message->text);
+}
+
+S_MaterialPtr TextViewFacingMarker::getMaterials()
+{
+  S_MaterialPtr materials;
+  if ( text_->getMaterial().get() )
+  {
+  materials.insert( text_->getMaterial() );
+  }
+  return materials;
 }
 
 }

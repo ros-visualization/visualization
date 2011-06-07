@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Willow Garage, Inc.
+ * Copyright (c) 2008, Willow Garage, Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,41 +27,57 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef RVIZ_SPHERE_LIST_MARKER_H
-#define RVIZ_SPHERE_LIST_MARKER_H
 
-#include "marker_base.h"
+#ifndef RVIZ_SELECTION_ARGS_H
+#define RVIZ_SELECTION_ARGS_H
 
-#include <OGRE/OgreMaterial.h>
+#include "forwards.h"
 
-namespace Ogre
-{
-class StaticGeometry;
-}
+#include <boost/signals.hpp>
 
-namespace ogre_tools
-{
-class Shape;
-}
 
 namespace rviz
 {
 
-class SphereListMarker : public MarkerBase
+struct SelectionSettingArgs
 {
-public:
-  SphereListMarker(MarkerDisplay* owner, VisualizationManager* manager, Ogre::SceneNode* parent_node);
-  ~SphereListMarker();
-
-protected:
-  virtual void onNewMessage(const MarkerConstPtr& old_message, const MarkerConstPtr& new_message);
-
-  Ogre::StaticGeometry* geometry_;
-  Ogre::MaterialPtr material_;
-  std::string material_name_;
+  SelectionSettingArgs()
+  {}
 };
+typedef boost::signal<void (const SelectionSettingArgs&)> SelectionSettingSignal;
+
+struct SelectionSetArgs
+{
+  SelectionSetArgs(const M_Picked& old_selection, const M_Picked& new_selection)
+  : old_selection_(old_selection)
+  , new_selection_(new_selection)
+  {}
+
+  const M_Picked& old_selection_;
+  const M_Picked& new_selection_;
+};
+typedef boost::signal<void (const SelectionSetArgs&)> SelectionSetSignal;
+
+struct SelectionAddedArgs
+{
+  SelectionAddedArgs(const M_Picked& added)
+  : added_(added)
+  {}
+
+  const M_Picked& added_;
+};
+typedef boost::signal<void (const SelectionAddedArgs&)> SelectionAddedSignal;
+
+struct SelectionRemovedArgs
+{
+  SelectionRemovedArgs(const M_Picked& removed)
+  : removed_(removed)
+  {}
+
+  const M_Picked& removed_;
+};
+typedef boost::signal<void (const SelectionRemovedArgs&)> SelectionRemovedSignal;
 
 }
 
 #endif
-

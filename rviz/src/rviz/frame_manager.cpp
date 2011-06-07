@@ -28,7 +28,6 @@
  */
 
 #include "frame_manager.h"
-#include "common.h"
 #include "display.h"
 #include "properties/property.h"
 
@@ -75,7 +74,7 @@ void FrameManager::setFixedFrame(const std::string& frame)
   cache_.clear();
 }
 
-bool FrameManager::getTransform(const std::string& frame, ros::Time time, Ogre::Vector3& position, Ogre::Quaternion& orientation, bool relative_orientation)
+bool FrameManager::getTransform(const std::string& frame, ros::Time time, Ogre::Vector3& position, Ogre::Quaternion& orientation)
 {
   boost::mutex::scoped_lock lock(cache_mutex_);
 
@@ -87,7 +86,7 @@ bool FrameManager::getTransform(const std::string& frame, ros::Time time, Ogre::
     return false;
   }
 
-  M_Cache::iterator it = cache_.find(CacheKey(frame, time, relative_orientation));
+  M_Cache::iterator it = cache_.find(CacheKey(frame, time));
   if (it != cache_.end())
   {
     position = it->second.position;
@@ -98,33 +97,37 @@ bool FrameManager::getTransform(const std::string& frame, ros::Time time, Ogre::
   geometry_msgs::Pose pose;
   pose.orientation.w = 1.0f;
 
-  if (!transform(frame, time, pose, position, orientation, relative_orientation))
+  if (!transform(frame, time, pose, position, orientation))
   {
     return false;
   }
 
-  cache_.insert(std::make_pair(CacheKey(frame, time, relative_orientation), CacheEntry(position, orientation)));
+  cache_.insert(std::make_pair(CacheKey(frame, time), CacheEntry(position, orientation)));
 
   return true;
 }
 
-bool FrameManager::transform(const std::string& frame, ros::Time time, const geometry_msgs::Pose& pose_msg, Ogre::Vector3& position, Ogre::Quaternion& orientation, bool relative_orientation)
+bool FrameManager::transform(const std::string& frame, ros::Time time, const geometry_msgs::Pose& pose_msg, Ogre::Vector3& position, Ogre::Quaternion& orientation)
 {
   position = Ogre::Vector3::ZERO;
   orientation = Ogre::Quaternion::IDENTITY;
 
-  btQuaternion btorient(pose_msg.orientation.x, pose_msg.orientation.y, pose_msg.orientation.z, pose_msg.orientation.w);
-  if (btorient.x() == 0.0 && btorient.y() == 0.0 && btorient.z() == 0.0 && btorient.w() == 0.0)
+  // put all pose data into a tf stamped pose
+  btQuaternion bt_orientation(pose_msg.orientation.x, pose_msg.orientation.y, pose_msg.orientation.z, pose_msg.orientation.w);
+  btVector3 bt_position(pose_msg.position.x, pose_msg.position.y, pose_msg.position.z);
+
+  if (bt_orientation.x() == 0.0 && bt_orientation.y() == 0.0 && bt_orientation.z() == 0.0 && bt_orientation.w() == 0.0)
   {
-    btorient.setW(1.0);
+    bt_orientation.setW(1.0);
   }
 
-  tf::Stamped<tf::Pose> pose(btTransform(btorient,
-                                   btVector3(pose_msg.position.x, pose_msg.position.y, pose_msg.position.z)),
-                                   time, frame);
+  tf::Stamped<tf::Pose> pose_in(btTransform(bt_orientation,bt_position), time, frame);
+  tf::Stamped<tf::Pose> pose_out;
+
+  // convert pose into new frame
   try
   {
-    tf_->transformPose( fixed_frame_, pose, pose );
+    tf_->transformPose( fixed_frame_, pose_in, pose_out );
   }
   catch(tf::TransformException& e)
   {
@@ -132,20 +135,11 @@ bool FrameManager::transform(const std::string& frame, ros::Time time, const geo
     return false;
   }
 
-  position = Ogre::Vector3(pose.getOrigin().x(), pose.getOrigin().y(), pose.getOrigin().z());
-  robotToOgre(position);
+  bt_position = pose_out.getOrigin();
+  position = Ogre::Vector3(bt_position.x(), bt_position.y(), bt_position.z());
 
-  btQuaternion quat;
-  pose.getBasis().getRotation( quat );
-  orientation = Ogre::Quaternion::IDENTITY;
-
-  if (relative_orientation)
-  {
-    ogreToRobot(orientation);
-  }
-
-  orientation = Ogre::Quaternion( quat.w(), quat.x(), quat.y(), quat.z() ) * orientation;
-  robotToOgre(orientation);
+  bt_orientation = pose_out.getRotation();
+  orientation = Ogre::Quaternion( bt_orientation.w(), bt_orientation.x(), bt_orientation.y(), bt_orientation.z() );
 
   return true;
 }

@@ -36,12 +36,15 @@
 
 #include <ogre_tools/shape.h>
 
+#include <OGRE/OgreSceneNode.h>
+#include <OGRE/OgreMatrix3.h>
+
 namespace rviz
 {
 
-ShapeMarker::ShapeMarker(MarkerDisplay* owner, VisualizationManager* manager, Ogre::SceneNode* parent_node)
-: MarkerBase(owner, manager, parent_node)
-, shape_(0)
+ShapeMarker::ShapeMarker( MarkerDisplay* owner, VisualizationManager* manager,
+    Ogre::SceneNode* parent_node ) :
+  MarkerBase(owner, manager, parent_node), shape_(0)
 {
 }
 
@@ -50,54 +53,74 @@ ShapeMarker::~ShapeMarker()
   delete shape_;
 }
 
-void ShapeMarker::onNewMessage(const MarkerConstPtr& old_message, const MarkerConstPtr& new_message)
+void ShapeMarker::onNewMessage( const MarkerConstPtr& old_message,
+    const MarkerConstPtr& new_message )
 {
   if (!shape_ || old_message->type != new_message->type)
   {
     delete shape_;
     shape_ = 0;
 
-    switch ( new_message->type )
+    switch (new_message->type)
     {
-    case visualization_msgs::Marker::CUBE:
+      case visualization_msgs::Marker::CUBE:
       {
-        shape_ = new ogre_tools::Shape(ogre_tools::Shape::Cube, vis_manager_->getSceneManager(), parent_node_);
+        shape_ = new ogre_tools::Shape(ogre_tools::Shape::Cube,
+            vis_manager_->getSceneManager(), scene_node_);
       }
-      break;
+        break;
 
-    case visualization_msgs::Marker::CYLINDER:
+      case visualization_msgs::Marker::CYLINDER:
       {
-        shape_ = new ogre_tools::Shape(ogre_tools::Shape::Cylinder, vis_manager_->getSceneManager(), parent_node_);
+        shape_ = new ogre_tools::Shape(ogre_tools::Shape::Cylinder,
+            vis_manager_->getSceneManager(), scene_node_);
       }
-      break;
+        break;
 
-    case visualization_msgs::Marker::SPHERE:
+      case visualization_msgs::Marker::SPHERE:
       {
-        shape_ = new ogre_tools::Shape(ogre_tools::Shape::Sphere, vis_manager_->getSceneManager(), parent_node_);
+        shape_ = new ogre_tools::Shape(ogre_tools::Shape::Sphere,
+            vis_manager_->getSceneManager(), scene_node_);
       }
-      break;
+        break;
 
-    default:
-      ROS_BREAK();
-      break;
+      default:
+        ROS_BREAK();
+        break;
     }
 
-    coll_ = vis_manager_->getSelectionManager()->createCollisionForObject(shape_, SelectionHandlerPtr(new MarkerSelectionHandler(this, MarkerID(new_message->ns, new_message->id))), coll_);
+    coll_ = vis_manager_->getSelectionManager()->createCollisionForObject(
+        shape_, SelectionHandlerPtr(new MarkerSelectionHandler(this, MarkerID(
+            new_message->ns, new_message->id))), coll_);
   }
 
-  Ogre::Vector3 pos, scale;
+  Ogre::Vector3 pos, scale, scale_correct;
   Ogre::Quaternion orient;
   transform(new_message, pos, orient, scale);
 
-  if (new_message->scale.x * new_message->scale.y * new_message->scale.z == 0.0f)
+  if (owner_ && (new_message->scale.x * new_message->scale.y
+      * new_message->scale.z == 0.0f))
   {
-    owner_->setMarkerStatus(getID(), status_levels::Warn, "Scale of 0 in one of x/y/z");
+    owner_->setMarkerStatus(getID(), status_levels::Warn,
+        "Scale of 0 in one of x/y/z");
   }
 
-  shape_->setPosition(pos);
-  shape_->setOrientation(orient);
-  shape_->setScale(scale);
-  shape_->setColor(new_message->color.r, new_message->color.g, new_message->color.b, new_message->color.a);
+  setPosition(pos);
+  setOrientation( orient * Ogre::Quaternion( Ogre::Degree(90), Ogre::Vector3(1,0,0) ) );
+
+  scale_correct = Ogre::Quaternion( Ogre::Degree(90), Ogre::Vector3(1,0,0) ) * scale;
+
+  shape_->setScale(scale_correct);
+
+  shape_->setColor(new_message->color.r, new_message->color.g,
+      new_message->color.b, new_message->color.a);
+}
+
+S_MaterialPtr ShapeMarker::getMaterials()
+{
+  S_MaterialPtr materials;
+  extractMaterials(shape_->getEntity(), materials);
+  return materials;
 }
 
 }

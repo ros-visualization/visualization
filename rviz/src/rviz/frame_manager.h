@@ -43,6 +43,15 @@
 
 #include <tf/message_filter.h>
 
+/*  Macro to issue warning when using deprecated functions with gcc4 or MSVC7: */
+#if defined(__GNUC__) && ( __GNUC__ >= 4 )
+    #define DEPRECATED(x) __attribute__((deprecated)) x
+#elif defined(__VISUALC__) && (__VISUALC__ >= 1300)
+    #define DEPRECATED(x) __declspec(deprecated) x
+#else
+    #define DEPRECATED(x) x
+#endif
+
 namespace tf
 {
 class TransformListener;
@@ -56,6 +65,8 @@ class FrameManager;
 typedef boost::shared_ptr<FrameManager> FrameManagerPtr;
 typedef boost::weak_ptr<FrameManager> FrameManagerWPtr;
 
+// helper class for transforming data into Ogre's world frame (the fixed frame)
+// during one frame update, the tf tree stays consistent and queries are cached for speedup
 class FrameManager
 {
 public:
@@ -66,23 +77,51 @@ public:
 
   void setFixedFrame(const std::string& frame);
 
+  // @deprecated "relative" flag is no longer needed.
   template<typename Header>
-  bool getTransform(const Header& header, Ogre::Vector3& position, Ogre::Quaternion& orientation, bool relative_orientation)
+  __attribute__((deprecated))
+  bool getTransform(const Header& header, Ogre::Vector3& position, Ogre::Quaternion& orientation, bool relative)
   {
-    return getTransform(header.frame_id, header.stamp, position, orientation, relative_orientation);
+    return getTransform(header, position, orientation);
   }
 
-  bool getTransform(const std::string& frame, ros::Time time, Ogre::Vector3& position, Ogre::Quaternion& orientation, bool relative_orientation);
-
+  // @return Ogre transform for the given header, relative to the fixed frame
   template<typename Header>
-  bool transform(const Header& header, const geometry_msgs::Pose& pose, Ogre::Vector3& position, Ogre::Quaternion& orientation, bool relative_orientation)
+  bool getTransform(const Header& header, Ogre::Vector3& position, Ogre::Quaternion& orientation)
   {
-    return transform(header.frame_id, header.stamp, pose, position, orientation, relative_orientation);
+    return getTransform(header.frame_id, header.stamp, position, orientation);
   }
 
-  bool transform(const std::string& frame, ros::Time time, const geometry_msgs::Pose& pose, Ogre::Vector3& position, Ogre::Quaternion& orientation, bool relative_orientation);
+  // @return Ogre transform for the given header (frame + timestamp) relative to the fixed frame
+  bool getTransform(const std::string& frame, ros::Time time, Ogre::Vector3& position, Ogre::Quaternion& orientation);
+
+  // transform a pose into the fixed frame
+  // @param header, pose: input pose (e.g. from a PoseStamped)
+  // @param position, orientation: output pose relative to fixed frame
+  // @return success
+  template<typename Header>
+  bool transform(const Header& header, const geometry_msgs::Pose& pose, Ogre::Vector3& position, Ogre::Quaternion& orientation)
+  {
+    return transform(header.frame_id, header.stamp, pose, position, orientation);
+  }
+
+  // @deprecated "relative" flag is no longer needed.
+  __attribute__((deprecated))
+  bool transform(const std::string& frame, ros::Time time, const geometry_msgs::Pose& pose, Ogre::Vector3& position, Ogre::Quaternion& orientation, bool relative)
+  {
+    return transform(frame, time, pose, position, orientation);
+  }
+
+  // transform a pose into the fixed frame
+  // @param frame, time, pose: input pose
+  // @param position, orientation: output pose relative to fixed frame
+  // @return success
+  bool transform(const std::string& frame, ros::Time time, const geometry_msgs::Pose& pose, Ogre::Vector3& position, Ogre::Quaternion& orientation);
+
+  // will clear the internal cache
   void update();
 
+  // find out what went wrong during a transformation
   bool frameHasProblems(const std::string& frame, ros::Time time, std::string& error);
   bool transformHasProblems(const std::string& frame, ros::Time time, std::string& error);
 
@@ -116,10 +155,9 @@ private:
 
   struct CacheKey
   {
-    CacheKey(const std::string& f, ros::Time t, bool r)
+    CacheKey(const std::string& f, ros::Time t)
     : frame(f)
     , time(t)
-    , relative(r)
     {}
 
     bool operator<(const CacheKey& rhs) const
@@ -129,18 +167,13 @@ private:
         return frame < rhs.frame;
       }
 
-      if (time != rhs.time)
-      {
-        return time < rhs.time;
-      }
-
-      return relative < rhs.relative;
+      return time < rhs.time;
     }
 
     std::string frame;
     ros::Time time;
-    bool relative;
   };
+
   struct CacheEntry
   {
     CacheEntry(const Ogre::Vector3& p, const Ogre::Quaternion& o)

@@ -31,7 +31,6 @@
 #include "rviz/visualization_manager.h"
 #include "rviz/properties/property.h"
 #include "rviz/properties/property_manager.h"
-#include "rviz/common.h"
 #include "rviz/frame_manager.h"
 #include "rviz/validate_floats.h"
 
@@ -198,7 +197,7 @@ void GridCellsDisplay::processMessage(const nav_msgs::GridCells::ConstPtr& msg)
 
   Ogre::Vector3 position;
   Ogre::Quaternion orientation;
-  if (!vis_manager_->getFrameManager()->getTransform(msg->header, position, orientation, true))
+  if (!vis_manager_->getFrameManager()->getTransform(msg->header, position, orientation))
   {
     ROS_DEBUG( "Error transforming from frame '%s' to frame '%s'", msg->header.frame_id.c_str(), fixed_frame_.c_str() );
   }
@@ -220,7 +219,6 @@ void GridCellsDisplay::processMessage(const nav_msgs::GridCells::ConstPtr& msg)
     ogre_tools::PointCloud::Point& current_point = points[ i ];
 
     Ogre::Vector3 pos(msg->cells[i].x, msg->cells[i].y, msg->cells[i].z);
-    robotToOgre(pos);
 
     current_point.x = pos.x;
     current_point.y = pos.y;

@@ -86,8 +86,6 @@ class FrameManager;
 class ViewController;
 typedef boost::shared_ptr<FrameManager> FrameManagerPtr;
 
-typedef std::vector<std::string> V_string;
-
 class DisplayWrapper;
 typedef std::vector<DisplayWrapper*> V_DisplayWrapper;
 
@@ -253,6 +251,8 @@ public:
   PluginManager* getPluginManager() { return plugin_manager_; }
   FrameManager* getFrameManager() { return frame_manager_.get(); }
 
+  uint64_t getFrameCount() { return frame_count_; }
+
 protected:
   /**
    * \brief Add a display to be managed by this panel
@@ -342,6 +342,11 @@ protected:
 
   bool disable_update_;
   bool target_frame_is_fixed_frame_;
+
+  Ogre::SceneNode *target_scene_node_;
+
+  std::deque<ViewportMouseEvent> vme_queue_;
+  boost::mutex vme_queue_mutex_;
 
 public:
   FramesChangedSignal& getFramesChangedSignal() { return frames_changed_; }
