@@ -4,7 +4,7 @@
      Visualization tools for robots.  Currently just <a href="http://www.ros.org/wiki/rviz">rviz</a>, a 3d visualization environment for robots using ROS, as well as <a href="http://www.ros.org/wiki/rxbag_plugins">rxbag_plugins</a>, which extend the visualization capabilities of <a href="http://www.ros.org/wiki/rxbag">rxbag</a>. 
 
   </description>
-  <author>Josh Faust</author>
+  <author>Maintained by Dave Hershberger</author>
   <license>BSD,Creative Commons,wxWindows</license>  
   <review status="Doc reviewed" notes="2011/01/04"/>
   <url>http://ros.org/wiki/visualization</url>
