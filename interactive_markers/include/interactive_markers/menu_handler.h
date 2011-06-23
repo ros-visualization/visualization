@@ -32,7 +32,7 @@
 #ifndef INTERACTIVE_MARKER_MENU_HANDLER
 #define INTERACTIVE_MARKER_MENU_HANDLER
 
-#include <visualization_msgs/Menu.h>
+#include <visualization_msgs/MenuEntry.h>
 #include <interactive_markers/interactive_marker_server.h>
 
 #include <boost/function.hpp>
@@ -47,7 +47,7 @@ class MenuHandler
 {
 public:
 
-  typedef unsigned int EntryHandle;
+  typedef uint32_t EntryHandle;
 
   typedef visualization_msgs::InteractiveMarkerFeedbackConstPtr FeedbackConstPtr;
   typedef boost::function< void ( const FeedbackConstPtr& ) > FeedbackCallback;
@@ -60,41 +60,43 @@ public:
 
   MenuHandler( );
 
-  // Insert top-level entry with feedback function
+  /// Insert top-level entry with feedback function
   EntryHandle insert( const std::string &title, const FeedbackCallback &feedback_cb );
 
-  // Insert top-level entry with custom (client-side) command
-  EntryHandle insert( const std::string &title, const std::string &command="",
-      const std::string &command_type="" );
+  /// Insert top-level entry with custom (client-side) command
+  EntryHandle insert( const std::string &title,
+                      const uint8_t command_type = visualization_msgs::MenuEntry::FEEDBACK,
+                      const std::string &command="" );
 
-  // Insert second-level entry with feedback function
-  EntryHandle insert( EntryHandle parent, const std::string &title, const FeedbackCallback &feedback_cb );
+  /// Insert second-level entry with feedback function
+  EntryHandle insert( EntryHandle parent, const std::string &title,
+      const FeedbackCallback &feedback_cb );
 
-  // Insert second-level entry with custom (client-side) command
-  EntryHandle insert( EntryHandle parent, const std::string &title, const std::string &command="",
-      const std::string &command_type="" );
+  /// Insert second-level entry with custom (client-side) command
+  EntryHandle insert( EntryHandle parent, const std::string &title,
+                      const uint8_t command_type = visualization_msgs::MenuEntry::FEEDBACK,
+                      const std::string &command="" );
 
-  // Specify if an entry should be visible or hidden
+  /// Specify if an entry should be visible or hidden
   bool setVisible( EntryHandle handle, bool visible );
 
-  // Specify if an entry is checked or can't be checked at all
+  /// Specify if an entry is checked or can't be checked at all
   bool setCheckState( EntryHandle handle, CheckState check_state );
 
-  // Get the current state of an entry
-  // @return true if the entry exists
-  bool getCheckState( EntryHandle handle, CheckState &check_state );
+  /// Get the current state of an entry
+  /// @return true if the entry exists
+  bool getCheckState( EntryHandle handle, CheckState &check_state ) const;
 
-  // Copy current menu state into the marker given by the specified name &
-  // divert callback for MENU_SELECT feedback to this manager
+  /// Copy current menu state into the marker given by the specified name &
+  /// divert callback for MENU_SELECT feedback to this manager
   bool apply( InteractiveMarkerServer &server, const std::string &marker_name );
 
-  // Re-apply to all markers that this was applied to previously
+  /// Re-apply to all markers that this was applied to previously
   bool reApply( InteractiveMarkerServer &server );
 
-  // Get the entry handle based on a menu command. Only works for
-  // auto-generated (internal) command names.
-  // @return true if the entry exists
-  bool getHandle( const std::string &command, EntryHandle &handle );
+  /// Get the title for the given menu entry
+  /// @return true if the entry exists
+  bool getTitle( EntryHandle handle, std::string &title ) const;
 
 private:
 
@@ -102,7 +104,7 @@ private:
   {
     std::string title;
     std::string command;
-    std::string command_type;
+    uint8_t command_type;
     std::vector<EntryHandle> sub_entries;
     bool visible;
     CheckState check_state;
@@ -112,12 +114,20 @@ private:
   // Call registered callback functions for given feedback command
   void processFeedback( const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback );
 
-  visualization_msgs::MenuEntry makeEntry( EntryContext& context );
+  // Create and push MenuEntry objects from handles_in onto
+  // entries_out.  Calls itself recursively to add the entire menu
+  // tree.
+  bool pushMenuEntries( std::vector<EntryHandle>& handles_in,
+                        std::vector<visualization_msgs::MenuEntry>& entries_out,
+                        EntryHandle parent_handle );
+
+  visualization_msgs::MenuEntry makeEntry( EntryContext& context, EntryHandle handle, EntryHandle parent_handle );
 
   // Insert without adding a top-level entry
-  EntryHandle doInsert( const std::string &title, const FeedbackCallback &feedback_cb );
-  EntryHandle doInsert( const std::string &title, const std::string &command,
-      const std::string &command_type );
+  EntryHandle doInsert( const std::string &title,
+                        const uint8_t command_type,
+                        const std::string &command,
+                        const FeedbackCallback &feedback_cb );
 
   std::vector<EntryHandle> top_level_handles_;
 

@@ -85,6 +85,7 @@ InteractionTool::~InteractionTool()
 void InteractionTool::activate()
 {
   manager_->getSelectionManager()->enableInteraction(true);
+  manager_->getSelectionManager()->setTextureSize(2);
 }
 
 void InteractionTool::deactivate()
@@ -100,11 +101,17 @@ void InteractionTool::updateSelection( SelectionHandlerPtr &focused_handler, Vie
 {
   M_Picked results;
   static const int pick_window = 3;
-  manager_->getSelectionManager()->pick( event.viewport, event.event.GetX()-pick_window, event.event.GetY()-pick_window, event.event.GetX()+pick_window, event.event.GetY()+pick_window, results);
+
+  manager_->getSelectionManager()->pick( event.viewport,
+      event.event.GetX()-pick_window, event.event.GetY()-pick_window,
+      event.event.GetX()+pick_window, event.event.GetY()+pick_window,
+      results, true );
+
   last_selection_frame_count_ = manager_->getFrameCount();
 
   SelectionHandlerPtr new_focused_handler;
   Picked new_focused_object;
+  new_focused_object.pixel_count = 0;
 
   // look for valid handles in the results, choose the one which covers the most pixels
   M_Picked::iterator result_it = results.begin();
@@ -148,17 +155,7 @@ void InteractionTool::updateSelection( SelectionHandlerPtr &focused_handler, Vie
 
 int InteractionTool::processMouseEvent( ViewportMouseEvent& event )
 {
-  int width = event.viewport->getActualWidth();
-  int height = event.viewport->getActualHeight();
-
-  Ogre::Ray mouse_ray = event.viewport->getCamera()->getCameraToViewportRay(
-      (float)event.event.GetX() / (float)width, (float)event.event.GetY() / (float)height );
-
-  if ( !manager_->getSelectionManager() )
-  {
-    return 0;
-  }
-
+  int flags = 0;
   // get the handler which was active last time
   SelectionHandlerPtr focused_handler;
   focused_handler = manager_->getSelectionManager()->getHandler( focused_object_.handle );
@@ -170,6 +167,7 @@ int InteractionTool::processMouseEvent( ViewportMouseEvent& event )
   if ( need_selection_update && !event.event.Dragging() && !event.event.LeftUp() && !event.event.MiddleUp() && !event.event.RightUp() )
   {
     updateSelection( focused_handler, event );
+    flags = Render;
   }
 
   if ( focused_handler.get() )
@@ -182,7 +180,7 @@ int InteractionTool::processMouseEvent( ViewportMouseEvent& event )
     updateSelection( focused_handler, event );
   }
 
-  return Render;
+  return flags;
 }
 
 void InteractionTool::enumerateProperties(PropertyManager* property_manager, const CategoryPropertyWPtr& parent)

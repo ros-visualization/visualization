@@ -37,6 +37,7 @@
 #include "frame_manager.h"
 
 #include "view_controller.h"
+#include "view_controllers/simple_orbit_view_controller.h"
 #include "view_controllers/orbit_view_controller.h"
 #include "view_controllers/fps_view_controller.h"
 #include "view_controllers/fixed_orientation_ortho_view_controller.h"
@@ -214,7 +215,7 @@ VisualizationManager::~VisualizationManager()
   }
 }
 
-void VisualizationManager::initialize(const StatusCallback& cb)
+void VisualizationManager::initialize(const StatusCallback& cb, bool verbose)
 {
   if (cb)
   {
@@ -228,6 +229,7 @@ void VisualizationManager::initialize(const StatusCallback& cb)
   render_panel_->getCamera()->setNearClipDistance(0.01f);
   render_panel_->getCamera()->lookAt(0, 0, 0);
 
+  addViewController(SimpleOrbitViewController::getClassNameStatic(), "SimpleOrbit");
   addViewController(OrbitViewController::getClassNameStatic(), "Orbit");
   addViewController(FPSViewController::getClassNameStatic(), "FPS");
   addViewController(FixedOrientationOrthoViewController::getClassNameStatic(), "TopDownOrtho");
@@ -243,7 +245,7 @@ void VisualizationManager::initialize(const StatusCallback& cb)
   createTool< GoalTool >( "2D Nav Goal", 'g' );
   createTool< InitialPoseTool >( "2D Pose Estimate", 'p' );
 
-  selection_manager_->initialize();
+  selection_manager_->initialize( verbose );
 
   last_update_ros_time_ = ros::Time::now();
   last_update_wall_time_ = ros::WallTime::now();
@@ -332,7 +334,6 @@ void VisualizationManager::onUpdate( wxTimerEvent& event )
 
     if ( flags & Tool::Render )
     {
-      //ROS_INFO("rendering queued");
       queueRender();
     }
 
@@ -1030,6 +1031,10 @@ bool VisualizationManager::setCurrentViewControllerType(const std::string& type)
   if (type == "rviz::OrbitViewController" || type == "Orbit")
   {
     view_controller_ = new OrbitViewController(this, "Orbit",target_scene_node_);
+  }
+  else if (type == "rviz::SimpleOrbitViewController" || type == "SimpleOrbit")
+  {
+    view_controller_ = new SimpleOrbitViewController(this, "SimpleOrbit",target_scene_node_);
   }
   else if (type == "rviz::FPSViewController" || type == "FPS")
   {

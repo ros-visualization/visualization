@@ -124,6 +124,11 @@ protected:
 
   wxString makeMenuString( const std::string &entry );
 
+  // Recursively append menu and submenu entries to menu, based on a
+  // vector of menu entry id numbers describing the menu entries at the
+  // current level.
+  void populateMenu( wxMenu* menu, std::vector<uint32_t>& ids );
+
   InteractiveMarkerDisplay *owner_;
   VisualizationManager *vis_manager_;
 
@@ -160,8 +165,19 @@ protected:
   float scale_;
 
   boost::shared_ptr<wxMenu> menu_;
-  // maps menu index to menu/submenu pair
-  std::vector< std::string > menu_entries_;
+
+  // Helper to more simply represent the menu tree.
+  struct MenuNode
+  {
+    visualization_msgs::MenuEntry entry;
+    std::vector<uint32_t> child_ids;
+  };
+
+  // maps menu index to menu entry and item
+  std::map< uint32_t, MenuNode > menu_entries_;
+
+  // Helper to store the top level of the menu tree.
+  std::vector<uint32_t> top_level_menu_ids_;
 
   // which control has popped up the menu
   std::string last_control_name_;
@@ -180,6 +196,9 @@ protected:
   std::string client_id_;
 
   boost::recursive_mutex mutex_;
+
+  boost::shared_ptr< boost::thread > sys_thread_;
+
 };
 
 

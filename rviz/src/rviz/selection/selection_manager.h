@@ -84,7 +84,7 @@ public:
   SelectionManager(VisualizationManager* manager);
   ~SelectionManager();
 
-  void initialize();
+  void initialize( bool debug = false );
 
   void clearHandlers();
   void addObject(CollObjectHandle obj, const SelectionHandlerPtr& handler);
@@ -98,7 +98,8 @@ public:
   void select(Ogre::Viewport* viewport, int x1, int y1, int x2, int y2, SelectType type);
 
   // @return handles of all objects in the given bounding box
-  void pick(Ogre::Viewport* viewport, int x1, int y1, int x2, int y2, M_Picked& results);
+  // @param single_render_pass only perform one rendering pass (point cloud selecting won't work)
+  void pick(Ogre::Viewport* viewport, int x1, int y1, int x2, int y2, M_Picked& results, bool single_render_pass=false );
 
   // create handle, add or modify the picking scheme of the object's material accordingly
   CollObjectHandle createCollisionForObject(ogre_tools::Object* obj, const SelectionHandlerPtr& handler, CollObjectHandle coll = 0);
@@ -128,24 +129,7 @@ public:
       const Ogre::Renderable* rend);
 
   // create a new unique handle
-  inline CollObjectHandle createHandle()
-  {
-    if (uid_counter_ > 0x00ffffff)
-    {
-      uid_counter_ = 0;
-    }
-
-    uint32_t handle = 0;
-
-    do
-    {
-      handle = (++uid_counter_)<<4;
-      handle ^= 0x00707070;
-      handle &= 0x00ffffff;
-    } while ( objects_.find(handle) != objects_.end());
-
-    return handle;
-  }
+  CollObjectHandle createHandle();
 
   // tell all handlers that interactive mode is active/inactive
   void enableInteraction( bool enable );
@@ -153,6 +137,9 @@ public:
 
   // tell the view controller to look at the selection
   void focusOnSelection();
+
+  // change the size of the off-screen selection buffer texture
+  void setTextureSize( unsigned size );
 
 protected:
   std::pair<Picked, bool> addSelection(const Picked& obj);
@@ -199,6 +186,12 @@ protected:
 
   Ogre::SceneNode* debug_nodes_[s_num_render_textures_];
   Ogre::MaterialPtr debug_material_[s_num_render_textures_];
+  bool debug_mode_;
+
+  Ogre::MaterialPtr fallback_pick_material_;
+  Ogre::Technique *fallback_pick_technique_;
+
+  uint32_t texture_size_;
 
 public:
   SelectionSetSignal& getSelectionSetSignal() { return selection_set_; }

@@ -37,7 +37,7 @@
 namespace interactive_markers
 {
 
-InteractiveMarkerServer::InteractiveMarkerServer( std::string topic_ns, std::string server_id, bool spin_thread ) :
+InteractiveMarkerServer::InteractiveMarkerServer( const std::string &topic_ns, const std::string &server_id, bool spin_thread ) :
     topic_ns_(topic_ns),
     seq_num_(0)
 {
@@ -227,7 +227,7 @@ bool InteractiveMarkerServer::setPose( const std::string &name, const geometry_m
   return true;
 }
 
-bool InteractiveMarkerServer::setCallback( std::string name, FeedbackCallback feedback_cb, uint8_t feedback_type  )
+bool InteractiveMarkerServer::setCallback( const std::string &name, FeedbackCallback feedback_cb, uint8_t feedback_type  )
 {
   boost::recursive_mutex::scoped_lock lock( mutex_ );
 
@@ -283,21 +283,8 @@ bool InteractiveMarkerServer::setCallback( std::string name, FeedbackCallback fe
   return true;
 }
 
-void InteractiveMarkerServer::insert( const visualization_msgs::InteractiveMarker &int_marker )
-{
-  boost::recursive_mutex::scoped_lock lock( mutex_ );
-
-  M_UpdateContext::iterator update_it = pending_updates_.find( int_marker.name );
-  if ( update_it == pending_updates_.end() )
-  {
-    update_it = pending_updates_.insert( std::make_pair( int_marker.name, UpdateContext() ) ).first;
-  }
-
-  update_it->second.update_type = UpdateContext::FULL_UPDATE;
-  update_it->second.int_marker = int_marker;
-}
-
-void InteractiveMarkerServer::insert( const visualization_msgs::InteractiveMarker &int_marker, FeedbackCallback feedback_cb, uint8_t feedback_type)
+void InteractiveMarkerServer::insert( const visualization_msgs::InteractiveMarker &int_marker,
+    FeedbackCallback feedback_cb, uint8_t feedback_type)
 {
   boost::recursive_mutex::scoped_lock lock( mutex_ );
 
@@ -313,13 +300,13 @@ void InteractiveMarkerServer::insert( const visualization_msgs::InteractiveMarke
   setCallback( int_marker.name, feedback_cb, feedback_type  );
 }
 
-bool InteractiveMarkerServer::get( std::string name, visualization_msgs::InteractiveMarker &int_marker )
+bool InteractiveMarkerServer::get( std::string name, visualization_msgs::InteractiveMarker &int_marker ) const
 {
-  M_UpdateContext::iterator update_it = pending_updates_.find( name );
+  M_UpdateContext::const_iterator update_it = pending_updates_.find( name );
 
   if ( update_it == pending_updates_.end() )
   {
-    M_MarkerContext::iterator marker_context_it = marker_contexts_.find( name );
+    M_MarkerContext::const_iterator marker_context_it = marker_contexts_.find( name );
     if ( marker_context_it == marker_contexts_.end() )
     {
       return false;
@@ -337,7 +324,7 @@ bool InteractiveMarkerServer::get( std::string name, visualization_msgs::Interac
 
     case UpdateContext::POSE_UPDATE:
     {
-      M_MarkerContext::iterator marker_context_it = marker_contexts_.find( name );
+      M_MarkerContext::const_iterator marker_context_it = marker_contexts_.find( name );
       if ( marker_context_it == marker_contexts_.end() )
       {
         return false;
@@ -406,21 +393,17 @@ void InteractiveMarkerServer::processFeedback( const FeedbackConstPtr& feedback 
   marker_context.last_feedback = ros::Time::now();
   marker_context.last_client_id = feedback->client_id;
 
-  if ( marker_context.int_marker.header.stamp == ros::Time(0) )
+  if ( feedback->event_type == visualization_msgs::InteractiveMarkerFeedback::POSE_UPDATE )
   {
-    // keep the old header
-    doSetPose( pending_updates_.find( feedback->marker_name ), feedback->marker_name, feedback->pose, marker_context.int_marker.header );
-  }
-  else
-  {
-    doSetPose( pending_updates_.find( feedback->marker_name ), feedback->marker_name, feedback->pose, feedback->header );
-  }
-
-  if ( feedback->event_type == visualization_msgs::InteractiveMarkerFeedback::KEEP_ALIVE )
-  {
-    ROS_DEBUG( "Received keep-alive from %s", feedback->marker_name.c_str() );
-    // we don't want the user to receive keep-alive messages
-    return;
+    if ( marker_context.int_marker.header.stamp == ros::Time(0) )
+    {
+      // keep the old header
+      doSetPose( pending_updates_.find( feedback->marker_name ), feedback->marker_name, feedback->pose, marker_context.int_marker.header );
+    }
+    else
+    {
+      doSetPose( pending_updates_.find( feedback->marker_name ), feedback->marker_name, feedback->pose, feedback->header );
+    }
   }
 
   // call feedback handler

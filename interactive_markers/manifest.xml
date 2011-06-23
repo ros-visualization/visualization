@@ -1,7 +1,8 @@
 <package>
   <description brief="interactive_markers">
 
-     interactive_markers
+     Interactive markers allow you to add a 3D user interface
+     to your application, which can be accessed from tools like RViz.
 
   </description>
   <author>David Gossow</author>

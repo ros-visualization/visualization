@@ -76,6 +76,7 @@ SelectionTool::~SelectionTool()
 
 void SelectionTool::activate()
 {
+  manager_->getSelectionManager()->setTextureSize(512);
   selecting_ = false;
   moving_ = false;
 }
@@ -98,8 +99,6 @@ void SelectionTool::update(float wall_dt, float ros_dt)
 int SelectionTool::processMouseEvent( ViewportMouseEvent& event )
 {
   SelectionManager* sel_manager = manager_->getSelectionManager();
-
-  event.viewport->setMaterialScheme("test");
 
   int flags = 0;
 
