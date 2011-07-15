@@ -112,7 +112,9 @@ public:
   void handleMenuSelect(wxCommandEvent &evt);
 
   // fill in current marker pose & name, publish
-  void publishFeedback(visualization_msgs::InteractiveMarkerFeedback &feedback);
+  void publishFeedback(visualization_msgs::InteractiveMarkerFeedback &feedback,
+                       bool mouse_point_valid = false,
+                       const Ogre::Vector3& mouse_point_rel_world = Ogre::Vector3(0,0,0) );
 
 protected:
 
@@ -199,6 +201,8 @@ protected:
 
   boost::shared_ptr< boost::thread > sys_thread_;
 
+  bool got_3d_point_for_menu_;
+  Ogre::Vector3 three_d_point_for_menu_;
 };
 
 
