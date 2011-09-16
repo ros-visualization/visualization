@@ -54,6 +54,9 @@ class VisualizationManager;
 class InteractiveMarker;
 class PointsMarker;
 
+/**
+ * A single control element of an InteractiveMarker.
+ */
 class InteractiveMarkerControl : public Ogre::SceneManager::Listener
 {
 public:
@@ -70,12 +73,17 @@ public:
   // will receive all mouse events while the handler has focus
   virtual void handleMouseEvent(ViewportMouseEvent& event);
 
-  // update the pose of the interactive marker being controlled, relative to the fixed frame
+  /** Update the pose of the interactive marker being controlled,
+   * relative to the reference frame.  Each InteractiveMarkerControl
+   * maintains its pose relative to the reference frame independently,
+   * so when the parent InteractiveMarker mvoes, it calls this
+   * function on all its child controls. */
   void interactiveMarkerPoseChanged( Ogre::Vector3 int_marker_position, Ogre::Quaternion int_marker_orientation );
 
   bool isInteractive() { return interaction_mode_ != visualization_msgs::InteractiveMarkerControl::NONE; }
 
-  void update( float heart_beat );
+  // Called every frame by parent's update() function.
+  void update();
 
   void setVisible( bool visible );
 
@@ -84,20 +92,46 @@ protected:
   // when this is called, we will face the camera
   virtual void preFindVisibleObjects(Ogre::SceneManager *source, Ogre::SceneManager::IlluminationRenderStage irs, Ogre::Viewport *v);
 
-  // rotate the pose, following the mouse movement
-  void rotate(Ogre::Ray &mouse_ray, Ogre::Ray &last_mouse_ray);
+  /** Rotate the pose, following the mouse movement.  mouse_ray is
+   * relative to the reference frame. */
+  void rotate(Ogre::Ray &mouse_ray);
 
-  // move the pose, following the mouse movement
-  void movePlane(Ogre::Ray &mouse_ray, Ogre::Ray &last_mouse_ray);
+  /** Rotate and translate to follow the mouse movement.  mouse_ray is
+   * relative to the reference frame. */
+  void moveRotate( Ogre::Ray &mouse_ray );
 
-  // move in plane so that the mouse stays within a max_dist radius to the center
-  void followMouse(Ogre::Ray &mouse_ray, float max_dist );
+  /** Translate, following the mouse movement. */
+  void movePlane(Ogre::Ray &mouse_ray);
+
+  // Move the position along the control ray given the latest mouse ray.
+  void moveAxis( const Ogre::Ray& mouse_ray, const ViewportMouseEvent& event );
 
   /// compute intersection between mouse ray and y-z plane given in local coordinates
-  bool intersectYzPlane( Ogre::Ray mouse_ray, Ogre::Vector3 &intersection_3d, Ogre::Vector2 &intersection_2d, float &ray_t );
+  bool intersectYzPlane( const Ogre::Ray& mouse_ray,
+                         Ogre::Vector3& intersection_3d,
+                         Ogre::Vector2& intersection_2d,
+                         float& ray_t );
 
-  /// get closest position on this control's axis
-  bool getClosestPosOnAxis( Ogre::Ray mouse_ray, float &pos );
+  /// compute intersection between mouse ray and a y-z plane.
+  bool intersectSomeYzPlane( const Ogre::Ray& mouse_ray,
+                             const Ogre::Vector3& point_in_plane,
+                             const Ogre::Quaternion& plane_orientation,
+                             Ogre::Vector3& intersection_3d,
+                             Ogre::Vector2& intersection_2d,
+                             float& ray_t );
+
+  /** Find the closest point on target_ray to mouse_ray.
+   * @param closest_point contains result point on target_ray if rays are not effectively parallel.
+   * @returns false if rays are effectively parallel, true otherwise. */
+  bool findClosestPoint( const Ogre::Ray& target_ray,
+                         const Ogre::Ray& mouse_ray,
+                         Ogre::Vector3& closest_point );
+
+  /** Project a reference position onto the viewport to find screen coordinates in pixels.
+   * @param screen_pos the resultant screen position, in pixels. */
+  void worldToScreen( const Ogre::Vector3& pos_rel_reference,
+                      const Ogre::Viewport* viewport,
+                      Ogre::Vector2& screen_pos );
 
   /// take all the materials, add a highlight pass and store a pointer to the pass for later use
   void addHighlightPass( S_MaterialPtr materials );
@@ -105,22 +139,41 @@ protected:
   // set the highlight color to (a,a,a)
   void setHighlight( float a );
 
+  // Save a copy of the latest mouse event with the event type set to
+  // wxEVT_MOTION, so that update() can resend the mouse event during
+  // drag actions to maintain consistent behavior.
+  void recordDraggingInPlaceEvent( ViewportMouseEvent& event );
+
+  // Motion part of mouse event handling.
+  void handleMouseMovement( ViewportMouseEvent& event );
+
+  // Return closest point on a line to a test point.
+  Ogre::Vector3 closestPointOnLineToPoint( const Ogre::Vector3& line_start,
+                                           const Ogre::Vector3& line_dir,
+                                           const Ogre::Vector3& test_point );
+
+  bool dragging_;
+
+  ViewportMouseEvent dragging_in_place_event_;
+
   VisualizationManager* vis_manager_;
 
   CollObjectHandle coll_object_handle_;
 
+  /** Node representing reference frame in tf, like /map, /base_link,
+   * /head, etc.  Same as the field in InteractiveMarker. */
   Ogre::SceneNode *reference_node_;
 
-  // represents the local frame of this control
-  // relative to reference node/frame
-  // in INHERIT mode, this will have an identical pose as the
-  // interactive marker, otherwise its orientation might be different
+  /** Represents the local frame of this control relative to reference
+   * node/frame.  There is no intermediate InteractiveMarker node or
+   * frame, each control keeps track of its pose relative to the
+   * reference frame independently.  In INHERIT mode, this will have
+   * an identical pose as the rest of the interactive marker,
+   * otherwise its orientation might be different. */
   Ogre::SceneNode *control_frame_node_;
 
   // this is a child of scene_node, but might be oriented differently
   Ogre::SceneNode *markers_node_;
-
-  bool dragging_;
 
   // interaction mode
   int interaction_mode_;
@@ -131,7 +184,10 @@ protected:
   // if set to false, they will follow the parent's transformations
   bool independent_marker_orientation_;
 
-  // defines the axis / plane along which to transform
+  /** Defines the axis / plane along which to transform.  This is not
+   * keeping track of rotations applied to the control by the user,
+   * this is just a copy of the "orientation" parameter from the
+   * InteractiveMarkerControl message. */
   Ogre::Quaternion control_orientation_;
 
   bool always_visible_;
@@ -153,9 +209,46 @@ protected:
   typedef boost::shared_ptr<PointsMarker> PointsMarkerPtr;
   std::vector< PointsMarkerPtr > points_markers_;
 
-  // stores the rotation around the x axis, only for fixed-orientation rotation controls
+  /** Stores the rotation around the x axis of the control.  Only
+   * relevant for fixed-orientation rotation controls. */
   Ogre::Radian rotation_;
+
+  /** Stores the rotation around the x axis of the control as it was
+   * when the mouse-down event happened.  Only relevant for
+   * fixed-orientation rotation controls. */
+  Ogre::Radian rotation_at_mouse_down_;
+
   Ogre::Quaternion intitial_orientation_;
+
+  /** The 3D position of the mouse click when the mouse button is
+   * pressed, relative to the reference frame. */
+  Ogre::Vector3 grab_point_;
+
+  // The 2D position in pixel coordinates of the mouse-down location.
+  Ogre::Vector2 grab_pixel_;
+  // The position of the parent when the mouse button is pressed.
+  Ogre::Vector3 parent_position_at_mouse_down_;
+
+  /** The orientation of the control_frame_node_ when the mouse button
+   * is pressed. */
+  Ogre::Quaternion control_frame_orientation_at_mouse_down_;
+
+  /** The orientation of the parent when the mouse button
+   * is pressed. */
+  Ogre::Quaternion parent_orientation_at_mouse_down_;
+
+  /** The direction vector of the axis of rotation during a mouse
+   * drag, relative to the reference frame.  Computed on mouse down
+   * event. */
+  Ogre::Vector3 rotation_axis_;
+
+  /** The center of rotation during a mouse drag, relative to the
+   * control frame.  Computed on mouse down event. */
+  Ogre::Vector3 rotation_center_rel_control_;
+
+  /** The grab point during a mouse drag, relative to the control
+   * frame.  Computed on mouse down event. */
+  Ogre::Vector3 grab_point_rel_control_;
 
   bool has_focus_;
   bool interaction_enabled_;

@@ -310,6 +310,13 @@ void InteractiveMarker::update(float wall_dt)
   {
     updateReferencePose();
   }
+
+  std::list<InteractiveMarkerControlPtr>::iterator it;
+  for ( it = controls_.begin(); it != controls_.end(); it++ )
+  {
+    (*it)->update();
+  }
+
   if ( dragging_ )
   {
     if ( pose_changed_ )
@@ -434,8 +441,8 @@ bool InteractiveMarker::handleMouseEvent(ViewportMouseEvent& event, const std::s
 
     visualization_msgs::InteractiveMarkerFeedback feedback;
     feedback.event_type = (event.event.LeftDown() ?
-                           visualization_msgs::InteractiveMarkerFeedback::MOUSE_DOWN :
-                           visualization_msgs::InteractiveMarkerFeedback::MOUSE_UP);
+                           (uint8_t)visualization_msgs::InteractiveMarkerFeedback::MOUSE_DOWN :
+                           (uint8_t)visualization_msgs::InteractiveMarkerFeedback::MOUSE_UP);
                            
     feedback.control_name = control_name;
     feedback.marker_name = name_;
