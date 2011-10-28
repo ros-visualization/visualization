@@ -34,3 +34,9 @@ src/interactive_marker_server.cpp
 src/tools.cpp
 src/menu_handler.cpp
 )
+
+# C++ Unit Tests
+rosbuild_add_executable(server_test EXCLUDE_FROM_ALL src/test/server_test.cpp)
+target_link_libraries(server_test ${PROJECT_NAME})
+rosbuild_add_gtest_build_flags(server_test)
+rosbuild_add_rostest(test/cpp_server.test)
