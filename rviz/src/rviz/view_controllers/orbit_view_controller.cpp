@@ -30,6 +30,7 @@
 #include "orbit_view_controller.h"
 #include "rviz/viewport_mouse_event.h"
 #include "rviz/visualization_manager.h"
+#include "rviz/frame_manager.h"
 
 #include <OGRE/OgreCamera.h>
 #include <OGRE/OgreSceneManager.h>
@@ -299,6 +300,8 @@ void OrbitViewController::fromString(const std::string& str)
   iss >> focal_point_.y;
   iss.ignore();
   iss >> focal_point_.z;
+
+  resetTargetSceneNodePosition();
 }
 
 std::string OrbitViewController::toString()
