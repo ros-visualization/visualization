@@ -9,7 +9,6 @@
   <review status="Doc reviewed" notes="2011/01/04"/>
   <url>http://ros.org/wiki/visualization</url>
   <depend stack="bullet" /> <!-- bullet -->
-  <depend stack="common" /> <!-- yaml_cpp -->
   <depend stack="common_msgs" /> <!-- nav_msgs, sensor_msgs, geometry_msgs, visualization_msgs -->
   <depend stack="common_rosdeps" /> <!-- common_rosdeps -->
   <depend stack="geometry" /> <!-- tf -->
