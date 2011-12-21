@@ -4,7 +4,7 @@
     A 3d visualization environment for robots using ROS.
     
     </description>
-    <author>Josh Faust</author>
+    <author>Josh Faust, Dave Hershberger</author>
     <license>BSD</license>
     <review status="Doc reviewed" notes=""/>
     <url>http://ros.org/wiki/rviz</url>
@@ -26,17 +26,18 @@
     <depend package="wxswig"/>
     <depend package="wxPython_swig_interface"/>
     <depend package="visualization_msgs" />
-    <depend package="yaml_cpp"/>
     <depend package="urdf"/>
     <depend package="resource_retriever"/>
     <depend package="image_transport"/>
     <depend package="interactive_markers"/>
-    <depend package="assimp"/>
+    <depend package="common_rosdeps"/>
     <export> 
         <cpp cflags="-I${prefix}/src/" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lrviz"/>
         <python path="${prefix}/lib/"/>
     </export>
 
+  <rosdep name="yaml-cpp"/>
+  <rosdep name="assimp"/>
   <rosdep name="wxwidgets"/>
   <rosdep name="wxpython"/>
   <platform os="ubuntu" version="9.04"/>

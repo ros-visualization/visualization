@@ -48,9 +48,17 @@ TFFramePGEditor::TFFramePGEditor()
 
 wxPGWindowList TFFramePGEditor::CreateControls(wxPropertyGrid *propgrid, wxPGProperty *property, const wxPoint &pos, const wxSize &size) const
 {
-  property->GetChoices().Clear();
-  property->GetChoices().Add(wxT(FIXED_FRAME_STRING));
-
+/* START_WX-2.9_COMPAT_CODE
+This code is related to ticket: https://code.ros.org/trac/ros-pkg/ticket/5156
+*/
+#if wxMAJOR_VERSION == 2 and wxMINOR_VERSION == 9 // If wxWidgets 2.9.x
+  wxPGChoices choices = property->GetChoices();
+#else
+  wxPGChoices& choices = property->GetChoices();
+#endif
+  choices.Clear();
+  choices.Add(wxT(FIXED_FRAME_STRING));
+  
   typedef std::vector<std::string> V_string;
   V_string frames;
   FrameManager::instance()->getTFClient()->getFrameStrings( frames );
@@ -66,7 +74,7 @@ wxPGWindowList TFFramePGEditor::CreateControls(wxPropertyGrid *propgrid, wxPGPro
       continue;
     }
 
-    property->GetChoices().Add(wxString::FromAscii(frame.c_str()));
+    choices.Add(wxString::FromAscii(frame.c_str()));
   }
 
   return wxPGComboBoxEditor::CreateControls(propgrid, property, pos, size);

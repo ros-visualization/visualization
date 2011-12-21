@@ -56,7 +56,15 @@ wxPGWindowList EditEnumPGEditor::CreateControls(wxPropertyGrid *propgrid, wxPGPr
 {
   if (option_cb_)
   {
-    property->GetChoices().Clear();
+/* START_WX-2.9_COMPAT_CODE
+This code is related to ticket: https://code.ros.org/trac/ros-pkg/ticket/5156
+*/
+#if wxMAJOR_VERSION == 2 and wxMINOR_VERSION == 9 // If wxWidgets 2.9.x
+    wxPGChoices _choices = property->GetChoices();
+#else
+    wxPGChoices& _choices = property->GetChoices();
+#endif
+    _choices.Clear();
 
     V_string choices;
     option_cb_(choices);
@@ -70,7 +78,7 @@ wxPGWindowList EditEnumPGEditor::CreateControls(wxPropertyGrid *propgrid, wxPGPr
         continue;
       }
 
-      property->GetChoices().Add(wxString::FromAscii(choice.c_str()));
+      _choices.Add(wxString::FromAscii(choice.c_str()));
     }
   }
 

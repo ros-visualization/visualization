@@ -190,7 +190,7 @@ typedef std::set<FrameInfo*> S_FrameInfo;
 TFDisplay::TFDisplay( const std::string& name, VisualizationManager* manager )
 : Display( name, manager )
 , update_timer_( 0.0f )
-, update_rate_( 0.0f )
+, update_rate_( 0.05f ) // A value of 0.0 is causing some performance problems, so making the default a little positive.
 , show_names_( true )
 , show_arrows_( true )
 , show_axes_( true )
@@ -216,7 +216,7 @@ TFDisplay::~TFDisplay()
 void TFDisplay::clear()
 {
   property_manager_->deleteChildren(tree_category_.lock());
-  //property_manager_->deleteChildren(frames_category_.lock());
+  property_manager_->deleteChildren(frames_category_.lock());
 
   S_FrameInfo to_delete;
   M_FrameInfo::iterator frame_it = frames_.begin();
@@ -230,7 +230,7 @@ void TFDisplay::clear()
   S_FrameInfo::iterator delete_end = to_delete.end();
   for ( ; delete_it != delete_end; ++delete_it )
   {
-    deleteFrame( *delete_it );
+    deleteFrame( *delete_it, false );
   }
 
   frames_.clear();
@@ -417,7 +417,7 @@ void TFDisplay::updateFrames()
     S_FrameInfo::iterator delete_end = to_delete.end();
     for ( ; delete_it != delete_end; ++delete_it )
     {
-      deleteFrame( *delete_it );
+      deleteFrame( *delete_it, true );
     }
   }
 
@@ -636,7 +636,7 @@ void TFDisplay::updateFrame(FrameInfo* frame)
   propertyChanged(frame->parent_property_);
 }
 
-void TFDisplay::deleteFrame(FrameInfo* frame)
+void TFDisplay::deleteFrame(FrameInfo* frame, bool delete_properties)
 {
   M_FrameInfo::iterator it = frames_.find( frame->name_ );
   ROS_ASSERT( it != frames_.end() );
@@ -648,8 +648,11 @@ void TFDisplay::deleteFrame(FrameInfo* frame)
   delete frame->parent_arrow_;
   delete frame->name_text_;
   scene_manager_->destroySceneNode( frame->name_node_->getName() );
-  property_manager_->deleteProperty( frame->category_.lock() );
-  property_manager_->deleteProperty( frame->tree_property_.lock() );
+  if ( delete_properties )
+  {
+    property_manager_->deleteProperty( frame->category_.lock() );
+    property_manager_->deleteProperty( frame->tree_property_.lock() );
+  }
   delete frame;
 }
 

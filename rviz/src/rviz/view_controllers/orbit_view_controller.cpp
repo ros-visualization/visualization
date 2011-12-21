@@ -30,6 +30,7 @@
 #include "orbit_view_controller.h"
 #include "rviz/viewport_mouse_event.h"
 #include "rviz/visualization_manager.h"
+#include "rviz/frame_manager.h"
 
 #include <OGRE/OgreCamera.h>
 #include <OGRE/OgreSceneManager.h>
@@ -88,12 +89,13 @@ void OrbitViewController::handleMouseEvent(ViewportMouseEvent& event)
     int32_t diff_x = event.event.GetX() - event.last_x;
     int32_t diff_y = event.event.GetY() - event.last_y;
 
-    if ( event.event.LeftIsDown() )
+    if ( event.event.LeftIsDown() && !event.event.ShiftDown() )
     {
       yaw( diff_x*0.005 );
       pitch( -diff_y*0.005 );
     }
-    else if ( event.event.MiddleIsDown() )
+    else if ( event.event.MiddleIsDown() || 
+	      ( event.event.ShiftDown() && event.event.LeftIsDown() ))
     {
       float fovY = camera_->getFOVy().valueRadians();
       float fovX = 2.0f * atan( tan( fovY / 2.0f ) * camera_->getAspectRatio() );
@@ -298,6 +300,8 @@ void OrbitViewController::fromString(const std::string& str)
   iss >> focal_point_.y;
   iss.ignore();
   iss >> focal_point_.z;
+
+  resetTargetSceneNodePosition();
 }
 
 std::string OrbitViewController::toString()

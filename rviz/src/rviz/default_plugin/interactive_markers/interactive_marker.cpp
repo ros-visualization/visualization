@@ -310,6 +310,13 @@ void InteractiveMarker::update(float wall_dt)
   {
     updateReferencePose();
   }
+
+  std::list<InteractiveMarkerControlPtr>::iterator it;
+  for ( it = controls_.begin(); it != controls_.end(); it++ )
+  {
+    (*it)->update();
+  }
+
   if ( dragging_ )
   {
     if ( pose_changed_ )
@@ -434,8 +441,8 @@ bool InteractiveMarker::handleMouseEvent(ViewportMouseEvent& event, const std::s
 
     visualization_msgs::InteractiveMarkerFeedback feedback;
     feedback.event_type = (event.event.LeftDown() ?
-                           visualization_msgs::InteractiveMarkerFeedback::MOUSE_DOWN :
-                           visualization_msgs::InteractiveMarkerFeedback::MOUSE_UP);
+                           (uint8_t)visualization_msgs::InteractiveMarkerFeedback::MOUSE_DOWN :
+                           (uint8_t)visualization_msgs::InteractiveMarkerFeedback::MOUSE_UP);
                            
     feedback.control_name = control_name;
     feedback.marker_name = name_;
@@ -458,7 +465,15 @@ bool InteractiveMarker::handleMouseEvent(ViewportMouseEvent& event, const std::s
 
       event.panel->setContextMenu( menu_ );
       wxContextMenuEvent context_event( wxEVT_CONTEXT_MENU, 0, event.event.GetPosition() );
+/* START_WX-2.9_COMPAT_CODE
+This code is related to ticket: https://code.ros.org/trac/ros-pkg/ticket/5156
+*/
+#if wxMAJOR_VERSION == 2 and wxMINOR_VERSION == 8 // If wxWidgets 2.8.x
       event.panel->AddPendingEvent( context_event );
+#else
+      event.panel->addPendingEvent(context_event);
+#endif
+/* END_WX-2.9_COMPAT_CODE */
       last_control_name_ = control_name;
       return true;
     }

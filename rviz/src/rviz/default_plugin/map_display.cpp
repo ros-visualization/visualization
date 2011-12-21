@@ -56,8 +56,8 @@ MapDisplay::MapDisplay( const std::string& name, VisualizationManager* manager )
 , manual_object_( NULL )
 , loaded_( false )
 , resolution_( 0.0f )
-, width_( 0.0f )
-, height_( 0.0f )
+, width_( 0 )
+, height_( 0 )
 , position_(Ogre::Vector3::ZERO)
 , orientation_(Ogre::Quaternion::IDENTITY)
 , draw_under_(false)
@@ -265,25 +265,38 @@ void MapDisplay::load(const nav_msgs::OccupancyGrid::ConstPtr& msg)
   }
 
   // Expand it to be RGB data
-  int pixels_size = width_ * height_;
+  unsigned int pixels_size = width_ * height_;
   unsigned char* pixels = new unsigned char[pixels_size];
   memset(pixels, 255, pixels_size);
 
-  for(unsigned int j=0;j<msg->info.height;j++)
+  bool map_status_set = false;
+  unsigned int num_pixels_to_copy = pixels_size;
+  if( pixels_size != msg->data.size() )
   {
-    for(unsigned int i=0;i<msg->info.width;i++)
-    {
-      unsigned char val;
-      if(msg->data[j*msg->info.width+i] == 100)
-        val = 0;
-      else if(msg->data[j*msg->info.width+i] == 0)
-        val = 255;
-      else
-        val = 127;
+    std::stringstream ss;
+    ss << "Data size doesn't match width*height: width = " << width_
+       << ", height = " << height_ << ", data size = " << msg->data.size();
+    setStatus(status_levels::Error, "Map", ss.str());
+    map_status_set = true;
 
-      int pidx = (j*width_ + i);
-      pixels[pidx] = val;
+    // Keep going, but don't read past the end of the data.
+    if( msg->data.size() < pixels_size )
+    {
+      num_pixels_to_copy = msg->data.size();
     }
+  }
+
+  for( unsigned int pixel_index = 0; pixel_index < num_pixels_to_copy; pixel_index++ )
+  {
+    unsigned char val;
+    if(msg->data[ pixel_index ] == 100)
+      val = 0;
+    else if(msg->data[ pixel_index ] == 0)
+      val = 255;
+    else
+      val = 127;
+
+    pixels[ pixel_index ] = val;
   }
 
   Ogre::DataStreamPtr pixel_stream;
@@ -297,7 +310,10 @@ void MapDisplay::load(const nav_msgs::OccupancyGrid::ConstPtr& msg)
 								 pixel_stream, width_, height_, Ogre::PF_L8, Ogre::TEX_TYPE_2D,
 								 0);
 
-    setStatus(status_levels::Ok, "Map", "Map OK");
+    if( !map_status_set )
+    {
+      setStatus(status_levels::Ok, "Map", "Map OK");
+    }
   }
   catch(Ogre::RenderingAPIException&)
   {
@@ -326,7 +342,7 @@ void MapDisplay::load(const nav_msgs::OccupancyGrid::ConstPtr& msg)
 
     ROS_WARN("Failed to create full-size map texture, likely because your graphics card does not support textures of size > 2048.  Downsampling to [%d x %d]...", (int)width, (int)height);
     //ROS_INFO("Stream size [%d], width [%f], height [%f], w * h [%f]", pixel_stream->size(), width_, height_, width_ * height_);
-    image.loadRawData(pixel_stream, (int)width_, (int)height_, Ogre::PF_L8);
+    image.loadRawData(pixel_stream, width_, height_, Ogre::PF_L8);
     image.resize(width, height, Ogre::Image::FILTER_NEAREST);
     ss << "Downsampled";
     texture_ = Ogre::TextureManager::getSingleton().loadImage(ss.str(), Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME, image);
@@ -461,11 +477,11 @@ void MapDisplay::createProperties()
   resolution_property_ = property_manager_->createProperty<FloatProperty>( "Resolution", property_prefix_, boost::bind( &MapDisplay::getResolution, this ),
                                                                             FloatProperty::Setter(), parent_category_, this );
   setPropertyHelpText(resolution_property_, "Resolution of the map. (not editable)");
-  width_property_ = property_manager_->createProperty<FloatProperty>( "Width", property_prefix_, boost::bind( &MapDisplay::getWidth, this ),
-                                                                       FloatProperty::Setter(), parent_category_, this );
+  width_property_ = property_manager_->createProperty<IntProperty>( "Width", property_prefix_, boost::bind( &MapDisplay::getWidth, this ),
+                                                                    IntProperty::Setter(), parent_category_, this );
   setPropertyHelpText(width_property_, "Width of the map, in meters. (not editable)");
-  height_property_ = property_manager_->createProperty<FloatProperty>( "Height", property_prefix_, boost::bind( &MapDisplay::getHeight, this ),
-                                                                        FloatProperty::Setter(), parent_category_, this );
+  height_property_ = property_manager_->createProperty<IntProperty>( "Height", property_prefix_, boost::bind( &MapDisplay::getHeight, this ),
+                                                                     IntProperty::Setter(), parent_category_, this );
   setPropertyHelpText(height_property_, "Height of the map, in meters. (not editable)");
   position_property_ = property_manager_->createProperty<Vector3Property>( "Position", property_prefix_, boost::bind( &MapDisplay::getPosition, this ),
                                                                            Vector3Property::Setter(), parent_category_, this );

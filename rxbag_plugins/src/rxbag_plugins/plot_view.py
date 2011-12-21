@@ -481,13 +481,13 @@ class PlotView(TopicMessageView):
         if dialog.ShowModal() == wx.ID_OK:
             path = dialog.Path
 
-            bitmap = wx.EmptyBitmap(self.width, self.height)
+            bitmap = wx.EmptyBitmap(self._chart._width, self._chart._height)
             mem_dc = wx.MemoryDC()
             mem_dc.SelectObject(bitmap)
             mem_dc.SetBackground(wx.WHITE_BRUSH)
             mem_dc.Clear()
             cairo_dc = wx.lib.wxcairo.ContextFromDC(mem_dc)
-            self.paint(cairo_dc)
+            self._chart.paint(cairo_dc)
             mem_dc.SelectObject(wx.NullBitmap)
 
             bitmap.SaveFile(path, wx.BITMAP_TYPE_PNG)

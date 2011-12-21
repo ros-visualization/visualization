@@ -5,19 +5,16 @@
      to your application, which can be accessed from tools like RViz.
 
   </description>
-  <author>David Gossow</author>
+  <author>David Gossow (C++), Michael Ferguson (Python)</author>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/interactive_markers</url>
   <depend package="roscpp"/>
   <depend package="visualization_msgs"/>
   <depend package="tf"/>
-  <depend package="bullet"/>
 
   <export> 
       <cpp cflags="-I${prefix}/include/" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -linteractive_markers"/>
   </export>
 
 </package>
-
-

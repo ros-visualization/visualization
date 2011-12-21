@@ -8,6 +8,18 @@ import string
 from glob import glob
 import platform
 
+try:
+    import wxversion
+    if not wxversion.checkInstalled(['2.8']):
+        if wxversion.checkInstalled(['2.9']):
+            # Propgrid is built-in to wx-2.9
+            sys.exit(0)
+        else:
+            sys.stderr.write("Neither wx-2.8 or wx-2.9 seems to be installed.")
+            sys.exit(-1)
+except ImportError:
+    sys.stderr.write("Could not import wxversion.  Is wxPython installed?\n")
+    sys.exit(-1)
 
 lib_suffix = "so"
 if (sys.platform == "darwin"):

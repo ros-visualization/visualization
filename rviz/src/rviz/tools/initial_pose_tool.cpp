@@ -77,13 +77,13 @@ void InitialPoseTool::onPoseSet(double x, double y, double theta)
   pose.pose.pose.position.x = x;
   pose.pose.pose.position.y = y;
 
-  btQuaternion quat;
+  tf::Quaternion quat;
   quat.setRPY(0.0, 0.0, theta);
   tf::quaternionTFToMsg(quat,
                         pose.pose.pose.orientation);
   pose.pose.covariance[6*0+0] = 0.5 * 0.5;
   pose.pose.covariance[6*1+1] = 0.5 * 0.5;
-  pose.pose.covariance[6*3+3] = M_PI/12.0 * M_PI/12.0;
+  pose.pose.covariance[6*5+5] = M_PI/12.0 * M_PI/12.0;
   ROS_INFO("Setting pose: %.3f %.3f %.3f [frame=%s]", x, y, theta, fixed_frame.c_str());
   pub_.publish(pose);
 }

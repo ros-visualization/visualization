@@ -142,7 +142,7 @@ void ManageDisplaysDialog::onRemove(wxCommandEvent& event)
 
   manager_->removeDisplay(displays_[sel]);
   listbox_->Delete(sel);
-  if (sel < listbox_->GetCount())
+  if (sel < (int) listbox_->GetCount())
   {
     listbox_->SetSelection(sel);
   }
@@ -173,7 +173,7 @@ void ManageDisplaysDialog::onMoveUp( wxCommandEvent& event )
 void ManageDisplaysDialog::onMoveDown( wxCommandEvent& event )
 {
   int sel = listbox_->GetSelection();
-  if (sel >= 0 && sel < listbox_->GetCount() - 1)
+  if (sel >= 0 && sel < (int) listbox_->GetCount() - 1)
   {
     std::swap(displays_[sel], displays_[sel + 1]);
     listbox_->Insert(listbox_->GetString(sel + 1), sel);
@@ -202,7 +202,14 @@ DisplaysPanel::DisplaysPanel( wxWindow* parent )
   property_grid_->Connect( wxEVT_PG_HIGHLIGHTED, wxPropertyGridEventHandler( DisplaysPanel::onPropertyHighlighted ), NULL, this );
 
   property_grid_->SetCaptionBackgroundColour( wxColour( 4, 89, 127 ) );
+/* START_WX-2.9_COMPAT_CODE
+This code is related to ticket: https://code.ros.org/trac/ros-pkg/ticket/5157
+*/
+#if wxMAJOR_VERSION == 2 and wxMINOR_VERSION == 8 // If wxWidgets 2.8.x
+  // This function is no longer available in wxPropgrid for wx-2.9
   property_grid_->SetCaptionForegroundColour( *wxWHITE );
+#endif
+/* END_WX-2.9_COMPAT_CODE */
 
   help_html_->Connect(wxEVT_COMMAND_HTML_LINK_CLICKED, wxHtmlLinkEventHandler(DisplaysPanel::onLinkClicked), NULL, this);
 
@@ -238,7 +245,16 @@ void DisplaysPanel::initialize(VisualizationManager* manager)
 void DisplaysPanel::sortDisplays()
 {
   property_grid_->Freeze();
+/* START_WX-2.9_COMPAT_CODE
+This code is related to ticket: https://code.ros.org/trac/ros-pkg/ticket/5157
+*/
+#if wxMAJOR_VERSION == 2 and wxMINOR_VERSION == 8 // If wxWidgets 2.8.x
   property_grid_->Sort(property_grid_->GetRoot());
+#else
+  // This is the new way to sort a wxPropertyGrid
+  property_grid_->Sort();
+#endif
+/* END_WX-2.9_COMPAT_CODE */
   property_grid_->Refresh();
   property_grid_->Thaw();
 }
@@ -436,12 +452,22 @@ void DisplaysPanel::setDisplayCategoryColor(const DisplayWrapper* wrapper)
   CategoryPropertyPtr cat = wrapper->getCategory().lock();
   wxPGProperty* property = wrapper->getCategory().lock()->getPGProperty();
 
+/* START_WX-2.9_COMPAT_CODE
+This code is related to ticket: https://code.ros.org/trac/ros-pkg/ticket/5157
+*/
+#if wxMAJOR_VERSION == 2 and wxMINOR_VERSION == 8 // If wxWidgets 2.8.x
   wxPGCell* cell = property->GetCell( 0 );
   if ( !cell )
   {
     cell = new wxPGCell(*(wxString*)0, wxNullBitmap, wxNullColour, wxNullColour);
     property->SetCell( 0, cell );
   }
+#else
+  // The new API returns a reference not a pointer
+  // and the library automatically creates a cell if one does not exists for you
+  wxPGCell _cell = property->GetCell(0);
+#endif
+/* END_WX-2.9_COMPAT_CODE */
 
   if (!wrapper->isLoaded())
   {

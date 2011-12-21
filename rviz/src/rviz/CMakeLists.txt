@@ -10,6 +10,19 @@ set(SWIG_FLAGS ${${PROJECT_NAME}_SWIG_FLAGS})
 rosbuild_find_ros_package(wxswig)
 set(WXSWIG_EXECUTABLE ${wxswig_PACKAGE_PATH}/bin/swig)
 
+# Build the SVN version number or (if not in an SVN directory) ROS
+# stack version number into the source so it can be printed at
+# run-time.
+set(VERSION_FILE ${PROJECT_SOURCE_DIR}/build/version.cpp)
+execute_process(COMMAND          svnversion -n ${PROJECT_SOURCE_DIR}
+                OUTPUT_VARIABLE  SVN_VERSION)
+if(${SVN_VERSION} MATCHES "^exported$")
+  execute_process(COMMAND          rosversion visualization
+                  OUTPUT_VARIABLE  SVN_VERSION
+                  OUTPUT_STRIP_TRAILING_WHITESPACE)
+endif()
+configure_file(version.cpp.in ${VERSION_FILE} @ONLY)
+
 # Add a custom command for generating the swig output files
 set(SWIG_INTERFACE_FILE ${PROJECT_SOURCE_DIR}/src/rviz/rviz.i)
 set(SWIG_OUTPUT_PYTHON_FILE ${PROJECT_SOURCE_DIR}/lib/rviz.py)
@@ -73,7 +86,7 @@ rosbuild_add_library(${PROJECT_NAME} plugin/plugin.cpp
                                     display.cpp
                                     display_wrapper.cpp
                                     view_controller.cpp
-                                    view_controllers/simple_orbit_view_controller.cpp
+                                    view_controllers/xy_orbit_view_controller.cpp
                                     view_controllers/orbit_view_controller.cpp
                                     view_controllers/fps_view_controller.cpp
                                     view_controllers/fixed_orientation_ortho_view_controller.cpp
@@ -86,9 +99,14 @@ rosbuild_add_library(${PROJECT_NAME} plugin/plugin.cpp
                                     robot/robot.cpp
                                     selection/selection_manager.cpp
                                     selection/selection_handler.cpp
-                                    generated/rviz_generated.cpp)
-target_link_libraries(${PROJECT_NAME} ${wxWidgets_LIBRARIES} ${OGRE_LIBRARIES})
+                                    generated/rviz_generated.cpp
+                                    ${VERSION_FILE})
+target_link_libraries(${PROJECT_NAME} ${wxWidgets_LIBRARIES} ${OGRE_LIBRARIES} assimp yaml-cpp)
 rosbuild_link_boost(${PROJECT_NAME} thread signals filesystem system program_options)
+
+if(APPLE)
+  set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS "-undefined dynamic_lookup")
+endif(APPLE)
 
 find_package(PythonLibs REQUIRED)
 include_directories(${PYTHON_INCLUDE_PATH})

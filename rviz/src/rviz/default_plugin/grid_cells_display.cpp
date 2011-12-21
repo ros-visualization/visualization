@@ -64,8 +64,8 @@ GridCellsDisplay::GridCellsDisplay( const std::string& name, VisualizationManage
 
   cloud_ = new ogre_tools::PointCloud();
   cloud_->setRenderMode( ogre_tools::PointCloud::RM_BILLBOARDS_COMMON_FACING );
-  cloud_->setCommonDirection( Ogre::Vector3::UNIT_Y );
-  cloud_->setCommonUpVector( Ogre::Vector3::NEGATIVE_UNIT_Z );
+  cloud_->setCommonDirection( Ogre::Vector3::UNIT_Z );
+  cloud_->setCommonUpVector( Ogre::Vector3::UNIT_Y );
   scene_node_->attachObject(cloud_);
   setAlpha( 1.0f );
 
@@ -206,6 +206,15 @@ void GridCellsDisplay::processMessage(const nav_msgs::GridCells::ConstPtr& msg)
   scene_node_->setOrientation( orientation );
 
   Ogre::ColourValue color( color_.r_, color_.g_, color_.b_, alpha_ );
+
+  if( msg->cell_width == 0 )
+  {
+    setStatus(status_levels::Error, "Topic", "Cell width is zero, cells will be invisible.");
+  }
+  else if( msg->cell_height == 0 )
+  {
+    setStatus(status_levels::Error, "Topic", "Cell height is zero, cells will be invisible.");
+  }
 
   cloud_->setDimensions(msg->cell_width, msg->cell_height, 0.0);
 

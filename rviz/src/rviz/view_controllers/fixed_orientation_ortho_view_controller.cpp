@@ -67,12 +67,13 @@ void FixedOrientationOrthoViewController::handleMouseEvent(ViewportMouseEvent& e
     int32_t diff_x = event.event.GetX() - event.last_x;
     int32_t diff_y = event.event.GetY() - event.last_y;
 
-    if ( event.event.LeftIsDown() )
+    if ( event.event.LeftIsDown() && !event.event.ShiftDown() )
     {
       camera_->roll( Ogre::Radian( -diff_x * 0.005 ) );
       orientation_ = camera_->getOrientation();
     }
-    else if ( event.event.MiddleIsDown() )
+    else if ( event.event.MiddleIsDown() || 
+	      ( event.event.ShiftDown() && event.event.LeftIsDown() ))
     {
       move( -diff_x / scale_, diff_y / scale_, 0.0f );
     }
@@ -179,6 +180,8 @@ void FixedOrientationOrthoViewController::fromString(const std::string& str)
   iss >> quat.w;
   iss.ignore();
   orientation_ = quat;
+
+  resetTargetSceneNodePosition();
 }
 
 std::string FixedOrientationOrthoViewController::toString()

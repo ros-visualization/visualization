@@ -37,7 +37,7 @@
 #include "frame_manager.h"
 
 #include "view_controller.h"
-#include "view_controllers/simple_orbit_view_controller.h"
+#include "view_controllers/xy_orbit_view_controller.h"
 #include "view_controllers/orbit_view_controller.h"
 #include "view_controllers/fps_view_controller.h"
 #include "view_controllers/fixed_orientation_ortho_view_controller.h"
@@ -229,7 +229,7 @@ void VisualizationManager::initialize(const StatusCallback& cb, bool verbose)
   render_panel_->getCamera()->setNearClipDistance(0.01f);
   render_panel_->getCamera()->lookAt(0, 0, 0);
 
-  addViewController(SimpleOrbitViewController::getClassNameStatic(), "SimpleOrbit");
+  addViewController(XYOrbitViewController::getClassNameStatic(), "XYOrbit");
   addViewController(OrbitViewController::getClassNameStatic(), "Orbit");
   addViewController(FPSViewController::getClassNameStatic(), "FPS");
   addViewController(FixedOrientationOrthoViewController::getClassNameStatic(), "TopDownOrtho");
@@ -315,8 +315,13 @@ void VisualizationManager::onUpdate( wxTimerEvent& event )
     return;
   }
 
-  disable_update_ = true;
+	// make sure that onIdle gets called, even if the application
+	// does not receive any wake-up events
+  wxWakeUpIdle();
+}
 
+void VisualizationManager::onIdle(wxIdleEvent& evt)
+{
   //process pending mouse events
 
   std::deque<ViewportMouseEvent> event_queue;
@@ -405,13 +410,6 @@ void VisualizationManager::onUpdate( wxTimerEvent& event )
 
   current_tool_->update(wall_dt, ros_dt);
 
-  disable_update_ = false;
-
-  wxWakeUpIdle();
-}
-
-void VisualizationManager::onIdle(wxIdleEvent& evt)
-{
   ros::WallTime cur = ros::WallTime::now();
   double dt = (cur - last_render_).toSec();
 
@@ -1032,9 +1030,10 @@ bool VisualizationManager::setCurrentViewControllerType(const std::string& type)
   {
     view_controller_ = new OrbitViewController(this, "Orbit",target_scene_node_);
   }
-  else if (type == "rviz::SimpleOrbitViewController" || type == "SimpleOrbit")
+  else if (type == "rviz::XYOrbitViewController" || type == "XYOrbit" ||
+           type == "rviz::SimpleOrbitViewController" || type == "SimpleOrbit" /* the old class name */) 
   {
-    view_controller_ = new SimpleOrbitViewController(this, "SimpleOrbit",target_scene_node_);
+    view_controller_ = new XYOrbitViewController(this, "XYOrbit",target_scene_node_);
   }
   else if (type == "rviz::FPSViewController" || type == "FPS")
   {
