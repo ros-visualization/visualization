@@ -24,11 +24,12 @@ pyside:
            ! -f /usr/lib/libshiboken*.so -o \
            ! -f /usr/lib/libpyside*.so ]; then 
 
+          echo "Building pyside and friends in ${work_dir}"
+
           # make sure qt libraries exist before we generate bindings for them.
-          sudo apt-get install libqt4-dev qt4-qmake
+          sudo apt-get install -y libqt4-dev qt4-qmake
 
           work_dir=`mktemp -d`
-          echo "Building pyside and friends in ${work_dir}"
           cd ${work_dir}
 
           pkgs=("apiextractor-0.10.9" "generatorrunner-0.6.15" "shiboken-1.0.10" "pyside-qt4.7+1.0.9")
@@ -49,11 +50,12 @@ pyside:
            ! -f /usr/lib/libshiboken*.so -o \
            ! -f /usr/lib/libpyside*.so ]; then 
 
+          echo "Building in pyside and friends in ${work_dir}"
+
           # make sure qt libraries exist before we generate bindings for them.
-          sudo apt-get install libqt4-dev qt4-qmake
+          sudo apt-get install -y libqt4-dev qt4-qmake
 
           work_dir=`mktemp -d`
-          echo "Building in pyside and friends in ${work_dir}"
           cd ${work_dir}
 
           pkgs=("apiextractor-0.10.9" "generatorrunner-0.6.15" "shiboken-1.0.10" "pyside-qt4.7+1.0.9")
