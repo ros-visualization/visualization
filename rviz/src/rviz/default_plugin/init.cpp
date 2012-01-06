@@ -27,59 +27,54 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "rviz/plugin/type_registry.h"
+#include <pluginlib/class_list_macros.h>
 
 #include "axes_display.h"
 #include "camera_display.h"
+#include "grid_cells_display.h"
 #include "grid_display.h"
+#include "image_display.h"
+#include "interactive_marker_display.h"
 #include "laser_scan_display.h"
 #include "map_display.h"
-#include "marker_display.h"
 #include "marker_array_display.h"
-#include "interactive_marker_display.h"
-#include "pose_array_display.h"
-#include "point_cloud_display.h"
-#include "point_cloud2_display.h"
-#include "path_display.h"
-#include "polygon_display.h"
-#include "grid_cells_display.h"
+#include "marker_display.h"
 #include "odometry_display.h"
+#include "path_display.h"
+#include "point_cloud2_display.h"
+#include "point_cloud_display.h"
+#include "point_cloud_transformers.h"
+#include "polygon_display.h"
+#include "pose_array_display.h"
+#include "pose_display.h"
+#include "range_display.h"
 #include "robot_model_display.h"
 #include "tf_display.h"
-#include "pose_display.h"
-#include "point_cloud_transformers.h"
-#include "image_display.h"
-#include "range_display.h"
 
-using namespace rviz;
+PLUGINLIB_DECLARE_CLASS( rviz, Axes, rviz::AxesDisplay, rviz::Display )
+PLUGINLIB_DECLARE_CLASS( rviz, Camera, rviz::CameraDisplay, rviz::Display )
+PLUGINLIB_DECLARE_CLASS( rviz, GridCells, rviz::GridCellsDisplay, rviz::Display )
+PLUGINLIB_DECLARE_CLASS( rviz, Grid, rviz::GridDisplay, rviz::Display )
+PLUGINLIB_DECLARE_CLASS( rviz, Image, rviz::ImageDisplay, rviz::Display )
+PLUGINLIB_DECLARE_CLASS( rviz, InteractiveMarker, rviz::InteractiveMarkerDisplay, rviz::Display )
+PLUGINLIB_DECLARE_CLASS( rviz, LaserScan, rviz::LaserScanDisplay, rviz::Display )
+PLUGINLIB_DECLARE_CLASS( rviz, Map, rviz::MapDisplay, rviz::Display )
+PLUGINLIB_DECLARE_CLASS( rviz, MarkerArray, rviz::MarkerArrayDisplay, rviz::Display )
+PLUGINLIB_DECLARE_CLASS( rviz, Marker, rviz::MarkerDisplay, rviz::Display )
+PLUGINLIB_DECLARE_CLASS( rviz, Odometry, rviz::OdometryDisplay, rviz::Display )
+PLUGINLIB_DECLARE_CLASS( rviz, Path, rviz::PathDisplay, rviz::Display )
+PLUGINLIB_DECLARE_CLASS( rviz, PointCloud2, rviz::PointCloud2Display, rviz::Display )
+PLUGINLIB_DECLARE_CLASS( rviz, PointCloud, rviz::PointCloudDisplay, rviz::Display )
+PLUGINLIB_DECLARE_CLASS( rviz, Polygon, rviz::PolygonDisplay, rviz::Display )
+PLUGINLIB_DECLARE_CLASS( rviz, PoseArray, rviz::PoseArrayDisplay, rviz::Display )
+PLUGINLIB_DECLARE_CLASS( rviz, Pose, rviz::PoseDisplay, rviz::Display )
+PLUGINLIB_DECLARE_CLASS( rviz, Range, rviz::RangeDisplay, rviz::Display )
+PLUGINLIB_DECLARE_CLASS( rviz, RobotModel, rviz::RobotModelDisplay, rviz::Display )
+PLUGINLIB_DECLARE_CLASS( rviz, TF, rviz::TFDisplay, rviz::Display )
 
-extern "C" void rvizPluginInit(rviz::TypeRegistry* reg)
-{
-  reg->registerDisplay<AxesDisplay>("rviz::AxesDisplay");
-  reg->registerDisplay<CameraDisplay>("rviz::CameraDisplay");
-  reg->registerDisplay<GridDisplay>("rviz::GridDisplay");
-  reg->registerDisplay<LaserScanDisplay>("rviz::LaserScanDisplay");
-  reg->registerDisplay<MapDisplay>("rviz::MapDisplay");
-  reg->registerDisplay<MarkerDisplay>("rviz::MarkerDisplay");
-  reg->registerDisplay<MarkerArrayDisplay>("rviz::MarkerArrayDisplay");
-  reg->registerDisplay<InteractiveMarkerDisplay>("rviz::InteractiveMarkerDisplay");
-  reg->registerDisplay<PoseArrayDisplay>("rviz::PoseArrayDisplay");
-  reg->registerDisplay<PointCloudDisplay>("rviz::PointCloudDisplay");
-  reg->registerDisplay<PointCloud2Display>("rviz::PointCloud2Display");
-  reg->registerDisplay<PathDisplay>("rviz::PathDisplay");
-  reg->registerDisplay<PolygonDisplay>("rviz::PolygonDisplay");
-  reg->registerDisplay<PoseDisplay>("rviz::PoseDisplay");
-  reg->registerDisplay<GridCellsDisplay>("rviz::GridCellsDisplay");
-  reg->registerDisplay<OdometryDisplay>("rviz::OdometryDisplay");
-  reg->registerDisplay<RangeDisplay>("rviz::RangeDisplay");
-  reg->registerDisplay<RobotModelDisplay>("rviz::RobotModelDisplay");
-  reg->registerDisplay<TFDisplay>("rviz::TFDisplay");
-  reg->registerDisplay<ImageDisplay>("rviz::ImageDisplay");
-
-  reg->registerClass<XYZPCTransformer>("rviz::PointCloudTransformer", "rviz::XYZPCTransformer", "XYZ");
-  reg->registerClass<IntensityPCTransformer>("rviz::PointCloudTransformer", "rviz::IntensityPCTransformer", "Intensity");
-  reg->registerClass<RGB8PCTransformer>("rviz::PointCloudTransformer", "rviz::RGB8PCTransformer", "RGB8");
-  reg->registerClass<RGBF32PCTransformer>("rviz::PointCloudTransformer", "rviz::RGBF32PCTransformer", "RGBF32");
-  reg->registerClass<FlatColorPCTransformer>("rviz::PointCloudTransformer", "rviz::FlatColorPCTransformer", "Flat Color");
-  reg->registerClass<AxisColorPCTransformer>("rviz::PointCloudTransformer", "rviz::AxisColorPCTransformer", "Axis");
-}
+PLUGINLIB_DECLARE_CLASS( rviz, AxisColor, rviz::AxisColorPCTransformer, rviz::PointCloudTransformer )
+PLUGINLIB_DECLARE_CLASS( rviz, FlatColor, rviz::FlatColorPCTransformer, rviz::PointCloudTransformer )
+PLUGINLIB_DECLARE_CLASS( rviz, Intensity, rviz::IntensityPCTransformer, rviz::PointCloudTransformer )
+PLUGINLIB_DECLARE_CLASS( rviz, RGB8, rviz::RGB8PCTransformer, rviz::PointCloudTransformer )
+PLUGINLIB_DECLARE_CLASS( rviz, RGBF32, rviz::RGBF32PCTransformer, rviz::PointCloudTransformer )
+PLUGINLIB_DECLARE_CLASS( rviz, XYZ, rviz::XYZPCTransformer, rviz::PointCloudTransformer )
