@@ -1,0 +1,78 @@
+libqt4-dev:
+  ubuntu: libqt4-dev
+  osxbrew:
+    lion:
+      homebrew:
+        packages: [ qt ]
+libqt4-opengl-dev:
+  ubuntu: libqt4-opengl-dev
+  osxbrew:
+    lion:
+      homebrew:
+        packages: [ qt ]
+qt4-qmake:
+  ubuntu: qt4-qmake
+  osxbrew:
+    lion:
+      homebrew:
+        packages: [ qt ]
+pyside:
+  ubuntu:
+    lucid: |
+      if [ ! -f /usr/lib/libapiextractor.so -o \
+           ! -f /usr/lib/libgenrunner.so -o \
+           ! -f /usr/lib/libshiboken*.so -o \
+           ! -f /usr/lib/libpyside*.so ]; then 
+
+          echo "Building pyside and friends in ${work_dir}"
+
+          # make sure qt libraries exist before we generate bindings for them.
+          sudo apt-get install -y libqt4-dev qt4-qmake
+
+          work_dir=`mktemp -d`
+          cd ${work_dir}
+
+          pkgs=("apiextractor-0.10.9" "generatorrunner-0.6.15" "shiboken-1.0.10" "pyside-qt4.7+1.0.9")
+           
+          for pkg in "${pkgs[@]}" ; do
+              wget --tries=10 http://pr.willowgarage.com/downloads/${pkg}.tar.bz2
+              tar xf ${pkg}.tar.bz2
+              rm -rf "${pkg}/build"
+              mkdir -p "${pkg}/build"
+              (cd "${pkg}/build"
+              cmake -DCMAKE_INSTALL_PREFIX=/usr ..  && make -j4 && sudo make install || exit 1
+              ) # exit from "${pkg}/build"
+          done
+      fi
+    maverick: |
+      if [ ! -f /usr/lib/libapiextractor.so -o \
+           ! -f /usr/lib/libgenrunner.so -o \
+           ! -f /usr/lib/libshiboken*.so -o \
+           ! -f /usr/lib/libpyside*.so ]; then 
+
+          echo "Building in pyside and friends in ${work_dir}"
+
+          # make sure qt libraries exist before we generate bindings for them.
+          sudo apt-get install -y libqt4-dev qt4-qmake
+
+          work_dir=`mktemp -d`
+          cd ${work_dir}
+
+          pkgs=("apiextractor-0.10.9" "generatorrunner-0.6.15" "shiboken-1.0.10" "pyside-qt4.7+1.0.9")
+           
+          for pkg in "${pkgs[@]}" ; do
+              wget --tries=10 http://pr.willowgarage.com/downloads/${pkg}.tar.bz2
+              tar xf ${pkg}.tar.bz2
+              rm -rf "${pkg}/build"
+              mkdir -p "${pkg}/build"
+              (cd "${pkg}/build"
+              cmake -DCMAKE_INSTALL_PREFIX=/usr ..  && make -j4 && sudo make install || exit 1
+              ) # exit from "${pkg}/build"
+          done
+      fi
+    natty: libpyside-dev libshiboken-dev shiboken libgenrunner-dev
+    oneiric: libpyside-dev libshiboken-dev shiboken libgenrunner-dev
+    precise: libpyside-dev libshiboken-dev shiboken libgenrunner-dev
+  osxbrew:
+    homebrew:
+      packages: [ pyside, shiboken, generatorrunner ]
