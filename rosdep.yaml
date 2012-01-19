@@ -16,8 +16,3 @@ qt4-qmake:
     lion:
       homebrew:
         packages: [ qt ]
-pyside:
-  ubuntu: python-pyside.qtcore python-pyside.qtgui libpyside-dev libshiboken-dev shiboken libgenrunner-dev
-  osxbrew:
-    homebrew:
-      packages: [ pyside, shiboken, generatorrunner ]
