@@ -45,7 +45,7 @@
 
 #include <deque>
 
-namespace ogre_tools
+namespace rviz
 {
 class Arrow;
 }
@@ -86,7 +86,6 @@ public:
   uint32_t getKeep() { return keep_; }
 
   // Overrides from Display
-  virtual void targetFrameChanged();
   virtual void fixedFrameChanged();
   virtual void createProperties();
   virtual void update(float wall_dt, float ros_dt);
@@ -99,7 +98,7 @@ protected:
 
   void incomingMessage( const nav_msgs::Odometry::ConstPtr& message );
   void processMessage( const nav_msgs::Odometry::ConstPtr& message );
-  void transformArrow( const nav_msgs::Odometry::ConstPtr& message, ogre_tools::Arrow* arrow );
+  void transformArrow( const nav_msgs::Odometry::ConstPtr& message, Arrow* arrow );
 
   // overrides from Display
   virtual void onEnable();
@@ -109,7 +108,7 @@ protected:
   Color color_;
   uint32_t keep_;
 
-  typedef std::deque<ogre_tools::Arrow*> D_Arrow;
+  typedef std::deque<Arrow*> D_Arrow;
   D_Arrow arrows_;
 
   Ogre::SceneNode* scene_node_;

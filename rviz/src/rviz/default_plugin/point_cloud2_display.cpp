@@ -36,7 +36,7 @@
 #include "rviz/validate_floats.h"
 
 #include <ros/time.h>
-#include "ogre_tools/point_cloud.h"
+#include "rviz/ogre_helpers/point_cloud.h"
 
 #include <tf/transform_listener.h>
 
@@ -195,10 +195,6 @@ void PointCloud2Display::incomingCloudCallback(const sensor_msgs::PointCloud2Con
   filtered->row_step = output_count;
 
   addMessage(filtered);
-}
-
-void PointCloud2Display::targetFrameChanged()
-{
 }
 
 void PointCloud2Display::fixedFrameChanged()

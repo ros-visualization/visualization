@@ -43,7 +43,7 @@
 
 #include <boost/shared_ptr.hpp>
 
-namespace ogre_tools
+namespace rviz
 {
 class PointCloud;
 }
@@ -79,7 +79,6 @@ public:
   float getAlpha() { return alpha_; }
 
   // Overrides from Display
-  virtual void targetFrameChanged() {}
   virtual void fixedFrameChanged();
   virtual void createProperties();
   virtual void update(float wall_dt, float ros_dt);
@@ -105,7 +104,7 @@ protected:
   float alpha_;
 
   Ogre::SceneNode* scene_node_;
-  ogre_tools::PointCloud* cloud_;
+  PointCloud* cloud_;
 
   message_filters::Subscriber<nav_msgs::GridCells> sub_;
   tf::MessageFilter<nav_msgs::GridCells>* tf_filter_;

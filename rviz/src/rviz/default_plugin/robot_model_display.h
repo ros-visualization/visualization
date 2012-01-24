@@ -43,7 +43,7 @@ class Entity;
 class SceneNode;
 }
 
-namespace ogre_tools
+namespace rviz
 {
 class Axes;
 }
@@ -105,8 +105,7 @@ public:
   void clear();
 
   // Overrides from Display
-  virtual void targetFrameChanged();
-  virtual void fixedFrameChanged() {}
+  virtual void fixedFrameChanged();
   virtual void createProperties();
   virtual void reset();
 

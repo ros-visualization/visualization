@@ -77,8 +77,6 @@ public:
   void setTransport(const std::string& transport);
 
   // Overrides from Display
-  virtual void targetFrameChanged();
-  virtual void fixedFrameChanged();
   virtual void createProperties();
   virtual void update(float wall_dt, float ros_dt);
   virtual void reset();
@@ -113,23 +111,9 @@ protected:
 
   ROSImageTexture texture_;
 
-  class Panel;
-
-  Panel* render_panel_;
+  RenderPanel* render_panel_;
 
   PanelDockWidget* panel_container_;
-
-  class Panel: public RenderPanel
-  {
-  public:
-    Panel( ImageDisplay* display, QWidget* parent = 0 );
-    void setActive( bool active );
-    void updateRenderWindow();
-  protected:
-    virtual void showEvent( QShowEvent *event );
-    ImageDisplay* display_;
-    bool active_;
-  };
 };
 
 } // namespace rviz

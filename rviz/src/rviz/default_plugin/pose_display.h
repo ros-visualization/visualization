@@ -44,7 +44,7 @@
 #include <message_filters/subscriber.h>
 #include <tf/message_filter.h>
 
-namespace ogre_tools
+namespace rviz
 {
 class Arrow;
 class Axes;
@@ -109,7 +109,6 @@ public:
   float getAxesLength() { return axes_length_; }
 
   // Overrides from Display
-  virtual void targetFrameChanged();
   virtual void fixedFrameChanged();
   virtual void createProperties();
   virtual void update(float wall_dt, float ros_dt);
@@ -144,8 +143,8 @@ protected:
   float axes_length_;
   float axes_radius_;
 
-  ogre_tools::Arrow* arrow_;
-  ogre_tools::Axes* axes_;
+  rviz::Arrow* arrow_;
+  rviz::Axes* axes_;
   CollObjectHandle coll_;
   PoseDisplaySelectionHandlerPtr coll_handler_;
 

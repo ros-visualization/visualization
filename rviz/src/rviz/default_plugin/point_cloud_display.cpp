@@ -34,7 +34,7 @@
 #include "rviz/frame_manager.h"
 
 #include <ros/time.h>
-#include "ogre_tools/point_cloud.h"
+#include "rviz/ogre_helpers/point_cloud.h"
 
 #include <tf/transform_listener.h>
 
@@ -111,10 +111,6 @@ void PointCloudDisplay::unsubscribe()
 void PointCloudDisplay::incomingCloudCallback(const sensor_msgs::PointCloudConstPtr& cloud)
 {
   addMessage(cloud);
-}
-
-void PointCloudDisplay::targetFrameChanged()
-{
 }
 
 void PointCloudDisplay::fixedFrameChanged()

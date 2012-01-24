@@ -36,16 +36,16 @@
 #include <QDialogButtonBox>
 #include <QPushButton>
 
-#include "new_display_dialog.h"
+#include "new_object_dialog.h"
 
 namespace rviz
 {
 
-NewDisplayDialog::NewDisplayDialog( pluginlib::ClassLoader<Display>* class_loader,
-                                    const S_string& current_display_names,
-                                    std::string* lookup_name_output,
-                                    std::string* display_name_output,
-                                    QWidget* parent )
+NewObjectDialog::NewObjectDialog( pluginlib::ClassLoaderBase* class_loader,
+                                  const S_string& current_display_names,
+                                  std::string* lookup_name_output,
+                                  std::string* display_name_output,
+                                  QWidget* parent )
 : QDialog( parent )
 , class_loader_( class_loader )
 , current_display_names_( current_display_names )
@@ -102,7 +102,7 @@ NewDisplayDialog::NewDisplayDialog( pluginlib::ClassLoader<Display>* class_loade
            this, SLOT( onNameChanged() ));
 }
 
-void NewDisplayDialog::fillTree( QTreeWidget* tree )
+void NewObjectDialog::fillTree( QTreeWidget* tree )
 {
   std::vector<std::string> classes = class_loader_->getDeclaredClasses();
 
@@ -140,7 +140,7 @@ void NewDisplayDialog::fillTree( QTreeWidget* tree )
   }
 }
 
-void NewDisplayDialog::onDisplaySelected( QTreeWidgetItem* selected_item )
+void NewObjectDialog::onDisplaySelected( QTreeWidgetItem* selected_item )
 {
   QString html = "<html><body>" + selected_item->whatsThis( 0 ) + "</body></html>";
   description_->setHtml( html );
@@ -180,7 +180,7 @@ void NewDisplayDialog::onDisplaySelected( QTreeWidgetItem* selected_item )
   button_box_->button( QDialogButtonBox::Ok )->setEnabled( isValid() );
 }
 
-bool NewDisplayDialog::isValid()
+bool NewObjectDialog::isValid()
 {
   std::string display_name = name_editor_->text().toStdString();
   if( lookup_name_.size() == 0 )
@@ -202,17 +202,17 @@ bool NewDisplayDialog::isValid()
   return true;
 }
 
-void NewDisplayDialog::setError( const QString& error_text )
+void NewObjectDialog::setError( const QString& error_text )
 {
   button_box_->button( QDialogButtonBox::Ok )->setToolTip( error_text );
 }
 
-void NewDisplayDialog::onNameChanged()
+void NewObjectDialog::onNameChanged()
 {
   button_box_->button( QDialogButtonBox::Ok )->setEnabled( isValid() );
 }
 
-void NewDisplayDialog::accept()
+void NewObjectDialog::accept()
 {
   if( isValid() )
   {

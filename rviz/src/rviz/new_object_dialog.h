@@ -52,11 +52,11 @@ namespace rviz
 typedef std::vector<std::string> V_string;
 typedef std::set<std::string> S_string;
 
-class NewDisplayDialog : public QDialog
+class NewObjectDialog : public QDialog
 {
 Q_OBJECT
 public:
-  NewDisplayDialog( pluginlib::ClassLoader<Display>* class_loader,
+  NewObjectDialog( pluginlib::ClassLoaderBase* class_loader,
                     const S_string& current_display_names,
                     std::string* lookup_name_output,
                     std::string* display_name_output,
@@ -81,7 +81,7 @@ private:
    * error message if error_text is empty. */
   void setError( const QString& error_text );
 
-  pluginlib::ClassLoader<Display>* class_loader_;
+  pluginlib::ClassLoaderBase* class_loader_;
   const S_string& current_display_names_;
 
   std::string* lookup_name_output_;

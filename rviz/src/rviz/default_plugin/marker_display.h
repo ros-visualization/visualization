@@ -51,7 +51,7 @@ class SceneManager;
 class SceneNode;
 }
 
-namespace ogre_tools
+namespace rviz
 {
 class Object;
 }
@@ -83,7 +83,6 @@ public:
 
   virtual void update(float wall_dt, float ros_dt);
 
-  virtual void targetFrameChanged();
   virtual void fixedFrameChanged();
   virtual void reset();
 

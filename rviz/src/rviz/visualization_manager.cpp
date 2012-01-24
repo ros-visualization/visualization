@@ -53,7 +53,7 @@
 #include "tools/selection_tool.h"
 #include "tools/interaction_tool.h"
 
-#include <ogre_tools/qt_ogre_render_window.h>
+#include <ogre_helpers/qt_ogre_render_window.h>
 
 #include <tf/transform_listener.h>
 
@@ -126,8 +126,6 @@ VisualizationManager::VisualizationManager( RenderPanel* render_panel, WindowMan
   cat_prop->collapse();
 
   setBackgroundColor(Color(0.0f, 0.0f, 0.0f));
-
-  Ogre::ResourceGroupManager::getSingleton().createResourceGroup(ROS_PACKAGE_NAME );
 
   createColorMaterials();
 
@@ -517,7 +515,6 @@ void VisualizationManager::onDisplayCreated(DisplayWrapper* wrapper)
   display->setLockRenderCallback( boost::bind( &VisualizationManager::lockRender, this ) );
   display->setUnlockRenderCallback( boost::bind( &VisualizationManager::unlockRender, this ) );
 
-  display->setTargetFrame( target_frame_ );
   display->setFixedFrame( fixed_frame_ );
 }
 
@@ -860,18 +857,6 @@ void VisualizationManager::setTargetFrame( const std::string& _frame )
   }
 
   target_frame_ = remapped_name;
-
-  V_DisplayWrapper::iterator it = displays_.begin();
-  V_DisplayWrapper::iterator end = displays_.end();
-  for ( ; it != end; ++it )
-  {
-    Display* display = (*it)->getDisplay();
-
-    if(display)
-    {
-      display->setTargetFrame(target_frame_);
-    }
-  }
 
   propertyChanged(target_frame_property_);
 

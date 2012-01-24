@@ -42,7 +42,7 @@
 
 #include <boost/shared_ptr.hpp>
 
-namespace ogre_tools
+namespace rviz
 {
 class Shape;
 }
@@ -81,7 +81,6 @@ public:
   float getAlpha() { return alpha_; }
 
   // Overrides from Display
-  virtual void targetFrameChanged() {}
   virtual void fixedFrameChanged();
   virtual void createProperties();
   virtual void update(float wall_dt, float ros_dt);
@@ -110,7 +109,7 @@ protected:
   uint32_t messages_received_;
 
   Ogre::SceneNode* scene_node_;
-  std::vector<ogre_tools::Shape* > cones_;      ///< Handles actually drawing the cone
+  std::vector<Shape* > cones_;      ///< Handles actually drawing the cone
 
   message_filters::Subscriber<sensor_msgs::Range> sub_;
   tf::MessageFilter<sensor_msgs::Range>* tf_filter_;

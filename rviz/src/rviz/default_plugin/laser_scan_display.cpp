@@ -33,7 +33,7 @@
 #include "rviz/properties/property_manager.h"
 #include "rviz/frame_manager.h"
 
-#include "ogre_tools/point_cloud.h"
+#include "rviz/ogre_helpers/point_cloud.h"
 
 #include <tf/transform_listener.h>
 #include <sensor_msgs/PointCloud.h>
@@ -139,10 +139,6 @@ void LaserScanDisplay::incomingScanCallback(const sensor_msgs::LaserScan::ConstP
     return;
   }
   addMessage(cloud);
-}
-
-void LaserScanDisplay::targetFrameChanged()
-{
 }
 
 void LaserScanDisplay::fixedFrameChanged()

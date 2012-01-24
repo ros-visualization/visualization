@@ -35,10 +35,14 @@
 
 #include <string>
 #include <deque>
+#include <set>
 #include <boost/shared_ptr.hpp>
+
+#include <pluginlib/class_loader.h>
 
 #include "rviz/window_manager_interface.h"
 #include "rviz/config.h"
+#include "rviz/panel.h"
 
 class QSplashScreen;
 class QAction;
@@ -84,13 +88,17 @@ public:
 
   // overrides from WindowManagerInterface
   virtual QWidget* getParentWindow();
-  virtual PanelDockWidget* addPane( const std::string& name, QWidget* panel, Qt::DockWidgetArea area = Qt::LeftDockWidgetArea, bool floating = true );
+  virtual PanelDockWidget* addPane( const std::string& name,
+                                    QWidget* panel,
+                                    Qt::DockWidgetArea area = Qt::LeftDockWidgetArea,
+                                    bool floating = true );
 
 protected Q_SLOTS:
   void onOpen();
   void onSave();
   void onRecentConfigSelected();
   void onHelpWiki();
+  void openNewPanelDialog();
 
   /** Looks up the Tool for this action and calls
    * VisualizationManager::setCurrentTool(). */
@@ -111,6 +119,13 @@ protected Q_SLOTS:
    * URI. */
   void changeMaster();
 
+  /** Remove the given panel's name from the list of current panel names. */
+  void onPanelRemoved( QObject* panel );
+
+  /** Delete a panel widget.  sender() of the signal should be a
+   * QAction whose text() is the name of the panel. */
+  void onDeletePanel();
+
 protected:
   void initConfigs();
   void initMenus();
@@ -129,6 +144,14 @@ protected:
 
   QRect hackedFrameGeometry();
 
+  PanelDockWidget* addCustomPanel( const std::string& name,
+                                   const std::string& class_lookup_name,
+                                   Qt::DockWidgetArea area = Qt::LeftDockWidgetArea,
+                                   bool floating = true );
+
+  void loadCustomPanels( const boost::shared_ptr<Config>& config );
+  void saveCustomPanels( const boost::shared_ptr<Config>& config );
+
   RenderPanel* render_panel_;
   DisplaysPanel* displays_panel_;
   ViewsPanel* views_panel_;
@@ -146,6 +169,7 @@ protected:
   QMenu* file_menu_;
   QMenu* recent_configs_menu_;
   QMenu* view_menu_;
+  QMenu* delete_view_menu_;
   QMenu* plugins_menu_;
   QList<QAction*> view_menu_actions_;
 
@@ -167,6 +191,21 @@ protected:
   std::map<QAction*,Tool*> action_to_tool_map_;
   std::map<Tool*,QAction*> tool_to_action_map_;
   bool show_choose_new_master_option_;
+
+  typedef std::set<std::string> S_string;
+  S_string panel_names_;
+  pluginlib::ClassLoader<Panel>* panel_class_loader_;
+
+  struct PanelRecord
+  {
+    Panel* panel;
+    PanelDockWidget* dock;
+    std::string name;
+    std::string lookup_name; // class lookup name needed by pluginlib.
+    QAction* delete_action;
+  };
+  typedef std::map<std::string, PanelRecord> M_PanelRecord;
+  M_PanelRecord custom_panels_;
 };
 
 }

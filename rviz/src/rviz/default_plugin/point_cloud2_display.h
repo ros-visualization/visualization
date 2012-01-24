@@ -34,7 +34,7 @@
 #include "rviz/helpers/color.h"
 #include "rviz/properties/forwards.h"
 
-#include "ogre_tools/point_cloud.h"
+#include "rviz/ogre_helpers/point_cloud.h"
 
 #include "sensor_msgs/PointCloud2.h"
 
@@ -68,7 +68,6 @@ public:
 
   // Overrides from Display
   virtual void createProperties();
-  virtual void targetFrameChanged();
   virtual void fixedFrameChanged();
 
   /**
