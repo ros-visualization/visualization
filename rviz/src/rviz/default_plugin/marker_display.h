@@ -30,20 +30,22 @@
 #ifndef RVIZ_MARKER_DISPLAY_H
 #define RVIZ_MARKER_DISPLAY_H
 
-#include "rviz/display.h"
-#include "rviz/selection/forwards.h"
-#include "rviz/properties/forwards.h"
-
 #include <map>
 #include <set>
 
-#include <visualization_msgs/Marker.h>
-#include <visualization_msgs/MarkerArray.h>
 #include <boost/thread/mutex.hpp>
 #include <boost/shared_ptr.hpp>
 
-#include <message_filters/subscriber.h>
 #include <tf/message_filter.h>
+
+#include <message_filters/subscriber.h>
+
+#include <visualization_msgs/Marker.h>
+#include <visualization_msgs/MarkerArray.h>
+
+#include "rviz/display.h"
+#include "rviz/properties/bool_property.h"
+#include "rviz/selection/forwards.h"
 
 namespace Ogre
 {
@@ -53,18 +55,15 @@ class SceneNode;
 
 namespace rviz
 {
-class Object;
-}
-
-namespace rviz
-{
-
-class MarkerSelectionHandler;
-typedef boost::shared_ptr<MarkerSelectionHandler> MarkerSelectionHandlerPtr;
-
+class IntProperty;
 class MarkerBase;
-typedef boost::shared_ptr<MarkerBase> MarkerBasePtr;
+class MarkerNamespace;
+class MarkerSelectionHandler;
+class Object;
+class RosTopicProperty;
 
+typedef boost::shared_ptr<MarkerSelectionHandler> MarkerSelectionHandlerPtr;
+typedef boost::shared_ptr<MarkerBase> MarkerBasePtr;
 typedef std::pair<std::string, int32_t> MarkerID;
 
 /**
@@ -73,8 +72,9 @@ typedef std::pair<std::string, int32_t> MarkerID;
  *
  * Markers come in as visualization_msgs::Marker messages.  See the Marker message for more information.
  */
-class MarkerDisplay : public Display
+class MarkerDisplay: public Display
 {
+Q_OBJECT
 public:
   MarkerDisplay();
   virtual ~MarkerDisplay();
@@ -86,14 +86,6 @@ public:
   virtual void fixedFrameChanged();
   virtual void reset();
 
-  void setMarkerTopic(const std::string& topic);
-  const std::string& getMarkerTopic() { return marker_topic_; }
-
-  virtual void createProperties();
-
-  void setNamespaceEnabled(const std::string& ns, bool enabled);
-  bool isNamespaceEnabled(const std::string& ns);
-
   void deleteMarker(MarkerID id);
 
   void setMarkerStatus(MarkerID id, StatusLevel level, const std::string& text);
@@ -103,14 +95,29 @@ protected:
   virtual void onEnable();
   virtual void onDisable();
 
-  /**
-   * \brief Subscribes to the "visualization_marker" and "visualization_marker_array" topics
-   */
+  /** @brief Subscribes to the "visualization_marker" and
+   * "visualization_marker_array" topics. */
   virtual void subscribe();
-  /**
-   * \brief Unsubscribes from the "visualization_marker" "visualization_marker_array" topics
-   */
+
+  /** @brief Unsubscribes from the "visualization_marker"
+   * "visualization_marker_array" topics. */
   virtual void unsubscribe();
+
+  /** @brief Process a MarkerArray message. */
+  void incomingMarkerArray( const visualization_msgs::MarkerArray::ConstPtr& array );
+
+  ros::Subscriber array_sub_;
+
+  RosTopicProperty* marker_topic_property_;
+  IntProperty* queue_size_property_;
+
+private Q_SLOTS:
+  void updateQueueSize();
+  void updateTopic();
+
+private:
+  /** @brief Delete all the markers within the given namespace. */
+  void deleteMarkersInNamespace( const std::string& ns );
 
   /**
    * \brief Removes all the markers
@@ -133,14 +140,10 @@ protected:
    */
   void processDelete( const visualization_msgs::Marker::ConstPtr& message );
 
-  MarkerBasePtr getMarker(MarkerID id);
-
   /**
    * \brief ROS callback notifying us of a new marker
    */
   void incomingMarker(const visualization_msgs::Marker::ConstPtr& marker);
-
-  void incomingMarkerArray(const visualization_msgs::MarkerArray::ConstPtr& array);
 
   void failedMarker(const visualization_msgs::Marker::ConstPtr& marker, tf::FilterFailureReason reason);
 
@@ -158,21 +161,29 @@ protected:
 
   message_filters::Subscriber<visualization_msgs::Marker> sub_;
   tf::MessageFilter<visualization_msgs::Marker>* tf_filter_;
-  ros::Subscriber array_sub_;
 
-  std::string marker_topic_;
-
-  struct Namespace
-  {
-    std::string name;
-    bool enabled;
-    BoolPropertyWPtr prop;
-  };
-  typedef std::map<std::string, Namespace> M_Namespace;
+  typedef QHash<QString, MarkerNamespace*> M_Namespace;
   M_Namespace namespaces_;
 
-  ROSTopicStringPropertyWPtr marker_topic_property_;
-  CategoryPropertyWPtr namespaces_category_;
+  Property* namespaces_category_;
+
+  friend class MarkerNamespace;
+};
+
+/** @brief Manager of a single marker namespace.  Keeps a hash from
+ * marker IDs to MarkerBasePtr, and creates or destroys them when . */
+class MarkerNamespace: public BoolProperty
+{
+Q_OBJECT
+public:
+  MarkerNamespace( const QString& name, Property* parent_property, MarkerDisplay* owner );
+  bool isEnabled() const { return getBool(); }
+
+public Q_SLOTS:
+  void onEnableChanged();
+
+private:
+  MarkerDisplay* owner_;
 };
 
 } // namespace rviz

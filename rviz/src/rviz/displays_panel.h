@@ -38,19 +38,21 @@
 #include <map>
 #include <set>
 
-class QTreeWidgetItem;
 class QPushButton;
+
+namespace YAML
+{
+class Node;
+class Emitter;
+}
 
 namespace rviz
 {
 
 class PropertyTreeWidget;
 class PropertyTreeWithHelp;
-class Config;
 class VisualizationManager;
 class Display;
-class DisplayWrapper;
-typedef std::vector<DisplayWrapper*> V_DisplayWrapper;
 
 /**
  * \class DisplaysPanel
@@ -68,10 +70,13 @@ public:
   PropertyTreeWidget* getPropertyTreeWidget() { return property_grid_; }
   VisualizationManager* getManager() { return manager_; }
 
-protected Q_SLOTS:
-  /// Call 5 times per second.
-  void onStateChangedTimer();
+  /** @brief Write state to the given YAML emitter. */
+  void save( YAML::Emitter& emitter );
 
+  /** @brief Read state from the given YAML node. */
+  void load( const YAML::Node& yaml_node );
+
+protected Q_SLOTS:
   /// Called when the "Add" button is pressed
   void onNewDisplay();
   /// Called when the "Remove" button is pressed
@@ -81,47 +86,12 @@ protected Q_SLOTS:
 
   void onSelectionChanged();
 
-  /** Renumber displays based on order in tree widget. */
-  void renumberDisplays();
-
-  // Other callbacks
-  /// Called when a display is enabled or disabled
-  void onDisplayStateChanged( Display* display );
-  void onDisplayCreated( DisplayWrapper* display );
-  void onDisplayDestroyed( DisplayWrapper* display );
-  void onDisplayAdding( DisplayWrapper* display );
-  void onDisplayAdded( DisplayWrapper* display );
-  void onDisplayRemoved( DisplayWrapper* display );
-
   /** Read saved state from the given config object. */
-  void readFromConfig( const boost::shared_ptr<Config>& config );
-
-  /** Write state to the given config object. */
-  void writeToConfig( const boost::shared_ptr<Config>& config );
+/////  void readFromConfig( const boost::shared_ptr<Config>& config );
 
 protected:
-  void setDisplayCategoryLabel( const DisplayWrapper* display, int index );
-  void setDisplayCategoryColor( const DisplayWrapper* display );
-
-  void sortDisplays();
-
-  /** Given a QTreeWidgetItem, return the corresponding
-   * DisplayWrapper, or NULL if the item does not correspond to a
-   * DisplayWrapper. */
-  DisplayWrapper* displayWrapperFromItem( QTreeWidgetItem* selected_item );
-
-  /** Return the set of DisplayWrappers which are currently selected. */
-  std::set<DisplayWrapper*> getSelectedDisplays();
-
   PropertyTreeWidget* property_grid_;
   VisualizationManager* manager_;
-
-  typedef std::map<DisplayWrapper*, uint32_t> M_DisplayToIndex;
-  M_DisplayToIndex display_map_;
-
-  typedef std::set<Display*> S_Display;
-  boost::mutex state_changed_displays_mutex_;
-  S_Display state_changed_displays_;
 
   QPushButton* remove_button_;
   QPushButton* rename_button_;
@@ -131,4 +101,3 @@ protected:
 } // namespace rviz
 
 #endif
-

@@ -27,98 +27,56 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-
 #ifndef RANGE_DISPLAY_H
 #define RANGE_DISPLAY_H
 
-#include "rviz/display.h"
-#include "rviz/helpers/color.h"
-#include "rviz/properties/forwards.h"
-
 #include <sensor_msgs/Range.h>
 
-#include <message_filters/subscriber.h>
-#include <tf/message_filter.h>
-
-#include <boost/shared_ptr.hpp>
+#include "rviz/message_filter_display.h"
 
 namespace rviz
 {
 class Shape;
 }
 
-
-namespace Ogre
-{
-class SceneNode;
-}
-
 namespace rviz
 {
+
+class ColorProperty;
+class FloatProperty;
+class IntProperty;
 
 /**
  * \class RangeDisplay
  * \brief Displays a sensor_msgs::Range message as a cone.
  */
-class RangeDisplay : public rviz::Display
+class RangeDisplay: public MessageFilterDisplay<sensor_msgs::Range>
 {
+Q_OBJECT
 public:
   RangeDisplay();
   virtual ~RangeDisplay();
 
-  virtual void onInitialize();
-
-  void setTopic( const std::string& topic );
-  const std::string& getTopic() { return topic_; }
-
-  void setColor( const rviz::Color& color );
-  const rviz::Color& getColor() { return color_; }
-
-  void setBuffer( int buffer );
-  int getBuffer() { return buffer_len_; }
-
-  void setAlpha( float alpha );
-  float getAlpha() { return alpha_; }
-
-  // Overrides from Display
-  virtual void fixedFrameChanged();
-  virtual void createProperties();
-  virtual void update(float wall_dt, float ros_dt);
+  /** @brief Overridden from Display. */
   virtual void reset();
 
-  static const char* getTypeStatic() { return "Range"; }
-  virtual const char* getType() const { return getTypeStatic(); }
-  static const char* getDescription();
-
 protected:
-  void subscribe();
-  void unsubscribe();
-  void clear();
-  void incomingMessage(const sensor_msgs::Range::ConstPtr& msg);
-  void processMessage(const sensor_msgs::Range::ConstPtr& msg);
+  /** @brief Overridden from Display. */
+  virtual void onInitialize();
 
-  // overrides from Display
-  virtual void onEnable();
-  virtual void onDisable();
+  /** @brief Overridden from MessageFilterDisplay. */
+  virtual void processMessage( const sensor_msgs::Range::ConstPtr& msg );
 
-  std::string topic_;
-  rviz::Color color_;
-  float alpha_;
-  int buffer_len_;
+private Q_SLOTS:
+  void updateBufferLength();
+  void updateColorAndAlpha();
 
-  uint32_t messages_received_;
+private:
+  std::vector<Shape* > cones_;      ///< Handles actually drawing the cones
 
-  Ogre::SceneNode* scene_node_;
-  std::vector<Shape* > cones_;      ///< Handles actually drawing the cone
-
-  message_filters::Subscriber<sensor_msgs::Range> sub_;
-  tf::MessageFilter<sensor_msgs::Range>* tf_filter_;
-  sensor_msgs::Range::ConstPtr current_message_;
-
-  rviz::ColorPropertyWPtr color_property_;
-  rviz::ROSTopicStringPropertyWPtr topic_property_;
-  rviz::FloatPropertyWPtr alpha_property_;
-  rviz::IntPropertyWPtr bufferLen_property_;
+  ColorProperty* color_property_;
+  FloatProperty* alpha_property_;
+  IntProperty* buffer_length_property_;
 };
 
 } // namespace range_plugin

@@ -34,7 +34,6 @@
 
 #include "forwards.h"
 #include "selection_handler.h"
-#include "rviz/properties/forwards.h"
 
 #include <boost/shared_ptr.hpp>
 #include <boost/unordered_map.hpp>
@@ -68,9 +67,9 @@ class MovableObject;
 
 namespace rviz
 {
+class PropertyTreeModel;
 class ViewportMouseEvent;
 class VisualizationManager;
-class PropertyManager;
 
 class SelectionManager: public QObject, public Ogre::MaterialManager::Listener, public Ogre::RenderQueueListener
 {
@@ -150,15 +149,19 @@ public:
                            const std::string& invocation, 
                            bool& skipThisInvocation );
 
-Q_SIGNALS:
-  void selectionSet( const M_Picked& old_selection, const M_Picked& new_selection );
-  void selectionSetting();
+  PropertyTreeModel* getPropertyModel() { return property_model_; }
+
+private Q_SLOTS:
+  /** @brief Call updateProperties() on all SelectionHandlers in the
+   * current selection. */
+  void updateProperties();
+
+private:
   void selectionAdded( const M_Picked& added );
   void selectionRemoved( const M_Picked& removed );
 
-protected:
-  std::pair<Picked, bool> addSelection(const Picked& obj);
-  void removeSelection(const Picked& obj);
+  std::pair<Picked, bool> addSelectedObject(const Picked& obj);
+  void removeSelectedObject(const Picked& obj);
 
   void setHighlightRect(Ogre::Viewport* viewport, int x1, int y1, int x2, int y2);
 
@@ -228,6 +231,9 @@ protected:
   Ogre::Technique *fallback_pick_technique_;
 
   uint32_t texture_size_;
+
+  PropertyTreeModel* property_model_;
+  bool setting_;
 };
 
 } // namespace rviz

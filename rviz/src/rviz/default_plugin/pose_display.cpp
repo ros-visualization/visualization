@@ -28,7 +28,7 @@
  */
 
 #include "pose_display.h"
-#include "rviz/visualization_manager.h"
+#include "rviz/display_context.h"
 #include "rviz/properties/property.h"
 #include "rviz/properties/property_manager.h"
 #include "rviz/selection/selection_manager.h"
@@ -105,12 +105,12 @@ PoseDisplay::PoseDisplay()
 
 void PoseDisplay::onInitialize()
 {
-  tf_filter_ = new tf::MessageFilter<geometry_msgs::PoseStamped>(*vis_manager_->getTFClient(), "", 5, update_nh_);
+  tf_filter_ = new tf::MessageFilter<geometry_msgs::PoseStamped>(*context_->getTFClient(), "", 5, update_nh_);
   scene_node_ = scene_manager_->getRootSceneNode()->createChildSceneNode();
 
   tf_filter_->connectInput(sub_);
   tf_filter_->registerCallback(boost::bind(&PoseDisplay::incomingMessage, this, _1));
-  vis_manager_->getFrameManager()->registerFilterForTransformStatusCheck(tf_filter_, this);
+  context_->getFrameManager()->registerFilterForTransformStatusCheck(tf_filter_, this);
 
   arrow_ = new rviz::Arrow(scene_manager_, scene_node_, shaft_length_, shaft_radius_, head_length_, head_radius_);
   // Arrow points in -Z direction, so rotate the orientation before display.
@@ -124,7 +124,7 @@ void PoseDisplay::onInitialize()
   Ogre::Quaternion quat(Ogre::Quaternion::IDENTITY);
   axes_->setOrientation(quat);
 
-  SelectionManager* sel_manager = vis_manager_->getSelectionManager();
+  SelectionManager* sel_manager = context_->getSelectionManager();
   coll_handler_.reset(new PoseDisplaySelectionHandler(name_));
   coll_ = sel_manager->createCollisionForObject(arrow_, coll_handler_);
   sel_manager->createCollisionForObject(axes_, coll_handler_, coll_);
@@ -139,7 +139,7 @@ PoseDisplay::~PoseDisplay()
 
   clear();
 
-  SelectionManager* sel_manager = vis_manager_->getSelectionManager();
+  SelectionManager* sel_manager = context_->getSelectionManager();
   sel_manager->removeObject(coll_);
 
   delete arrow_;
@@ -154,7 +154,7 @@ void PoseDisplay::clear()
   setVisibility();
 
   messages_received_ = 0;
-  setStatus(status_levels::Warn, "Topic", "No messages received");
+  setStatus(StatusProperty::Warn, "Topic", "No messages received");
 }
 
 void PoseDisplay::setTopic( const std::string& topic )
@@ -165,7 +165,7 @@ void PoseDisplay::setTopic( const std::string& topic )
 
   propertyChanged(topic_property_);
 
-  causeRender();
+  context_->queueRender();
 }
 
 void PoseDisplay::setColor( const Color& color )
@@ -177,7 +177,7 @@ void PoseDisplay::setColor( const Color& color )
 
   propertyChanged(color_property_);
 
-  causeRender();
+  context_->queueRender();
 }
 
 void PoseDisplay::setAlpha( float a )
@@ -189,7 +189,7 @@ void PoseDisplay::setAlpha( float a )
 
   propertyChanged(alpha_property_);
 
-  causeRender();
+  context_->queueRender();
 }
 
 void PoseDisplay::setHeadRadius(float r)
@@ -244,7 +244,7 @@ void PoseDisplay::setShape(int shape)
 
   createShapeProperties();
 
-  causeRender();
+  context_->queueRender();
 }
 
 void PoseDisplay::setVisibility()
@@ -275,7 +275,15 @@ void PoseDisplay::subscribe()
     return;
   }
 
-  sub_.subscribe(update_nh_, topic_, 5);
+  try
+  {
+    sub_.subscribe(update_nh_, topic_, 5);
+    setStatus(StatusProperty::Ok, "Topic", "OK");
+  }
+  catch (ros::Exception& e)
+  {
+    setStatus(StatusProperty::Error, "Topic", std::string("Error subscribing: ") + e.what());
+  }
 }
 
 void PoseDisplay::unsubscribe()
@@ -314,32 +322,32 @@ void PoseDisplay::createShapeProperties()
       color_property_ = property_manager_->createProperty<ColorProperty>( "Color", property_prefix_, boost::bind( &PoseDisplay::getColor, this ),
                                                                           boost::bind( &PoseDisplay::setColor, this, _1 ), shape_category_, this );
       setPropertyHelpText(color_property_, "Color to draw the arrow.");
-      alpha_property_ = property_manager_->createProperty<FloatProperty>( "Alpha", property_prefix_, boost::bind( &PoseDisplay::getAlpha, this ),
+      alpha_property_ = new FloatProperty( "Alpha", property_prefix_, boost::bind( &PoseDisplay::getAlpha, this ),
                                                                           boost::bind( &PoseDisplay::setAlpha, this, _1 ), shape_category_, this );
       setPropertyHelpText(alpha_property_, "Amount of transparency to apply to the arrow.");
       FloatPropertyPtr float_prop = alpha_property_.lock();
       float_prop->setMin(0.0);
       float_prop->setMax(1.0);
 
-      shaft_length_property_ = property_manager_->createProperty<FloatProperty>( "Shaft Length", property_prefix_, boost::bind( &PoseDisplay::getShaftLength, this ),
+      shaft_length_property_ = new FloatProperty( "Shaft Length", property_prefix_, boost::bind( &PoseDisplay::getShaftLength, this ),
                                                                                  boost::bind( &PoseDisplay::setShaftLength, this, _1 ), shape_category_, this );
       setPropertyHelpText(shaft_length_property_, "Length of the arrow's shaft, in meters.");
-      shaft_radius_property_ = property_manager_->createProperty<FloatProperty>( "Shaft Radius", property_prefix_, boost::bind( &PoseDisplay::getShaftRadius, this ),
+      shaft_radius_property_ = new FloatProperty( "Shaft Radius", property_prefix_, boost::bind( &PoseDisplay::getShaftRadius, this ),
                                                                                  boost::bind( &PoseDisplay::setShaftRadius, this, _1 ), shape_category_, this );
       setPropertyHelpText(shaft_radius_property_, "Radius of the arrow's shaft, in meters.");
-      head_length_property_ = property_manager_->createProperty<FloatProperty>( "Head Length", property_prefix_, boost::bind( &PoseDisplay::getHeadLength, this ),
+      head_length_property_ = new FloatProperty( "Head Length", property_prefix_, boost::bind( &PoseDisplay::getHeadLength, this ),
                                                                                   boost::bind( &PoseDisplay::setHeadLength, this, _1 ), shape_category_, this );
       setPropertyHelpText(head_length_property_, "Length of the arrow's head, in meters.");
-      head_radius_property_ = property_manager_->createProperty<FloatProperty>( "Head Radius", property_prefix_, boost::bind( &PoseDisplay::getHeadRadius, this ),
+      head_radius_property_ = new FloatProperty( "Head Radius", property_prefix_, boost::bind( &PoseDisplay::getHeadRadius, this ),
                                                                                  boost::bind( &PoseDisplay::setHeadRadius, this, _1 ), shape_category_, this );
       setPropertyHelpText(head_radius_property_, "Radius of the arrow's head, in meters.");
     }
     break;
   case Axes:
-    axes_length_property_ = property_manager_->createProperty<FloatProperty>( "Axes Length", property_prefix_, boost::bind( &PoseDisplay::getAxesLength, this ),
+    axes_length_property_ = new FloatProperty( "Axes Length", property_prefix_, boost::bind( &PoseDisplay::getAxesLength, this ),
                                                                                 boost::bind( &PoseDisplay::setAxesLength, this, _1 ), shape_category_, this );
     setPropertyHelpText(axes_length_property_, "Length of each axis, in meters.");
-    axes_radius_property_ = property_manager_->createProperty<FloatProperty>( "Axes Radius", property_prefix_, boost::bind( &PoseDisplay::getAxesRadius, this ),
+    axes_radius_property_ = new FloatProperty( "Axes Radius", property_prefix_, boost::bind( &PoseDisplay::getAxesRadius, this ),
                                                                                boost::bind( &PoseDisplay::setAxesRadius, this, _1 ), shape_category_, this );
     setPropertyHelpText(axes_radius_property_, "Radius of each axis, in meters.");
     break;
@@ -349,13 +357,13 @@ void PoseDisplay::createShapeProperties()
 
 void PoseDisplay::createProperties()
 {
-  topic_property_ = property_manager_->createProperty<ROSTopicStringProperty>( "Topic", property_prefix_, boost::bind( &PoseDisplay::getTopic, this ),
+  topic_property_ = new RosTopicProperty( "Topic", property_prefix_, boost::bind( &PoseDisplay::getTopic, this ),
                                                                                 boost::bind( &PoseDisplay::setTopic, this, _1 ), parent_category_, this );
   setPropertyHelpText(topic_property_, "geometry_msgs::PoseStamped topic to subscribe to.");
   ROSTopicStringPropertyPtr topic_prop = topic_property_.lock();
   topic_prop->setMessageType(ros::message_traits::datatype<geometry_msgs::PoseStamped>());
 
-  shape_property_ = property_manager_->createProperty<EnumProperty>( "Shape", property_prefix_, boost::bind( &PoseDisplay::getShape, this ),
+  shape_property_ = new EnumProperty( "Shape", property_prefix_, boost::bind( &PoseDisplay::getShape, this ),
                                                                      boost::bind( &PoseDisplay::setShape, this, _1 ), parent_category_, this );
   setPropertyHelpText(shape_property_, "Shape to display the pose as.");
   EnumPropertyPtr enum_prop = shape_property_.lock();
@@ -381,19 +389,19 @@ void PoseDisplay::incomingMessage( const geometry_msgs::PoseStamped::ConstPtr& m
 
   if (!validateFloats(*message))
   {
-    setStatus(status_levels::Error, "Topic", "Message contained invalid floating point values (nans or infs)");
+    setStatus(StatusProperty::Error, "Topic", "Message contained invalid floating point values (nans or infs)");
     return;
   }
 
   {
     std::stringstream ss;
     ss << messages_received_ << " messages received";
-    setStatus(status_levels::Ok, "Topic", ss.str());
+    setStatus(StatusProperty::Ok, "Topic", ss.str());
   }
 
   Ogre::Vector3 position;
   Ogre::Quaternion orientation;
-  if (!vis_manager_->getFrameManager()->transform(message->header, message->pose, position, orientation))
+  if (!context_->getFrameManager()->transform(message->header, message->pose, position, orientation))
   {
     ROS_ERROR( "Error transforming pose '%s' from frame '%s' to frame '%s'", name_.c_str(), message->header.frame_id.c_str(), fixed_frame_.c_str() );
   }
@@ -405,7 +413,7 @@ void PoseDisplay::incomingMessage( const geometry_msgs::PoseStamped::ConstPtr& m
   coll_handler_->setMessage(message);
   setVisibility();
 
-  causeRender();
+  context_->queueRender();
 }
 
 void PoseDisplay::reset()

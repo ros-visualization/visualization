@@ -27,6 +27,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <QLabel>
 #include <QListWidget>
 #include <QComboBox>
 #include <QPushButton>
@@ -55,6 +56,14 @@ ViewsPanel::ViewsPanel( QWidget* parent )
   QPushButton* save_button = new QPushButton( "Save Current" );
   QPushButton* load_button = new QPushButton( "Load" );
   QPushButton* delete_button = new QPushButton( "Delete" );
+  QPushButton* zero_button = new QPushButton( "Zero" );
+  zero_button->setToolTip( "Jump to 0,0,0 with the current view controller. Shortcut: Z" );
+
+  QHBoxLayout* top_layout = new QHBoxLayout;
+  top_layout->addWidget( new QLabel( "Type:" ));
+  top_layout->addWidget( camera_type_selector_ );
+  top_layout->addStretch();
+  top_layout->addWidget( zero_button );
 
   QHBoxLayout* button_layout = new QHBoxLayout;
   button_layout->addWidget( save_button );
@@ -62,7 +71,7 @@ ViewsPanel::ViewsPanel( QWidget* parent )
   button_layout->addWidget( delete_button );
 
   QVBoxLayout* main_layout = new QVBoxLayout;
-  main_layout->addWidget( camera_type_selector_ );
+  main_layout->addLayout( top_layout );
   main_layout->addWidget( views_list_ );
   main_layout->addLayout( button_layout );
   setLayout( main_layout );
@@ -70,6 +79,7 @@ ViewsPanel::ViewsPanel( QWidget* parent )
   connect( save_button, SIGNAL( clicked() ), this, SLOT( onSaveClicked() ));
   connect( load_button, SIGNAL( clicked() ), this, SLOT( loadSelected() ));
   connect( delete_button, SIGNAL( clicked() ), this, SLOT( onDeleteClicked() ));
+  connect( zero_button, SIGNAL( clicked() ), this, SLOT( onZeroClicked() ));
 
   connect( camera_type_selector_, SIGNAL( activated( int )), this, SLOT( onCameraTypeSelected( int )));
   connect( views_list_, SIGNAL( itemActivated( QListWidgetItem* )), this, SLOT( loadSelected() ));
@@ -83,10 +93,10 @@ void ViewsPanel::initialize( VisualizationManager* manager )
 {
   manager_ = manager;
 
-  connect( manager_, SIGNAL( generalConfigLoaded( const boost::shared_ptr<Config>& )),
-           this, SLOT( onGeneralConfigLoaded( const boost::shared_ptr<Config>& )));
-  connect( manager_, SIGNAL( generalConfigSaving( const boost::shared_ptr<Config>& )),
-           this, SLOT( onGeneralConfigSaving( const boost::shared_ptr<Config>& )));
+/////  connect( manager_, SIGNAL( displaysConfigLoaded( const boost::shared_ptr<Config>& )),
+/////           this, SLOT( readFromConfig( const boost::shared_ptr<Config>& )));
+/////  connect( manager_, SIGNAL( displaysConfigSaved( const boost::shared_ptr<Config>& )),
+/////           this, SLOT( writeToConfig( const boost::shared_ptr<Config>& )));
   connect( manager_, SIGNAL( viewControllerTypeAdded( const std::string&, const std::string& )),
            this, SLOT( onViewControllerTypeAdded( const std::string&, const std::string& )));
   connect( manager_, SIGNAL( viewControllerChanged( ViewController* )),
@@ -99,7 +109,7 @@ void ViewsPanel::loadSelected()
   if( index >= 0 && index < (int) views_.size() )
   {
     const View& view = views_[ index ];
-    manager_->setTargetFrame( view.target_frame_ );
+    manager_->setTargetFrame( QString::fromStdString( view.target_frame_ ));
     manager_->setCurrentViewControllerType( view.controller_class_ );
     manager_->getCurrentViewController()->fromString( view.controller_config_ );
     manager_->queueRender();
@@ -122,12 +132,13 @@ void ViewsPanel::addView( const View& view )
 void ViewsPanel::save( const std::string& name )
 {
   View view;
-  view.target_frame_ = manager_->getTargetFrame();
+  view.target_frame_ = manager_->getTargetFrame().toStdString();
   view.controller_class_ = manager_->getCurrentViewControllerType();
   view.name_ = name;
   view.controller_config_ = manager_->getCurrentViewController()->toString();
 
   addView( view );
+  Q_EMIT configChanged();
 }
 
 void ViewsPanel::onViewControllerTypeAdded( const std::string& class_name, const std::string& name )
@@ -175,6 +186,14 @@ void ViewsPanel::onSaveClicked()
   }
 }
 
+void ViewsPanel::onZeroClicked()
+{
+  if( manager_->getCurrentViewController() )
+  {
+    manager_->getCurrentViewController()->reset();
+  }
+}
+
 void ViewsPanel::onDeleteClicked()
 {
   int index = views_list_->currentRow();
@@ -182,11 +201,20 @@ void ViewsPanel::onDeleteClicked()
   {
     views_.erase( views_.begin() + index );
     delete views_list_->item( index );
+    Q_EMIT configChanged();
   }
 }
 
-void ViewsPanel::onGeneralConfigLoaded( const boost::shared_ptr<Config>& config )
+void ViewsPanel::clear()
 {
+  views_.clear();
+  views_list_->clear();
+}
+
+void ViewsPanel::readFromConfig( const boost::shared_ptr<Config>& config )
+{
+  clear();
+
   int i = 0;
   while( 1 )
   {
@@ -229,7 +257,7 @@ void ViewsPanel::onGeneralConfigLoaded( const boost::shared_ptr<Config>& config 
   }
 }
 
-void ViewsPanel::onGeneralConfigSaving( const boost::shared_ptr<Config>& config )
+void ViewsPanel::writeToConfig( const boost::shared_ptr<Config>& config )
 {
   V_View::const_iterator it = views_.begin();
   V_View::const_iterator end = views_.end();

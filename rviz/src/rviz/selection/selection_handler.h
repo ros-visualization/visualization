@@ -32,8 +32,8 @@
 
 #include "forwards.h"
 #include "selection_handler.h"
-#include "rviz/properties/forwards.h"
 #include "rviz/viewport_mouse_event.h"
+#include "rviz/interactive_object.h"
 
 #include <boost/shared_ptr.hpp>
 #include <boost/unordered_map.hpp>
@@ -53,19 +53,15 @@ class MovableObject;
 namespace rviz
 {
 
+class Property;
 class ViewportMouseEvent;
 class VisualizationManager;
-class PropertyManager;
 
 typedef std::vector<Ogre::AxisAlignedBox> V_AABB;
-
-
 
 class SelectionHandler
 {
 public:
-  typedef std::vector<PropertyBaseWPtr> V_Property;
-
   SelectionHandler();
   virtual ~SelectionHandler();
 
@@ -75,9 +71,9 @@ public:
 
   virtual void updateTrackedBoxes();
 
-  virtual void createProperties(const Picked& obj, PropertyManager* property_manager) {}
-  virtual void destroyProperties(const Picked& obj, PropertyManager* property_manager);
-  virtual void updateProperties();
+  virtual void createProperties( const Picked& obj, Property* parent_property ) {}
+  virtual void destroyProperties( const Picked& obj );
+  virtual void updateProperties() {}
 
   virtual bool needsAdditionalRenderPass(uint32_t pass)
   {
@@ -92,22 +88,24 @@ public:
   virtual void onSelect(const Picked& obj);
   virtual void onDeselect(const Picked& obj);
 
-  // interface for interactive mode ////
+  /** @brief Set an object to listen to mouse events and other
+   * interaction calls during use of the 'interact' tool. */
+  virtual void setInteractiveObject( InteractiveObjectWPtr object );
 
-  // called when interactive mode is globally switched on/off
-  virtual void enableInteraction(bool enable) {}
-
-  // @return true if this handler is ready to receive mouse events
-  virtual bool isInteractive() { return false; }
-
-  // will receive all mouse events while the handler has focus (incl. set/kill focus events)
-  virtual void handleMouseEvent(const Picked& obj, ViewportMouseEvent& event) {}
+  /** @brief Get the object to listen to mouse events and other
+   * interaction calls during use of the 'interact' tool.
+   *
+   * Returns a boost::weak_ptr to the object, which may or may not
+   * point to something.  Do not lock() the result and hold it for
+   * long periods because it may cause something visual to stick
+   * around after it was meant to be destroyed. */
+  virtual InteractiveObjectWPtr getInteractiveObject();
 
 protected:
   void createBox(const std::pair<CollObjectHandle, uint64_t>& handles, const Ogre::AxisAlignedBox& aabb, const std::string& material_name);
   void destroyBox(const std::pair<CollObjectHandle, uint64_t>& handles);
 
-  V_Property properties_;
+  QList<Property*> properties_;
 
   typedef std::map<std::pair<CollObjectHandle, uint64_t>, std::pair<Ogre::SceneNode*, Ogre::WireBoundingBox*> > M_HandleToBox;
   M_HandleToBox boxes_;
@@ -137,6 +135,8 @@ protected:
   };
   typedef boost::shared_ptr<Listener> ListenerPtr;
   ListenerPtr listener_;
+
+  InteractiveObjectWPtr interactive_object_;
 
   friend class SelectionManager;
 };

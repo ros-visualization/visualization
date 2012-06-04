@@ -29,7 +29,7 @@
 
 #include "marker_base.h"
 #include "rviz/default_plugin/marker_display.h"
-#include "rviz/visualization_manager.h"
+#include "rviz/display_context.h"
 #include "rviz/selection/selection_manager.h"
 #include "marker_selection_handler.h"
 #include "rviz/frame_manager.h"
@@ -45,17 +45,17 @@
 namespace rviz
 {
 
-MarkerBase::MarkerBase(MarkerDisplay* owner, VisualizationManager* manager, Ogre::SceneNode* parent_node)
-: owner_(owner)
-, vis_manager_(manager)
-, scene_node_(parent_node->createChildSceneNode())
-, coll_(0)
+MarkerBase::MarkerBase( MarkerDisplay* owner, DisplayContext* context, Ogre::SceneNode* parent_node )
+  : owner_( owner )
+  , context_( context )
+  , scene_node_( parent_node->createChildSceneNode() )
+  , coll_( 0 )
 {}
 
 MarkerBase::~MarkerBase()
 {
-  vis_manager_->getSelectionManager()->removeObject(coll_);
-  vis_manager_->getSceneManager()->destroySceneNode(scene_node_);
+  context_->getSelectionManager()->removeObject(coll_);
+  context_->getSceneManager()->destroySceneNode(scene_node_);
 }
 
 void MarkerBase::setMessage(const Marker& message)
@@ -94,13 +94,13 @@ bool MarkerBase::transform(const MarkerConstPtr& message, Ogre::Vector3& pos, Og
     stamp = ros::Time();
   }
 
-  if (!FrameManager::instance()->transform(message->header.frame_id, stamp, message->pose, pos, orient))
+  if (!context_->getFrameManager()->transform(message->header.frame_id, stamp, message->pose, pos, orient))
   {
     std::string error;
-    FrameManager::instance()->transformHasProblems(message->header.frame_id, message->header.stamp, error);
+    context_->getFrameManager()->transformHasProblems(message->header.frame_id, message->header.stamp, error);
     if ( owner_ )
     {
-      owner_->setMarkerStatus(getID(), status_levels::Error, error);
+      owner_->setMarkerStatus(getID(), StatusProperty::Error, error);
     }
     return false;
   }
@@ -110,13 +110,12 @@ bool MarkerBase::transform(const MarkerConstPtr& message, Ogre::Vector3& pos, Og
   return true;
 }
 
-void MarkerBase::setControl( InteractiveMarkerControl* control )
+void MarkerBase::setInteractiveObject( InteractiveObjectWPtr control )
 {
-  SelectionHandlerPtr handler_ptr = vis_manager_->getSelectionManager()->getHandler( coll_ );
-  MarkerSelectionHandler* handler = dynamic_cast<MarkerSelectionHandler*>( handler_ptr.get() );
-  if ( handler )
+  SelectionHandlerPtr handler = context_->getSelectionManager()->getHandler( coll_ );
+  if( handler )
   {
-    handler->setControl( control );
+    handler->setInteractiveObject( control );
   }
 }
 

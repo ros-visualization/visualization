@@ -28,8 +28,9 @@
  */
 
 #include "line_strip_marker.h"
+
 #include "rviz/default_plugin/marker_display.h"
-#include "rviz/visualization_manager.h"
+#include "rviz/display_context.h"
 
 #include <rviz/ogre_helpers/billboard_line.h>
 
@@ -40,8 +41,8 @@
 namespace rviz
 {
 
-LineStripMarker::LineStripMarker(MarkerDisplay* owner, VisualizationManager* manager, Ogre::SceneNode* parent_node)
-: MarkerBase(owner, manager, parent_node)
+LineStripMarker::LineStripMarker(MarkerDisplay* owner, DisplayContext* context, Ogre::SceneNode* parent_node)
+: MarkerBase(owner, context, parent_node)
 , lines_(0)
 {
 }
@@ -57,7 +58,7 @@ void LineStripMarker::onNewMessage(const MarkerConstPtr& old_message, const Mark
 
   if (!lines_)
   {
-    lines_ = new BillboardLine(vis_manager_->getSceneManager(), scene_node_);
+    lines_ = new BillboardLine(context_->getSceneManager(), scene_node_);
   }
 
   Ogre::Vector3 pos, scale;

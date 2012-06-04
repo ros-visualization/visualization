@@ -28,7 +28,7 @@
  */
 
 #include "point_cloud_display.h"
-#include "rviz/visualization_manager.h"
+#include "rviz/display_context.h"
 #include "rviz/properties/property.h"
 #include "rviz/properties/property_manager.h"
 #include "rviz/frame_manager.h"
@@ -60,10 +60,24 @@ PointCloudDisplay::~PointCloudDisplay()
 void PointCloudDisplay::onInitialize()
 {
   PointCloudBase::onInitialize();
-  tf_filter_ = new tf::MessageFilter<sensor_msgs::PointCloud>( *vis_manager_->getTFClient(), "", 10, threaded_nh_ );
+  tf_filter_ = new tf::MessageFilter<sensor_msgs::PointCloud>( *context_->getTFClient(), "", 10, threaded_nh_ );
   tf_filter_->connectInput(sub_);
   tf_filter_->registerCallback(&PointCloudDisplay::incomingCloudCallback, this);
-  vis_manager_->getFrameManager()->registerFilterForTransformStatusCheck(tf_filter_, this);
+  context_->getFrameManager()->registerFilterForTransformStatusCheck(tf_filter_, this);
+}
+
+void PointCloudDisplay::setQueueSize( int size )
+{
+  if( size != (int) tf_filter_->getQueueSize() )
+  {
+    tf_filter_->setQueueSize( (uint32_t) size );
+    propertyChanged( queue_size_property_ );
+  }
+}
+
+int PointCloudDisplay::getQueueSize()
+{
+  return (int) tf_filter_->getQueueSize();
 }
 
 void PointCloudDisplay::setTopic( const std::string& topic )
@@ -75,7 +89,7 @@ void PointCloudDisplay::setTopic( const std::string& topic )
 
   propertyChanged(topic_property_);
 
-  causeRender();
+  context_->queueRender();
 }
 
 void PointCloudDisplay::onEnable()
@@ -100,7 +114,15 @@ void PointCloudDisplay::subscribe()
     return;
   }
 
-  sub_.subscribe(threaded_nh_, topic_, 2);
+  try
+  {
+    sub_.subscribe(threaded_nh_, topic_, 2);
+    setStatus(StatusProperty::Ok, "Topic", "OK");
+  }
+  catch (ros::Exception& e)
+  {
+    setStatus(StatusProperty::Error, "Topic", std::string("Error subscribing: ") + e.what());
+  }
 }
 
 void PointCloudDisplay::unsubscribe()
@@ -122,11 +144,17 @@ void PointCloudDisplay::fixedFrameChanged()
 
 void PointCloudDisplay::createProperties()
 {
-  topic_property_ = property_manager_->createProperty<ROSTopicStringProperty>( "Topic", property_prefix_, boost::bind( &PointCloudDisplay::getTopic, this ),
+  topic_property_ = new RosTopicProperty( "Topic", property_prefix_, boost::bind( &PointCloudDisplay::getTopic, this ),
                                                                               boost::bind( &PointCloudDisplay::setTopic, this, _1 ), parent_category_, this );
   setPropertyHelpText(topic_property_, "sensor_msgs::PointCloud topic to subscribe to.");
   ROSTopicStringPropertyPtr topic_prop = topic_property_.lock();
   topic_prop->setMessageType(ros::message_traits::datatype<sensor_msgs::PointCloud>());
+
+  queue_size_property_ = new IntProperty( "Queue Size", property_prefix_,
+                                                                         boost::bind( &PointCloudDisplay::getQueueSize, this ),
+                                                                         boost::bind( &PointCloudDisplay::setQueueSize, this, _1 ),
+                                                                         parent_category_, this );
+  setPropertyHelpText( queue_size_property_, "Advanced: set the size of the incoming PointCloud message queue.  Increasing this is useful if your incoming TF data is delayed significantly from your PointCloud data, but it can greatly increase memory usage if the messages are big." );
 
   PointCloudBase::createProperties();
 }

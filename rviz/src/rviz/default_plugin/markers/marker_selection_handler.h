@@ -37,41 +37,27 @@ namespace rviz
 {
 class InteractiveMarkerControl;
 class MarkerBase;
+class QuaternionProperty;
+class VectorProperty;
 typedef std::pair<std::string, int32_t> MarkerID;
 
-class MarkerSelectionHandler : public SelectionHandler
+class MarkerSelectionHandler: public SelectionHandler
 {
 public:
   MarkerSelectionHandler(const MarkerBase* marker, MarkerID id);
   virtual ~MarkerSelectionHandler();
 
-  std::string getId()
-  {
-    std::stringstream ss;
-    ss << id_.first << "/" << id_.second;
-    return ss.str();
-  }
-
   Ogre::Vector3 getPosition();
   Ogre::Quaternion getOrientation();
 
-  void setControl( InteractiveMarkerControl* control );
-
-  // called when interactive mode is globally switched on/off
-  virtual void enableInteraction(bool enable);
-
-  // @return true if this handler is ready to receive mouse events
-  virtual bool isInteractive();
-
-  // will receive all mouse events while the handler has focus
-  virtual void handleMouseEvent(const Picked& obj, ViewportMouseEvent& event);
-
-  virtual void createProperties(const Picked& obj, PropertyManager* property_manager);
+  virtual void createProperties( const Picked& obj, Property* parent_property );
+  virtual void updateProperties();
 
 private:
   const MarkerBase* marker_;
-  MarkerID id_;
-  InteractiveMarkerControl* control_;
+  QString marker_id_;
+  VectorProperty* position_property_;
+  QuaternionProperty* orientation_property_;
 };
 
 }

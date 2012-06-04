@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Willow Garage, Inc.
+ * Copyright (c) 2012, Willow Garage, Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,11 +31,7 @@
 #ifndef RVIZ_VISUALIZATION_MANAGER_H_
 #define RVIZ_VISUALIZATION_MANAGER_H_
 
-#include <QObject>
 #include <QTimer>
-
-#include "rviz/helpers/color.h"
-#include "rviz/properties/forwards.h"
 
 #include <boost/thread.hpp>
 
@@ -49,7 +45,16 @@
 
 #include <pluginlib/class_loader.h>
 
+#include "rviz/status_callback.h"
+#include "rviz/display_context.h"
+
 class QKeyEvent;
+
+namespace YAML
+{
+class Node;
+class Emitter;
+}
 
 namespace Ogre
 {
@@ -66,200 +71,388 @@ class TransformListener;
 namespace rviz
 {
 
-class Config;
-class PropertyManager;
-class SelectionManager;
-class RenderPanel;
+class ColorProperty;
 class Display;
+class DisplayFactory;
+class DisplayGroup;
+class FrameManager;
+class Property;
+class PropertyTreeModel;
+class RenderPanel;
+class SelectionManager;
+class StatusList;
+class TfFrameProperty;
 class Tool;
+class ViewController;
 class ViewportMouseEvent;
 class WindowManagerInterface;
-class PluginManager;
-class PluginStatus;
-class FrameManager;
-class ViewController;
 typedef boost::shared_ptr<FrameManager> FrameManagerPtr;
 
-class DisplayWrapper;
-typedef std::vector<DisplayWrapper*> V_DisplayWrapper;
-
-class DisplayTypeInfo;
-typedef boost::shared_ptr<DisplayTypeInfo> DisplayTypeInfoPtr;
-
-class VisualizationManager: public QObject
+/**
+ * \brief The VisualizationManager class is the central manager class
+ *        of rviz, holding all the Displays, Tools, ViewControllers,
+ *        and other managers.
+ *
+ * It keeps the current view controller for the main render window.
+ * It has a timer which calls update() on all the displays.  It
+ * creates and holds pointers to the other manager objects:
+ * SelectionManager, FrameManager, the PropertyManager s, and
+ * Ogre::SceneManager.
+ *
+ * The "protected" members should probably all be "private", as
+ * VisualizationManager is not intended to be subclassed.
+ */
+class VisualizationManager: public DisplayContext
 {
 Q_OBJECT
 public:
   /**
    * \brief Constructor
+   * Creates managers and sets up global properties.
+   * @param render_panel a pointer to the main render panel widget of the app.
+   * @param wm a pointer to the window manager (which is really just a
+   *        VisualizationFrame, the top-level container widget of rviz).
    */
-  VisualizationManager(RenderPanel* render_panel, WindowManagerInterface* wm = 0);
+  VisualizationManager( RenderPanel* render_panel, WindowManagerInterface* wm = 0 );
+
+  /**
+   * \brief Destructor
+   * Stops update timers and destroys all displays, tools, and managers.
+   */
   virtual ~VisualizationManager();
 
+  /**
+   * \brief Do initialization that wasn't done in constructor.
+   * Sets initial fixed and target frames, adds view controllers and
+   * tools, and initializes SelectionManager.
+   */
   void initialize(const StatusCallback& cb = StatusCallback(), bool verbose=false);
+
+  /**
+   * \brief Start timers.
+   * Creates and starts the update and idle timers, both set to 30Hz (33ms).
+   */
   void startUpdate();
 
   /**
    * \brief Create and add a display to this panel, by class lookup name
    * @param class_lookup_name "lookup name" of the Display subclass, for pluginlib.
-   * @param name The name of this display instance shown on the GUI.
+   *        Should be of the form "packagename/displaynameofclass", like "rviz/Image".
+   * @param name The name of this display instance shown on the GUI, like "Left arm camera".
    * @param enabled Whether to start enabled
-   * @return A pointer to the new display
+   * @return A pointer to the new display.
    */
-  DisplayWrapper* createDisplay( const std::string& class_lookup_name, const std::string& name, bool enabled );
+  Display* createDisplay( const QString& class_lookup_name, const QString& name, bool enabled );
 
   /**
-   * \brief Remove a display
-   * @param display The display to remove
+   * \brief Add a display to be managed by this panel
+   * @param display The display to be added
    */
-  void removeDisplay( DisplayWrapper* display );
+  void addDisplay( Display* display, bool enabled );
+
   /**
-   * \brief Remove a display by name
-   * @param name The name of the display to remove
-   */
-  void removeDisplay( const std::string& name );
-  /**
-   * \brief Remove all displays
+   * \brief Remove and delete all displays
    */
   void removeAllDisplays();
 
-  template< class T >
-  T* createTool( const std::string& name, char shortcut_key )
-  {
-    T* tool = new T( name, shortcut_key, this );
-    addTool( tool );
+  /** Create a tool by class lookup name and add it. */
+  void addTool( const std::string& tool_class_lookup_name );
 
-    return tool;
-  }
-
-  void addTool( Tool* tool );
+  /**
+   * \brief Return the tool currently in use.
+   * \sa setCurrentTool()
+   */
   Tool* getCurrentTool() { return current_tool_; }
+
+  /**
+   * \brief Return the tool at a given index in the Tool list.
+   * If index is less than 0 or greater than the number of tools, this
+   * will fail an assertion.
+   */
   Tool* getTool( int index );
+
+  int numTools() { return tools_.size(); }
+  void removeTool( int index );
+
+  /**
+   * \brief Set the current tool.
+   * The current tool is given all mouse and keyboard events which
+   * VisualizationManager receives via handleMouseEvent() and
+   * handleChar().
+   * \sa getCurrentTool()
+   */
   void setCurrentTool( Tool* tool );
+
+  /**
+   * \brief Set the default tool.
+   *
+   * The default tool is selected directly by pressing the Escape key.
+   * The default tool is indirectly selected when a Tool returns
+   * Finished in the bit field result of Tool::processMouseEvent().
+   * This is how control moves from the InitialPoseTool back to
+   * MoveCamera when InitialPoseTool receives a left mouse button
+   * release event.
+   * \sa getDefaultTool()
+   */
   void setDefaultTool( Tool* tool );
+
+  /**
+   * \brief Get the default tool.
+   * \sa setDefaultTool()
+   */
   Tool* getDefaultTool() { return default_tool_; }
 
-  // The "general" config file stores window geometry, plugin status, and view controller state.
-  void loadGeneralConfig( const boost::shared_ptr<Config>& config, const StatusCallback& cb = StatusCallback() );
-  void saveGeneralConfig( const boost::shared_ptr<Config>& config );
-
-  // The "display" config file stores the properties of each Display.
-  void loadDisplayConfig( const boost::shared_ptr<Config>& config, const StatusCallback& cb = StatusCallback() );
-  void saveDisplayConfig( const boost::shared_ptr<Config>& config );
+  /** @brief Load the properties of each Display and most editable rviz data.
+   * 
+   * This is what is called when loading a "*.vcg" file.
+   *
+   * @param yaml_node The YAML node with the global options, displays, tools, and views.  Must be a YAML map.
+   * @param cb An optional callback function to call with status
+   *        updates, such as "loading displays".
+   * @sa save()
+   */
+  void load( const YAML::Node& yaml_node, const StatusCallback& cb );
 
   /**
-   * \brief Set the coordinate frame we should be displaying in
-   * @param frame The string name -- must match the frame name broadcast to libTF
+   * \brief Save the properties of each Display and most editable rviz
+   *        data.
+   * 
+   * This is what is called when saving a "*.vcg" file.
+   * \param config The object to write to.
+   * \sa loadDisplayConfig()
    */
-  void setTargetFrame( const std::string& frame );
-  std::string getTargetFrame();
+  void save( YAML::Emitter& emitter );
+
+  /** @brief Return the fixed frame name.
+   * @sa setFixedFrame() */
+  QString getFixedFrame() const;
+
+  /** @brief Set the coordinate frame we should be transforming all fixed data into.
+   * @param frame The name of the frame -- must match the frame name broadcast to libTF
+   * @sa getFixedFrame() */
+  void setFixedFrame( const QString& frame );
+  
+  /** @brief Return the target frame name.
+   * @sa setTargetFrame() */
+  QString getTargetFrame() const;
+  
+  /** @brief Set the coordinate frame whose position the display should track.
+   *
+   * The view controller sets the camera position by looking at the
+   * \em position of the target frame relative to the fixed frame and
+   * adding that to the position of the camera as controlled by the
+   * user.  This lets the user keep the virtual camera following a
+   * robot, for example, but not spinning the camera when the robot
+   * spins.
+   *
+   * @param frame The target frame name.  It must match the frame name
+   *        broadcast to libTF, or can be the special string "<Fixed
+   *        Frame>", in which case getTargetFrame() will return the
+   *        same as getFixedFrame().
+   * @sa getTargetFrame()
+   */
+  void setTargetFrame( const QString& frame );
 
   /**
-   * \brief Set the coordinate frame we should be transforming all fixed data to
-   * @param frame The string name -- must match the frame name broadcast to libTF
+   * @brief Convenience function: returns getFrameManager()->getTFClient().
    */
-  void setFixedFrame( const std::string& frame );
-  const std::string& getFixedFrame() { return fixed_frame_; }
+  tf::TransformListener* getTFClient() const;
 
   /**
-   * \brief Performs a linear search to find a display wrapper based on its name
-   * @param name Name of the display to search for
+   * @brief Returns the Ogre::SceneManager used for the main RenderPanel.
    */
-  DisplayWrapper* getDisplayWrapper( const std::string& name );
+  Ogre::SceneManager* getSceneManager() const { return scene_manager_; }
 
   /**
-   * \brief Performs a linear search to find a display wrapper based on its display
-   * @param display Display to search for
+   * @brief Return the main RenderPanel.
    */
-  DisplayWrapper* getDisplayWrapper( Display* display );
-
-  PropertyManager* getPropertyManager() { return property_manager_; }
-  PropertyManager* getToolPropertyManager() { return tool_property_manager_; }
-
-  bool isValidDisplay( const DisplayWrapper* display );
-
-  tf::TransformListener* getTFClient();
-  Ogre::SceneManager* getSceneManager() { return scene_manager_; }
-
   RenderPanel* getRenderPanel() { return render_panel_; }
 
-  typedef std::set<std::string> S_string;
-  void getDisplayNames(S_string& displays);
-  V_DisplayWrapper& getDisplays() { return displays_; }
-
-  void resetDisplays();
-
+  /**
+   * @brief Return the wall clock time, in seconds since 1970.
+   */
   double getWallClock();
+
+  /**
+   * @brief Return the ROS time, in seconds.
+   */
   double getROSTime();
+
+  /**
+   * @brief Return the wall clock time in seconds since the last reset.
+   */
   double getWallClockElapsed();
+
+  /**
+   * @brief Return the ROS time in seconds since the last reset.
+   */
   double getROSTimeElapsed();
 
+  /**
+   * @brief Handle a single key event for a given RenderPanel.
+   *
+   * If the key is Escape, switches to the default Tool (via
+   * getDefaultTool()).  All other key events are passed to the
+   * current Tool (via getCurrentTool()).
+   */
   void handleChar( QKeyEvent* event, RenderPanel* panel );
-  void handleMouseEvent( ViewportMouseEvent& event );
 
-  void setBackgroundColor(const Color& c);
-  const Color& getBackgroundColor();
+  /**
+   * @brief Handle a mouse event.
+   *
+   * This just copies the given event into an event queue.  The events
+   * in the queue are processed by onUpdate() which is called from the
+   * main thread by a timer every 33ms.
+   */
+  void handleMouseEvent( const ViewportMouseEvent& event );
 
+  /**
+   * @brief Resets the wall and ROS elapsed time to zero and calls resetDisplays().
+   */
   void resetTime();
 
+  /**
+   * @brief Return the current ViewController in use for the main RenderWindow.
+   */
   ViewController* getCurrentViewController() { return view_controller_; }
+
+  /**
+   * @brief Return the type of the current ViewController as a
+   *        std::string, like "rviz::OrbitViewController".
+   */
   std::string getCurrentViewControllerType();
+
+  /**
+   * @brief Set the current view controller by specifying the desired type.
+   *
+   * This accepts the actual C++ class name (with namespace) of the
+   * subclass of ViewController and also accepts a number of variants for backward-compatibility:
+   *  - "rviz::OrbitViewController", "Orbit"
+   *  - "rviz::XYOrbitViewController", "XYOrbit", "rviz::SimpleOrbitViewController", "SimpleOrbit"
+   *  - "rviz::FPSViewController", "FPS"
+   *  - "rviz::FixedOrientationOrthoViewController", "TopDownOrtho", "Top-down Orthographic"
+   *
+   * If `type` is not one of these and there is not a current
+   * ViewController, the type defaults to rviz::OrbitViewController.
+   * If `type` is not one of these and there *is* a current
+   * ViewController, nothing happens.
+   *
+   * If the selected type is different from the current type, a new
+   * instance of the selected type is created, set in the main
+   * RenderPanel, and sent out via the viewControllerChanged() signal.
+   */
   bool setCurrentViewControllerType(const std::string& type);
 
-  SelectionManager* getSelectionManager() { return selection_manager_; }
+  /**
+   * @brief Return a pointer to the SelectionManager.
+   */
+  SelectionManager* getSelectionManager() const { return selection_manager_; }
 
+  /**
+   * @brief Lock a mutex to delay calls to Ogre::Root::renderOneFrame().
+   */
   void lockRender() { render_mutex_.lock(); }
+
+  /**
+   * @brief Unlock a mutex, allowing calls to Ogre::Root::renderOneFrame().
+   */
   void unlockRender() { render_mutex_.unlock(); }
+
   /**
    * \brief Queues a render.  Multiple calls before a render happens will only cause a single render.
    * \note This function can be called from any thread.
    */
   void queueRender();
 
-  WindowManagerInterface* getWindowManager() { return window_manager_; }
+  /**
+   * @brief Return the window manager, if any.
+   */
+  WindowManagerInterface* getWindowManager() const { return window_manager_; }
 
+  /**
+   * @brief Return the CallbackQueue using the main GUI thread.
+   */
   ros::CallbackQueueInterface* getUpdateQueue() { return ros::getGlobalCallbackQueue(); }
+
+  /**
+   * @brief Return a CallbackQueue using a different thread than the main GUI one.
+   */
   ros::CallbackQueueInterface* getThreadedQueue() { return &threaded_queue_; }
 
-  pluginlib::ClassLoader<Display>* getDisplayClassLoader() { return display_class_loader_; }
-//  PluginManager* getPluginManager() { return plugin_manager_; }
-  FrameManager* getFrameManager() { return frame_manager_.get(); }
+  pluginlib::ClassLoader<Tool>* getToolClassLoader() { return tool_class_loader_; }
+  std::set<std::string> getToolClasses();
 
-  uint64_t getFrameCount() { return frame_count_; }
+  /** @brief Return the FrameManager instance. */
+  FrameManager* getFrameManager() const { return frame_manager_; }
+
+  /** @brief Return the current value of the frame count.
+   *
+   * The frame count is just a number which increments each time a
+   * frame is rendered.  This lets clients check if a new frame has
+   * been rendered since the last time they did something. */
+  uint64_t getFrameCount() const { return frame_count_; }
+
+  /** @brief Notify this VisualizationManager that something about its
+   * display configuration has changed. */
+  void notifyConfigChanged();
+
+  virtual DisplayFactory* getDisplayFactory() const { return display_factory_; }
+
+  PropertyTreeModel* getDisplayTreeModel() const { return display_property_tree_model_; }
 
 Q_SIGNALS:
-  void displayAdding( DisplayWrapper* );
-  void displayAdded( DisplayWrapper* );
-  void displayRemoving( DisplayWrapper* );
-  void displayRemoved( DisplayWrapper* );
-  void displaysRemoving( const V_DisplayWrapper& );
-  void displaysRemoved( const V_DisplayWrapper& );
-  void displaysConfigLoaded( const boost::shared_ptr<Config>& );
-  void displaysConfigSaved( const boost::shared_ptr<Config>& );
-  void generalConfigLoaded( const boost::shared_ptr<Config>& );
-  void generalConfigSaving( const boost::shared_ptr<Config>& );
+  /**
+   * @brief Emitted by addTool() after the tool is added to the list of tools.
+   */
   void toolAdded( Tool* );
+
+  /**
+   * @brief Emitted by setCurrentTool() after the newly chosen tool is
+   * activated.
+   */
   void toolChanged( Tool* );
+
+  void toolRemoved( Tool* );
+
+  /**
+   * @brief Emitted when a new ViewController type is added.
+   * @param class_name is the C++ class name with namespace, like "rviz::OrbitViewController".
+   * @param name is the name used for displaying, like "Orbit".
+   */
   void viewControllerTypeAdded( const std::string& class_name, const std::string& name );
+
+  /**
+   * @brief Emitted after the current ViewController has changed.
+   */
   void viewControllerChanged( ViewController* );
+
+  /**
+   * @brief Emitted at most once every 100ms.
+   */
   void timeChanged();
 
+  /** @brief Emitted whenever the display configuration changes. */
+  void configChanged();
+
 protected Q_SLOTS:
-  /// Called at 30Hz from the update timer
+  /** @brief Call update() on all managed objects.
+   *
+   * This is the central place where update() is called on most rviz
+   * objects.  Display objects, the FrameManager, the current
+   * ViewController, the SelectionManager, PropertyManager.  Also
+   * calls ros::spinOnce(), so any callbacks on the global
+   * CallbackQueue get called from here as well.
+   *
+   * It is called at 30Hz from the update timer. */
   void onUpdate();
 
-  /// Called whenever the event loop has no other events to process.
+  /** @brief Render one frame if requested and enough time has passed
+   *         since the previous render.
+   *
+   * Called at 30Hz from the "idle" timer */
   void onIdle();
 
-  void onDisplayCreated( DisplayWrapper* wrapper );
-
 protected:
-  /**
-   * \brief Add a display to be managed by this panel
-   * @param display The display to be added
-   */
-  bool addDisplay(DisplayWrapper* wrapper, bool enabled);
-
   void addViewController(const std::string& class_name, const std::string& name);
 
   void updateRelativeNode();
@@ -272,8 +465,6 @@ protected:
   void createColorMaterials();
 
   void threadedQueueThreadFunc();
-
-  void onPluginUnloading(const PluginStatus& status);
 
   Ogre::Root* ogre_root_;                                 ///< Ogre Root
   Ogre::SceneManager* scene_manager_;                     ///< Ogre scene manager associated with this panel
@@ -290,24 +481,24 @@ protected:
   ros::NodeHandle threaded_nh_;
   volatile bool shutting_down_;
 
+  PropertyTreeModel* display_property_tree_model_;
+  PropertyTreeModel* tool_property_tree_model_;
+  DisplayGroup* root_display_group_;
 
-  V_DisplayWrapper displays_;                          ///< Our list of displays
-
-  typedef std::vector< Tool* > V_Tool;
-  V_Tool tools_;
+  struct ToolRecord
+  {
+    Tool* tool;
+    std::string lookup_name; // for looking up the class with pluginlib
+  };
+  typedef std::vector<ToolRecord> V_ToolRecord;
+  V_ToolRecord tools_;
   Tool* current_tool_;
   Tool* default_tool_;
 
-  std::string target_frame_;                              ///< Target coordinate frame we're displaying everything in
-  std::string fixed_frame_;                               ///< Frame to transform fixed data to
-
-  PropertyManager* property_manager_;
-  PropertyManager* tool_property_manager_;
-  TFFramePropertyWPtr target_frame_property_;
-  EditEnumPropertyWPtr fixed_frame_property_;
-  StatusPropertyWPtr status_property_;
-
-  V_string available_frames_;
+  Property* global_options_;
+  TfFrameProperty* target_frame_property_;         ///< Target coordinate frame we're displaying everything in
+  TfFrameProperty* fixed_frame_property_;          ///< Frame to transform fixed data to
+  StatusList* global_status_;
 
   RenderPanel* render_panel_;
 
@@ -316,8 +507,7 @@ protected:
   ros::WallDuration wall_clock_elapsed_;
   ros::Duration ros_time_elapsed_;
 
-  Color background_color_;
-  ColorPropertyWPtr background_color_property_;
+  ColorProperty* background_color_property_;
 
   float time_update_timer_;
   float frame_update_timer_;
@@ -333,9 +523,9 @@ protected:
 
   WindowManagerInterface* window_manager_;
   
-  pluginlib::ClassLoader<Display>* display_class_loader_;
-//  PluginManager* plugin_manager_;
-  FrameManagerPtr frame_manager_;
+  pluginlib::ClassLoader<Tool>* tool_class_loader_;
+
+  FrameManager* frame_manager_;
 
   bool disable_update_;
   bool target_frame_is_fixed_frame_;
@@ -344,6 +534,14 @@ protected:
 
   std::deque<ViewportMouseEvent> vme_queue_;
   boost::mutex vme_queue_mutex_;
+
+private Q_SLOTS:
+  void updateFixedFrame();
+  void updateTargetFrame();
+  void updateBackgroundColor();
+
+private:
+  DisplayFactory* display_factory_;
 };
 
 }

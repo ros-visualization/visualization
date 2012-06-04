@@ -27,22 +27,23 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "text_view_facing_marker.h"
-
-#include "rviz/visualization_manager.h"
-#include "rviz/selection/selection_manager.h"
-#include "marker_selection_handler.h"
-
-#include <rviz/ogre_helpers/movable_text.h>
-
 #include <OGRE/OgreSceneNode.h>
 #include <OGRE/OgreSceneManager.h>
+
+#include <ros/assert.h>
+
+#include "rviz/default_plugin/markers/marker_selection_handler.h"
+#include "rviz/display_context.h"
+#include "rviz/ogre_helpers/movable_text.h"
+#include "rviz/selection/selection_manager.h"
+
+#include "rviz/default_plugin/markers/text_view_facing_marker.h"
 
 namespace rviz
 {
 
-TextViewFacingMarker::TextViewFacingMarker(MarkerDisplay* owner, VisualizationManager* manager, Ogre::SceneNode* parent_node)
-: MarkerBase(owner, manager, parent_node)
+TextViewFacingMarker::TextViewFacingMarker(MarkerDisplay* owner, DisplayContext* context, Ogre::SceneNode* parent_node)
+: MarkerBase(owner, context, parent_node)
 , text_(0)
 {
 }
@@ -62,11 +63,11 @@ void TextViewFacingMarker::onNewMessage(const MarkerConstPtr& old_message, const
     text_->setTextAlignment(MovableText::H_CENTER, MovableText::V_CENTER);
     scene_node_->attachObject(text_);
 
-    vis_manager_->getSelectionManager()->removeObject(coll_);
-    coll_ = vis_manager_->getSelectionManager()->createHandle();
-    vis_manager_->getSelectionManager()->addPickTechnique( coll_, text_->getMaterial() );
+    context_->getSelectionManager()->removeObject(coll_);
+    coll_ = context_->getSelectionManager()->createHandle();
+    context_->getSelectionManager()->addPickTechnique( coll_, text_->getMaterial() );
     SelectionHandlerPtr handler( new MarkerSelectionHandler(this, MarkerID(new_message->ns, new_message->id)) );
-    vis_manager_->getSelectionManager()->addObject( coll_, handler );
+    context_->getSelectionManager()->addObject( coll_, handler );
   }
 
   Ogre::Vector3 pos, scale;

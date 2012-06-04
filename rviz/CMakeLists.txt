@@ -19,12 +19,6 @@ rosbuild_init()
 
 rosbuild_add_boost_directories()
 
-# rviz depends on package laser_geometry, which needs Eigen.
-# laser_geometry cannot (as yet) propertly export this dependency to
-# rviz, so here I repeat the CMake lines which find Eigen.
-find_package(Eigen REQUIRED)
-include_directories(${EIGEN_INCLUDE_DIRS})
-
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
@@ -32,6 +26,9 @@ find_package(Qt4 COMPONENTS QtCore QtGui QtOpenGL REQUIRED)
 include(${QT_USE_FILE})
 
 add_definitions(-DQT_NO_KEYWORDS)
+
+find_package(OpenGL REQUIRED)
+include_directories( ${OPENGL_INCLUDE_DIR} )
 
 find_package(PythonLibs REQUIRED)
 include_directories(${PYTHON_INCLUDE_PATH})

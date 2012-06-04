@@ -30,7 +30,6 @@
 #include "selection_handler.h"
 
 #include "properties/property.h"
-#include "properties/property_manager.h"
 #include "visualization_manager.h"
 
 #include <ros/assert.h>
@@ -49,7 +48,6 @@ SelectionHandler::SelectionHandler()
 : manager_(0)
 , listener_(new Listener(this))
 {
-
 }
 
 SelectionHandler::~SelectionHandler()
@@ -145,24 +143,13 @@ void SelectionHandler::getAABBs(const Picked& obj, V_AABB& aabbs)
   }
 }
 
-void SelectionHandler::updateProperties()
+void SelectionHandler::destroyProperties( const Picked& obj )
 {
-  V_Property::iterator it = properties_.begin();
-  V_Property::iterator end = properties_.end();
-  for (; it != end; ++it)
+  for( int i = 0; i < properties_.size(); i++ )
   {
-    propertyChanged(*it);
+    delete properties_.at( i );
   }
-}
-
-void SelectionHandler::destroyProperties(const Picked& obj, PropertyManager* property_manager)
-{
-  V_Property::iterator it = properties_.begin();
-  V_Property::iterator end = properties_.end();
-  for (; it != end; ++it)
-  {
-    property_manager->deleteProperty((*it).lock());
-  }
+  properties_.clear();
 }
 
 void SelectionHandler::createBox(const std::pair<CollObjectHandle, uint64_t>& handles, const Ogre::AxisAlignedBox& aabb, const std::string& material_name)
@@ -236,6 +223,16 @@ void SelectionHandler::onDeselect(const Picked& obj)
   ROS_DEBUG("Deselected 0x%08x", obj.handle);
 
   destroyBox(std::make_pair(obj.handle, 0ULL));
+}
+
+void SelectionHandler::setInteractiveObject( InteractiveObjectWPtr object )
+{
+  interactive_object_ = object;
+}
+
+InteractiveObjectWPtr SelectionHandler::getInteractiveObject()
+{
+  return interactive_object_;
 }
 
 }

@@ -27,35 +27,37 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "robot_link.h"
-#include "robot.h"
-#include "properties/property.h"
-#include "properties/property_manager.h"
-#include "visualization_manager.h"
-#include "selection/selection_manager.h"
-#include "mesh_loader.h"
+#include <boost/filesystem.hpp>
 
-#include "ogre_helpers/object.h"
-#include "ogre_helpers/shape.h"
-#include "ogre_helpers/axes.h"
-
-#include <urdf/model.h>
-#include <urdf_interface/link.h>
-
-#include <OGRE/OgreSceneNode.h>
-#include <OGRE/OgreSceneManager.h>
-#include <OGRE/OgreRibbonTrail.h>
 #include <OGRE/OgreEntity.h>
-#include <OGRE/OgreSubEntity.h>
-#include <OGRE/OgreMaterialManager.h>
 #include <OGRE/OgreMaterial.h>
+#include <OGRE/OgreMaterialManager.h>
+#include <OGRE/OgreRibbonTrail.h>
+#include <OGRE/OgreSceneManager.h>
+#include <OGRE/OgreSceneNode.h>
+#include <OGRE/OgreSubEntity.h>
 #include <OGRE/OgreTextureManager.h>
 
 #include <ros/console.h>
 
 #include <resource_retriever/retriever.h>
 
-#include <boost/filesystem.hpp>
+#include <urdf/model.h>
+#include <urdf_interface/link.h>
+
+#include "rviz/mesh_loader.h"
+#include "rviz/ogre_helpers/axes.h"
+#include "rviz/ogre_helpers/object.h"
+#include "rviz/ogre_helpers/shape.h"
+#include "rviz/properties/float_property.h"
+#include "rviz/properties/property.h"
+#include "rviz/properties/quaternion_property.h"
+#include "rviz/properties/vector_property.h"
+#include "rviz/robot/robot.h"
+#include "rviz/selection/selection_manager.h"
+#include "rviz/visualization_manager.h"
+
+#include "rviz/robot/robot_link.h"
 
 namespace fs=boost::filesystem;
 
@@ -68,14 +70,17 @@ public:
   RobotLinkSelectionHandler(RobotLink* link);
   virtual ~RobotLinkSelectionHandler();
 
-  virtual void createProperties(const Picked& obj, PropertyManager* property_manager);
+  virtual void createProperties( const Picked& obj, Property* parent_property );
+  virtual void updateProperties();
 
 private:
   RobotLink* link_;
+  VectorProperty* position_property_;
+  QuaternionProperty* orientation_property_;
 };
 
 RobotLinkSelectionHandler::RobotLinkSelectionHandler(RobotLink* link)
-: link_(link)
+  : link_( link )
 {
 }
 
@@ -83,38 +88,64 @@ RobotLinkSelectionHandler::~RobotLinkSelectionHandler()
 {
 }
 
-void RobotLinkSelectionHandler::createProperties(const Picked& obj, PropertyManager* property_manager)
+void RobotLinkSelectionHandler::createProperties( const Picked& obj, Property* parent_property )
 {
-  std::stringstream ss;
-  ss << link_->getName() << " Link " << link_->getName();
+  Property* group = new Property( "Link " + QString::fromStdString( link_->getName() ), QVariant(), "", parent_property );
+  properties_.push_back( group );
 
-  CategoryPropertyWPtr cat = property_manager->createCategory( "Link " + link_->getName(), ss.str(), CategoryPropertyWPtr(), (void*)obj.handle );
-  properties_.push_back(cat);
+  position_property_ = new VectorProperty( "Position", Ogre::Vector3::ZERO, "", group );
+  position_property_->setReadOnly( true );
 
-  properties_.push_back(property_manager->createProperty<Vector3Property>( "Position", ss.str(), boost::bind( &RobotLink::getPositionInRobotFrame, link_ ),
-                                                                                Vector3Property::Setter(), cat, (void*)obj.handle ));
+  orientation_property_ = new QuaternionProperty( "Orientation", Ogre::Quaternion::IDENTITY, "", group );
+  orientation_property_->setReadOnly( true );
 
-  properties_.push_back(property_manager->createProperty<QuaternionProperty>( "Orientation", ss.str(), boost::bind( &RobotLink::getOrientationInRobotFrame, link_ ),
-                                                                                      QuaternionProperty::Setter(), cat, (void*)obj.handle ));
+  group->expand();
 }
 
-RobotLink::RobotLink(Robot* parent, VisualizationManager* manager)
-: parent_(parent)
-, scene_manager_(manager->getSceneManager())
-, property_manager_(0)
-, vis_manager_(manager)
+void RobotLinkSelectionHandler::updateProperties()
+{
+  position_property_->setVector( link_->getPosition() );
+  orientation_property_->setQuaternion( link_->getOrientation() );
+}
+
+RobotLink::RobotLink( Robot* parent, DisplayContext* context, Property* parent_property )
+: parent_( parent )
+, scene_manager_( context->getSceneManager() )
+, context_( context )
 , visual_mesh_( NULL )
 , collision_mesh_( NULL )
 , visual_node_( NULL )
 , collision_node_( NULL )
-, position_(Ogre::Vector3::ZERO)
-, orientation_(Ogre::Quaternion::IDENTITY)
 , trail_( NULL )
 , axes_( NULL )
 , material_alpha_( 1.0 )
-, link_alpha_( 1.0 )
 , selection_object_(NULL)
 {
+  link_property_ = new Property( "", true, "", parent_property, SLOT( updateVisibility() ), this );
+
+  alpha_property_ = new FloatProperty( "Alpha", 1,
+                                       "Amount of transparency to apply to this link.",
+                                       link_property_, SLOT( updateAlpha() ), this );
+                                                                                   
+  trail_property_ = new Property( "Show Trail", false,
+                                  "Enable/disable a 2 meter \"ribbon\" which follows this link.",
+                                  link_property_, SLOT( updateTrail() ), this );
+
+  axes_property_ = new Property( "Show Axes", false,
+                                 "Enable/disable showing the axes of this link.",
+                                 link_property_, SLOT( updateAxes() ), this );
+
+  position_property_ = new VectorProperty( "Position", Ogre::Vector3::ZERO,
+                                           "Position of this link, in the current Fixed Frame.  (Not editable)",
+                                           link_property_ );
+  position_property_->setReadOnly( true );
+
+  orientation_property_ = new QuaternionProperty( "Orientation", Ogre::Quaternion::IDENTITY,
+                                                  "Orientation of this link, in the current Fixed Frame.  (Not editable)",
+                                                  link_property_ );
+  orientation_property_->setReadOnly( true );
+
+  link_property_->collapse();
 }
 
 RobotLink::~RobotLink()
@@ -138,13 +169,10 @@ RobotLink::~RobotLink()
 
   if (selection_object_)
   {
-    vis_manager_->getSelectionManager()->removeObject(selection_object_);
+    context_->getSelectionManager()->removeObject(selection_object_);
   }
 
-  if (property_manager_)
-  {
-    property_manager_->deleteByUserData(this);
-  }
+  delete link_property_;
 }
 
 bool RobotLink::isValid()
@@ -152,9 +180,15 @@ bool RobotLink::isValid()
   return visual_mesh_ || collision_mesh_;
 }
 
+bool RobotLink::getEnabled() const
+{
+  return link_property_->getValue().toBool();
+}
+
 void RobotLink::load(TiXmlElement* root_element, urdf::Model& descr, const urdf::LinkConstPtr& link, bool visual, bool collision)
 {
   name_ = link->name;
+  link_property_->setName( QString::fromStdString( name_ ));
 
   if ( visual )
   {
@@ -170,14 +204,9 @@ void RobotLink::load(TiXmlElement* root_element, urdf::Model& descr, const urdf:
   {
     createSelection( descr, link );
   }
-
-  if ( property_manager_ )
-  {
-    createProperties();
-  }
 }
 
-void RobotLink::setAlpha(float a)
+void RobotLink::setRobotAlpha( float a )
 {
   robot_alpha_ = a;
   updateAlpha();
@@ -185,6 +214,7 @@ void RobotLink::setAlpha(float a)
 
 void RobotLink::updateAlpha()
 {
+  float link_alpha = alpha_property_->getFloat();
   M_SubEntityToMaterial::iterator it = materials_.begin();
   M_SubEntityToMaterial::iterator end = materials_.end();
   for (; it != end; ++it)
@@ -192,7 +222,7 @@ void RobotLink::updateAlpha()
     const Ogre::MaterialPtr& material = it->second;
 
     Ogre::ColourValue color = material->getTechnique(0)->getPass(0)->getDiffuse();
-    color.a = robot_alpha_ * material_alpha_ * link_alpha_;
+    color.a = robot_alpha_ * material_alpha_ * link_alpha;
     material->setDiffuse( color );
 
     if ( color.a < 0.9998 )
@@ -208,16 +238,25 @@ void RobotLink::updateAlpha()
   }
 }
 
-void RobotLink::setLinkAlpha( float a )
+void RobotLink::updateVisibility()
 {
-  link_alpha_ = a;
-  propertyChanged( alpha_property_ );
-  updateAlpha();
-}
-
-float RobotLink::getLinkAlpha()
-{
-  return link_alpha_;
+  bool enabled = getEnabled();
+  if( visual_node_ )
+  {
+    visual_node_->setVisible( enabled && parent_->isVisualVisible() );
+  }
+  if( collision_node_ )
+  {
+    collision_node_->setVisible( enabled && parent_->isCollisionVisible() );
+  }
+  if( trail_ )
+  {
+    trail_->setVisible( enabled );
+  }
+  if( axes_ )
+  {
+    axes_->getSceneNode()->setVisible( enabled );
+  }
 }
 
 Ogre::MaterialPtr RobotLink::getMaterialForLink(TiXmlElement* root_element, const urdf::LinkConstPtr& link)
@@ -424,6 +463,7 @@ void RobotLink::createCollision(TiXmlElement* root_element, const urdf::LinkCons
     return;
 
   createEntityForGeometryElement(root_element, link, *link->collision->geometry, link->collision->origin, parent_->getCollisionNode(), collision_mesh_, collision_node_, collision_offset_node_);
+  collision_node_->setVisible( getEnabled() );
 }
 
 void RobotLink::createVisual(TiXmlElement* root_element, const urdf::LinkConstPtr& link )
@@ -432,12 +472,13 @@ void RobotLink::createVisual(TiXmlElement* root_element, const urdf::LinkConstPt
     return;
 
   createEntityForGeometryElement(root_element, link, *link->visual->geometry, link->visual->origin, parent_->getVisualNode(), visual_mesh_, visual_node_, visual_offset_node_);
+  visual_node_->setVisible( getEnabled() );
 }
 
 void RobotLink::createSelection(const urdf::Model& descr, const urdf::LinkConstPtr& link)
 {
   selection_handler_ = RobotLinkSelectionHandlerPtr(new RobotLinkSelectionHandler(this));
-  SelectionManager* sel_man = vis_manager_->getSelectionManager();
+  SelectionManager* sel_man = context_->getSelectionManager();
   selection_object_ = sel_man->createHandle();
   sel_man->addObject(selection_object_, selection_handler_);
 
@@ -461,62 +502,13 @@ void RobotLink::createSelection(const urdf::Model& descr, const urdf::LinkConstP
   }
 }
 
-void RobotLink::setPropertyManager(PropertyManager* property_manager)
+void RobotLink::updateTrail()
 {
-  property_manager_ = property_manager;
-}
-
-void RobotLink::createProperties()
-{
-  ROS_ASSERT( property_manager_ );
-
-  std::stringstream ss;
-  ss << parent_->getName() << " Link " << name_;
-
-  CategoryPropertyWPtr cat = property_manager_->createCategory( name_, ss.str(), parent_->getLinksCategory(), this );
-
-  alpha_property_ = property_manager_->createProperty<FloatProperty>( "Alpha", ss.str(),
-                                                                      boost::bind( &RobotLink::getLinkAlpha, this ),
-                                                                      boost::bind( &RobotLink::setLinkAlpha, this, _1 ),
-                                                                      cat, this );
-                                                                                   
-  trail_property_ = property_manager_->createProperty<BoolProperty>( "Show Trail", ss.str(), boost::bind( &RobotLink::getShowTrail, this ),
-                                                                          boost::bind( &RobotLink::setShowTrail, this, _1 ), cat, this );
-  setPropertyHelpText(trail_property_, "Enable/disable a 2 meter \"ribbon\" which follows this link.");
-
-  axes_property_ = property_manager_->createProperty<BoolProperty>( "Show Axes", ss.str(), boost::bind( &RobotLink::getShowAxes, this ),
-                                                                          boost::bind( &RobotLink::setShowAxes, this, _1 ), cat, this );
-  setPropertyHelpText(axes_property_, "Enable/disable showing the axes of this link.");
-
-  position_property_ = property_manager_->createProperty<Vector3Property>( "Position", ss.str(), boost::bind( &RobotLink::getPositionInRobotFrame, this ),
-                                                                                Vector3Property::Setter(), cat, this );
-  setPropertyHelpText(position_property_, "Position of this link, in the current Fixed Frame.  (Not editable)");
-  orientation_property_ = property_manager_->createProperty<QuaternionProperty>( "Orientation", ss.str(), boost::bind( &RobotLink::getOrientationInRobotFrame, this ),
-                                                                                      QuaternionProperty::Setter(), cat, this );
-  setPropertyHelpText(orientation_property_, "Orientation of this link, in the current Fixed Frame.  (Not editable)");
-
-  CategoryPropertyPtr cat_prop = cat.lock();
-  cat_prop->collapse();
-}
-
-
-Ogre::Vector3 RobotLink::getPositionInRobotFrame()
-{
-  return position_;
-}
-
-Ogre::Quaternion RobotLink::getOrientationInRobotFrame()
-{
-  return orientation_;
-}
-
-void RobotLink::setShowTrail(bool show)
-{
-  if ( show )
+  if( trail_property_->getValue().toBool() )
   {
-    if ( !trail_ )
+    if( !trail_ )
     {
-      if ( visual_node_ )
+      if( visual_node_ )
       {
         static int count = 0;
         std::stringstream ss;
@@ -527,6 +519,7 @@ void RobotLink::setShowTrail(bool show)
         trail_->setInitialColour( 0, 0.0f, 0.5f, 0.5f );
         trail_->addNode( visual_node_ );
         trail_->setTrailLength( 2.0f );
+        trail_->setVisible( getEnabled() );
         parent_->getOtherNode()->attachObject( trail_ );
       }
       else
@@ -537,56 +530,41 @@ void RobotLink::setShowTrail(bool show)
   }
   else
   {
-    if ( trail_ )
+    if( trail_ )
     {
       scene_manager_->destroyRibbonTrail( trail_ );
       trail_ = NULL;
     }
   }
-
-  propertyChanged(trail_property_);
 }
 
-bool RobotLink::getShowTrail()
+void RobotLink::updateAxes()
 {
-  return trail_ != NULL;
-}
-
-void RobotLink::setShowAxes(bool show)
-{
-  if ( show )
+  if( axes_property_->getValue().toBool() )
   {
-    if ( !axes_ )
+    if( !axes_ )
     {
       static int count = 0;
       std::stringstream ss;
       ss << "Axes for link " << name_ << count++;
       axes_ = new Axes( scene_manager_, parent_->getOtherNode(), 0.1, 0.01 );
+      axes_->getSceneNode()->setVisible( getEnabled() );
     }
   }
   else
   {
-    if ( axes_ )
+    if( axes_ )
     {
       delete axes_;
       axes_ = NULL;
     }
   }
-
-  propertyChanged(axes_property_);
-}
-
-bool RobotLink::getShowAxes()
-{
-  return axes_ != NULL;
 }
 
 void RobotLink::setTransforms( const Ogre::Vector3& visual_position, const Ogre::Quaternion& visual_orientation,
-                          const Ogre::Vector3& collision_position, const Ogre::Quaternion& collision_orientation, bool apply_offset_transforms )
+                               const Ogre::Vector3& collision_position, const Ogre::Quaternion& collision_orientation,
+                               bool apply_offset_transforms )
 {
-  position_ = visual_position;
-  orientation_ = visual_orientation;
-
   if ( visual_node_ )
   {
     visual_node_->setPosition( visual_position );
@@ -599,17 +577,13 @@ void RobotLink::setTransforms( const Ogre::Vector3& visual_position, const Ogre:
     collision_node_->setOrientation( collision_orientation );
   }
 
-  if (property_manager_)
-  {
-    propertyChanged(position_property_);
-    propertyChanged(orientation_property_);
-  }
-
+  position_property_->setVector( visual_position );
+  orientation_property_->setQuaternion( visual_orientation );
 
   if ( axes_ )
   {
-    axes_->setPosition( position_ );
-    axes_->setOrientation( orientation_ );
+    axes_->setPosition( visual_position );
+    axes_->setOrientation( visual_orientation );
   }
 }
 
@@ -634,6 +608,16 @@ void RobotLink::setToNormalMaterial()
   {
     it->first->setMaterial(it->second);
   }
+}
+
+Ogre::Vector3 RobotLink::getPosition()
+{
+  return position_property_->getVector();
+}
+
+Ogre::Quaternion RobotLink::getOrientation()
+{
+  return orientation_property_->getQuaternion();
 }
 
 } // namespace rviz

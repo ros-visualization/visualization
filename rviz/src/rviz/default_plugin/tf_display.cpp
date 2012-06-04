@@ -28,12 +28,13 @@
  */
 
 #include "tf_display.h"
-#include "rviz/visualization_manager.h"
+#include "rviz/display_context.h"
 #include "rviz/selection/selection_manager.h"
 #include "rviz/selection/forwards.h"
 #include "rviz/properties/property.h"
 #include "rviz/properties/property_manager.h"
 #include "rviz/frame_manager.h"
+#include "rviz/uniform_string_stream.h"
 
 #include <rviz/ogre_helpers/arrow.h>
 #include <rviz/ogre_helpers/axes.h>
@@ -141,7 +142,7 @@ void TFDisplay::setFrameEnabled(FrameInfo* frame, bool enabled)
     propertyChanged(all_enabled_property_);
   }
 
-  causeRender();
+  context_->queueRender();
 }
 
 class FrameSelectionHandler : public SelectionHandler
@@ -169,7 +170,7 @@ FrameSelectionHandler::~FrameSelectionHandler()
 
 void FrameSelectionHandler::createProperties(const Picked& obj, PropertyManager* property_manager)
 {
-  std::stringstream ss;
+  UniformStringStream ss;
   ss << frame_->name_ << " Frame " << frame_->name_;
 
   CategoryPropertyWPtr cat = property_manager->createCategory( "Frame " + frame_->name_, ss.str(), CategoryPropertyWPtr() );
@@ -374,7 +375,7 @@ void TFDisplay::updateFrames()
 {
   typedef std::vector<std::string> V_string;
   V_string frames;
-  vis_manager_->getTFClient()->getFrameStrings( frames );
+  context_->getTFClient()->getFrameStrings( frames );
   std::sort(frames.begin(), frames.end());
 
   S_FrameInfo current_frames;
@@ -425,7 +426,7 @@ void TFDisplay::updateFrames()
     }
   }
 
-  causeRender();
+  context_->queueRender();
 }
 
 static const Ogre::ColourValue ARROW_HEAD_COLOR(1.0f, 0.1f, 0.6f, 1.0f);
@@ -440,7 +441,7 @@ FrameInfo* TFDisplay::createFrame(const std::string& frame)
   info->last_update_ = ros::Time::now();
   info->axes_ = new Axes( scene_manager_, axes_node_, 0.2, 0.02 );
   info->axes_->getSceneNode()->setVisible( show_axes_ );
-  info->axes_coll_ = vis_manager_->getSelectionManager()->createCollisionForObject(info->axes_, SelectionHandlerPtr(new FrameSelectionHandler(info, this)));
+  info->axes_coll_ = context_->getSelectionManager()->createCollisionForObject(info->axes_, SelectionHandlerPtr(new FrameSelectionHandler(info, this)));
 
   info->name_text_ = new MovableText( frame, "Arial", 0.1 );
   info->name_text_->setTextAlignment(MovableText::H_CENTER, MovableText::V_BELOW);
@@ -461,7 +462,7 @@ FrameInfo* TFDisplay::createFrame(const std::string& frame)
 
   prefix += info->name_ + ".";
 
-  info->enabled_property_ = property_manager_->createProperty<BoolProperty>( "Enabled", prefix, boost::bind( &FrameInfo::isEnabled, info ),
+  info->enabled_property_ = new BoolProperty( "Enabled", prefix, boost::bind( &FrameInfo::isEnabled, info ),
                                                                              boost::bind( &TFDisplay::setFrameEnabled, this, info, _1 ), info->category_, this );
   setPropertyHelpText(info->enabled_property_, "Enable or disable this individual frame.");
   info->parent_property_ = property_manager_->createProperty<StringProperty>( "Parent", prefix, boost::bind( &FrameInfo::getParent, info ),
@@ -485,7 +486,7 @@ Ogre::ColourValue lerpColor(const Ogre::ColourValue& start, const Ogre::ColourVa
 
 void TFDisplay::updateFrame(FrameInfo* frame)
 {
-  tf::TransformListener* tf = vis_manager_->getTFClient();
+  tf::TransformListener* tf = context_->getTFClient();
 
   // Check last received time so we can grey out/fade out frames that have stopped being published
   ros::Time latest_time;
@@ -540,13 +541,13 @@ void TFDisplay::updateFrame(FrameInfo* frame)
     frame->parent_arrow_->setShaftColor(ARROW_SHAFT_COLOR);
   }
 
-  setStatus(status_levels::Ok, frame->name_, "Transform OK");
+  setStatus(StatusProperty::Ok, frame->name_, "Transform OK");
 
-  if (!vis_manager_->getFrameManager()->getTransform(frame->name_, ros::Time(), frame->position_, frame->orientation_))
+  if (!context_->getFrameManager()->getTransform(frame->name_, ros::Time(), frame->position_, frame->orientation_))
   {
     std::stringstream ss;
     ss << "No transform from [" << frame->name_ << "] to frame [" << fixed_frame_ << "]";
-    setStatus(status_levels::Warn, frame->name_, ss.str());
+    setStatus(StatusProperty::Warn, frame->name_, ss.str());
     ROS_DEBUG("Error transforming frame '%s' to frame '%s'", frame->name_.c_str(), fixed_frame_.c_str());
   }
 
@@ -595,7 +596,7 @@ void TFDisplay::updateFrame(FrameInfo* frame)
     {
       Ogre::Vector3 parent_position;
       Ogre::Quaternion parent_orientation;
-      if (!vis_manager_->getFrameManager()->getTransform(frame->parent_, ros::Time(), parent_position, parent_orientation))
+      if (!context_->getFrameManager()->getTransform(frame->parent_, ros::Time(), parent_position, parent_orientation))
       {
         ROS_DEBUG("Error transforming frame '%s' (parent of '%s') to frame '%s'", frame->parent_.c_str(), frame->name_.c_str(), fixed_frame_.c_str());
       }
@@ -653,7 +654,7 @@ void TFDisplay::deleteFrame(FrameInfo* frame, bool delete_properties)
   frames_.erase( it );
 
   delete frame->axes_;
-  vis_manager_->getSelectionManager()->removeObject(frame->axes_coll_);
+  context_->getSelectionManager()->removeObject(frame->axes_coll_);
   delete frame->parent_arrow_;
   delete frame->name_text_;
   scene_manager_->destroySceneNode( frame->name_node_->getName() );
@@ -667,26 +668,26 @@ void TFDisplay::deleteFrame(FrameInfo* frame, bool delete_properties)
 
 void TFDisplay::createProperties()
 {
-  show_names_property_ = property_manager_->createProperty<BoolProperty>( "Show Names", property_prefix_, boost::bind( &TFDisplay::getShowNames, this ),
+  show_names_property_ = new BoolProperty( "Show Names", property_prefix_, boost::bind( &TFDisplay::getShowNames, this ),
                                                                           boost::bind( &TFDisplay::setShowNames, this, _1 ), parent_category_, this );
   setPropertyHelpText(show_names_property_, "Whether or not names should be shown next to the frames.");
-  show_axes_property_ = property_manager_->createProperty<BoolProperty>( "Show Axes", property_prefix_, boost::bind( &TFDisplay::getShowAxes, this ),
+  show_axes_property_ = new BoolProperty( "Show Axes", property_prefix_, boost::bind( &TFDisplay::getShowAxes, this ),
                                                                           boost::bind( &TFDisplay::setShowAxes, this, _1 ), parent_category_, this );
   setPropertyHelpText(show_axes_property_, "Whether or not the axes of each frame should be shown.");
-  show_arrows_property_ = property_manager_->createProperty<BoolProperty>( "Show Arrows", property_prefix_, boost::bind( &TFDisplay::getShowArrows, this ),
+  show_arrows_property_ = new BoolProperty( "Show Arrows", property_prefix_, boost::bind( &TFDisplay::getShowArrows, this ),
                                                                            boost::bind( &TFDisplay::setShowArrows, this, _1 ), parent_category_, this );
   setPropertyHelpText(show_arrows_property_, "Whether or not arrows from child to parent should be shown.");
-  scale_property_ = property_manager_->createProperty<FloatProperty>( "Marker Scale", property_prefix_, boost::bind( &TFDisplay::getScale, this ), 
+  scale_property_ = new FloatProperty( "Marker Scale", property_prefix_, boost::bind( &TFDisplay::getScale, this ), 
                                                                       boost::bind( &TFDisplay::setScale, this, _1 ), parent_category_, this ); 
   setPropertyHelpText(scale_property_, "Scaling factor for all names, axes and arrows.");
-  update_rate_property_ = property_manager_->createProperty<FloatProperty>( "Update Interval", property_prefix_, boost::bind( &TFDisplay::getUpdateRate, this ),
+  update_rate_property_ = new FloatProperty( "Update Interval", property_prefix_, boost::bind( &TFDisplay::getUpdateRate, this ),
                                                                             boost::bind( &TFDisplay::setUpdateRate, this, _1 ), parent_category_, this );
   setPropertyHelpText(update_rate_property_, "The interval, in seconds, at which to update the frame transforms.  0 means to do so every update cycle.");
   FloatPropertyPtr float_prop = update_rate_property_.lock();
   float_prop->setMin( 0.0 );
   float_prop->addLegacyName("Update Rate");
 
-  frame_timeout_property_ = property_manager_->createProperty<FloatProperty>( "Frame Timeout", property_prefix_, boost::bind( &TFDisplay::getFrameTimeout, this ),
+  frame_timeout_property_ = new FloatProperty( "Frame Timeout", property_prefix_, boost::bind( &TFDisplay::getFrameTimeout, this ),
                                                                               boost::bind( &TFDisplay::setFrameTimeout, this, _1 ), parent_category_, this );
   setPropertyHelpText(frame_timeout_property_, "The length of time, in seconds, before a frame that has not been updated is considered \"dead\".  For 1/3 of this time"
                                                " the frame will appear correct, for the second 1/3rd it will fade to gray, and then it will fade out completely.");
@@ -698,7 +699,7 @@ void TFDisplay::createProperties()
   CategoryPropertyPtr cat_prop = frames_category_.lock();
   cat_prop->collapse();
 
-  all_enabled_property_ = property_manager_->createProperty<BoolProperty>( "All Enabled", property_prefix_, boost::bind( &TFDisplay::getAllEnabled, this ),
+  all_enabled_property_ = new BoolProperty( "All Enabled", property_prefix_, boost::bind( &TFDisplay::getAllEnabled, this ),
                                                                            boost::bind( &TFDisplay::setAllEnabled, this, _1 ), frames_category_, this );
   setPropertyHelpText(all_enabled_property_, "Whether all the frames should be enabled or not.");
 

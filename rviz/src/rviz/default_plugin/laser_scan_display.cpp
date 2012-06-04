@@ -28,7 +28,7 @@
  */
 
 #include "laser_scan_display.h"
-#include "rviz/visualization_manager.h"
+#include "rviz/display_context.h"
 #include "rviz/properties/property.h"
 #include "rviz/properties/property_manager.h"
 #include "rviz/frame_manager.h"
@@ -61,12 +61,26 @@ LaserScanDisplay::~LaserScanDisplay()
 void LaserScanDisplay::onInitialize()
 {
   PointCloudBase::onInitialize();
-  tf_filter_ = new tf::MessageFilter<sensor_msgs::LaserScan>(*vis_manager_->getTFClient(), "", 10, threaded_nh_);
+  tf_filter_ = new tf::MessageFilter<sensor_msgs::LaserScan>(*context_->getTFClient(), "", 10, threaded_nh_);
   projector_ = new laser_geometry::LaserProjection();
 
   tf_filter_->connectInput(sub_);
   tf_filter_->registerCallback(boost::bind(&LaserScanDisplay::incomingScanCallback, this, _1));
-  vis_manager_->getFrameManager()->registerFilterForTransformStatusCheck(tf_filter_, this);
+  context_->getFrameManager()->registerFilterForTransformStatusCheck(tf_filter_, this);
+}
+
+void LaserScanDisplay::setQueueSize( int size )
+{
+  if( size != (int) tf_filter_->getQueueSize() )
+  {
+    tf_filter_->setQueueSize( (uint32_t) size );
+    propertyChanged( queue_size_property_ );
+  }
+}
+
+int LaserScanDisplay::getQueueSize()
+{
+  return (int) tf_filter_->getQueueSize();
 }
 
 void LaserScanDisplay::setTopic( const std::string& topic )
@@ -80,7 +94,7 @@ void LaserScanDisplay::setTopic( const std::string& topic )
 
   propertyChanged(topic_property_);
 
-  causeRender();
+  context_->queueRender();
 }
 
 
@@ -105,7 +119,15 @@ void LaserScanDisplay::subscribe()
     return;
   }
 
-  sub_.subscribe(threaded_nh_, topic_, 2);
+  try
+  {
+    sub_.subscribe(threaded_nh_, topic_, 2);
+    setStatus(StatusProperty::Ok, "Topic", "OK");
+  }
+  catch (ros::Exception& e)
+  {
+    setStatus(StatusProperty::Error, "Topic", std::string("Error subscribing: ") + e.what());
+  }
 }
 
 void LaserScanDisplay::unsubscribe()
@@ -131,7 +153,7 @@ void LaserScanDisplay::incomingScanCallback(const sensor_msgs::LaserScan::ConstP
 
   try
   {
-    projector_->transformLaserScanToPointCloud(fixed_frame_, *scan, *cloud , *vis_manager_->getTFClient(), laser_geometry::channel_option::Intensity);
+    projector_->transformLaserScanToPointCloud(fixed_frame_, *scan, *cloud , *context_->getTFClient(), laser_geometry::channel_option::Intensity);
   }
   catch (tf::TransformException& e)
   {
@@ -150,12 +172,18 @@ void LaserScanDisplay::fixedFrameChanged()
 
 void LaserScanDisplay::createProperties()
 {
-  topic_property_ = property_manager_->createProperty<ROSTopicStringProperty>( "Topic", property_prefix_, boost::bind( &LaserScanDisplay::getTopic, this ),
+  topic_property_ = new RosTopicProperty( "Topic", property_prefix_, boost::bind( &LaserScanDisplay::getTopic, this ),
                                                                             boost::bind( &LaserScanDisplay::setTopic, this, _1 ), parent_category_, this );
   setPropertyHelpText(topic_property_, "sensor_msgs::LaserScan topic to subscribe to.");
   ROSTopicStringPropertyPtr str_prop = topic_property_.lock();
   str_prop->addLegacyName("Scan Topic");
   str_prop->setMessageType(ros::message_traits::datatype<sensor_msgs::LaserScan>());
+
+  queue_size_property_ = new IntProperty( "Queue Size", property_prefix_,
+                                                                         boost::bind( &LaserScanDisplay::getQueueSize, this ),
+                                                                         boost::bind( &LaserScanDisplay::setQueueSize, this, _1 ),
+                                                                         parent_category_, this );
+  setPropertyHelpText( queue_size_property_, "Advanced: set the size of the incoming LaserScan message queue.  Increasing this is useful if your incoming TF data is delayed significantly from your LaserScan data, but it can greatly increase memory usage if the messages are big." );
 
   PointCloudBase::createProperties();
 }

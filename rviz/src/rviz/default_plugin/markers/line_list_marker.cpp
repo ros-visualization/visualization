@@ -29,7 +29,7 @@
 
 #include "line_list_marker.h"
 #include "rviz/default_plugin/marker_display.h"
-#include "rviz/visualization_manager.h"
+#include "rviz/display_context.h"
 
 #include <rviz/ogre_helpers/billboard_line.h>
 
@@ -40,8 +40,8 @@
 namespace rviz
 {
 
-LineListMarker::LineListMarker(MarkerDisplay* owner, VisualizationManager* manager, Ogre::SceneNode* parent_node)
-: MarkerBase(owner, manager, parent_node)
+LineListMarker::LineListMarker(MarkerDisplay* owner, DisplayContext* context, Ogre::SceneNode* parent_node)
+: MarkerBase(owner, context, parent_node)
 , lines_(0)
 {
 }
@@ -57,7 +57,7 @@ void LineListMarker::onNewMessage(const MarkerConstPtr& old_message, const Marke
 
   if (!lines_)
   {
-    lines_ = new BillboardLine(vis_manager_->getSceneManager(), scene_node_);
+    lines_ = new BillboardLine(context_->getSceneManager(), scene_node_);
   }
 
   Ogre::Vector3 pos, scale;
@@ -126,7 +126,7 @@ void LineListMarker::onNewMessage(const MarkerConstPtr& old_message, const Marke
     ss << "Line list marker [" << getStringID() << "] has an odd number of points.";
     if ( owner_ )
     {
-      owner_->setMarkerStatus(getID(), status_levels::Error, ss.str());
+      owner_->setMarkerStatus(getID(), StatusProperty::Error, ss.str());
     }
     ROS_DEBUG("%s", ss.str().c_str());
   }

@@ -1,4 +1,4 @@
-/*
+/* 
  * Copyright (c) 2008, Willow Garage, Inc.
  * All rights reserved.
  *
@@ -52,6 +52,8 @@
 #include "wait_for_master_dialog.h"
 #include "visualizer_app.h"
 
+#define CATCH_EXCEPTIONS 0
+
 namespace po = boost::program_options;
 
 namespace rviz
@@ -70,6 +72,7 @@ bool reloadShaders(std_srvs::Empty::Request&, std_srvs::Empty::Response&)
 
 VisualizerApp::VisualizerApp()
   : timer_( 0 )
+  , frame_( 0 )
 {
 }
 
@@ -95,14 +98,17 @@ bool VisualizerApp::init( int argc, char** argv )
   SetFrontProcess(&PSN);
 #endif
 
+#if CATCH_EXCEPTIONS
   try
   {
+#endif
     ros::init( argc, argv, "rviz", ros::init_options::AnonymousName | ros::init_options::NoSigintHandler );
 
     po::options_description options;
     options.add_options()
       ("help,h", "Produce this help message")
       ("splash-screen,s", po::value<std::string>(), "A custom splash-screen image to display")
+      ("help-file", po::value<std::string>(), "A custom html file to show as the help screen")
       ("display-config,d", po::value<std::string>(), "A display config file (.vcg) to load")
       ("target-frame,t", po::value<std::string>(), "Set the target frame")
       ("fixed-frame,f", po::value<std::string>(), "Set the fixed frame")
@@ -110,7 +116,7 @@ bool VisualizerApp::init( int argc, char** argv )
       ("in-mc-wrapper", "Signal that this is running inside a master-chooser wrapper")
       ("verbose,v", "Enable debug visualizations");
     po::variables_map vm;
-    std::string display_config, target_frame, fixed_frame, splash_path;
+    std::string display_config, target_frame, fixed_frame, splash_path, help_path;
     bool enable_ogre_log = false;
     bool in_mc_wrapper = false;
     bool verbose = false;
@@ -138,6 +144,11 @@ bool VisualizerApp::init( int argc, char** argv )
       if (vm.count("splash-screen"))
       {
         splash_path = vm["splash-screen"].as<std::string>();
+      }
+
+      if (vm.count("help-file"))
+      {
+        help_path = vm["help-file"].as<std::string>();
       }
 
       if (vm.count("target-frame"))
@@ -195,7 +206,8 @@ bool VisualizerApp::init( int argc, char** argv )
     log_manager->createLog( "Ogre.log", false, false, !enable_ogre_log );
 
     frame_ = new VisualizationFrame;
-    frame_->initialize( display_config, fixed_frame, target_frame, splash_path, verbose, in_mc_wrapper );
+    frame_->initialize( display_config, fixed_frame, target_frame,
+                        splash_path, help_path, verbose, in_mc_wrapper );
     frame_->show();
 
     timer_ = new QTimer( this );
@@ -204,13 +216,14 @@ bool VisualizerApp::init( int argc, char** argv )
 
     ros::NodeHandle private_nh("~");
     reload_shaders_service_ = private_nh.advertiseService("reload_shaders", reloadShaders);
+#if CATCH_EXCEPTIONS
   }
   catch (std::exception& e)
   {
     ROS_ERROR("Caught exception while loading: %s", e.what());
     return false;
   }
-
+#endif
   return true;
 }
 

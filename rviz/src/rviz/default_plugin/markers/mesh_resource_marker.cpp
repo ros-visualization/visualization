@@ -33,7 +33,7 @@
 #include "rviz/default_plugin/marker_display.h"
 #include "rviz/selection/selection_manager.h"
 
-#include "rviz/visualization_manager.h"
+#include "rviz/display_context.h"
 #include "rviz/mesh_loader.h"
 #include "marker_display.h"
 
@@ -47,8 +47,8 @@
 namespace rviz
 {
 
-MeshResourceMarker::MeshResourceMarker(MarkerDisplay* owner, VisualizationManager* manager, Ogre::SceneNode* parent_node)
-: MarkerBase(owner, manager, parent_node)
+MeshResourceMarker::MeshResourceMarker(MarkerDisplay* owner, DisplayContext* context, Ogre::SceneNode* parent_node)
+: MarkerBase(owner, context, parent_node)
 , entity_(0)
 {
 }
@@ -63,7 +63,7 @@ void MeshResourceMarker::reset()
   //destroy entity
   if (entity_)
   {
-    vis_manager_->getSceneManager()->destroyEntity( entity_ );
+    context_->getSceneManager()->destroyEntity( entity_ );
     entity_ = 0;
   }
 
@@ -117,7 +117,7 @@ void MeshResourceMarker::onNewMessage(const MarkerConstPtr& old_message, const M
       ss << "Mesh resource marker [" << getStringID() << "] could not load [" << new_message->mesh_resource << "]";
       if ( owner_ )
       {
-        owner_->setMarkerStatus(getID(), status_levels::Error, ss.str());
+        owner_->setMarkerStatus(getID(), StatusProperty::Error, ss.str());
       }
       ROS_DEBUG("%s", ss.str().c_str());
       return;
@@ -127,9 +127,17 @@ void MeshResourceMarker::onNewMessage(const MarkerConstPtr& old_message, const M
     std::stringstream ss;
     ss << "mesh_resource_marker_" << count++;
     std::string id = ss.str();
-    entity_ = vis_manager_->getSceneManager()->createEntity(id, new_message->mesh_resource);
+    entity_ = context_->getSceneManager()->createEntity(id, new_message->mesh_resource);
     scene_node_->attachObject(entity_);
     need_color = true;
+
+    // create a default material for any sub-entities which don't have their own.
+    ss << "Material";
+    Ogre::MaterialPtr default_material = Ogre::MaterialManager::getSingleton().create( ss.str(), ROS_PACKAGE_NAME );
+    default_material->setReceiveShadows(false);
+    default_material->getTechnique(0)->setLightingEnabled(true);
+    default_material->getTechnique(0)->setAmbient( 0.5, 0.5, 0.5 );
+    materials_.insert( default_material );
 
     if ( new_message->mesh_use_embedded_materials )
     {
@@ -139,32 +147,38 @@ void MeshResourceMarker::onNewMessage(const MarkerConstPtr& old_message, const M
       S_MaterialPtr::iterator it;
       for ( it = materials.begin(); it!=materials.end(); it++ )
       {
-        Ogre::MaterialPtr new_material = (*it)->clone( id + (*it)->getName() );
-        materials_.insert( new_material );
+        if( (*it)->getName() != "BaseWhiteNoLighting" )
+        {
+          Ogre::MaterialPtr new_material = (*it)->clone( id + (*it)->getName() );
+          materials_.insert( new_material );
+        }
       }
 
       // make sub-entities use cloned materials
       for (uint32_t i = 0; i < entity_->getNumSubEntities(); ++i)
       {
         std::string mat_name = entity_->getSubEntity(i)->getMaterialName();
-        entity_->getSubEntity(i)->setMaterialName( id + mat_name );
+        if( mat_name != "BaseWhiteNoLighting" )
+        {
+          entity_->getSubEntity(i)->setMaterialName( id + mat_name );
+        }
+        else
+        {
+          // BaseWhiteNoLighting is the default material Ogre uses
+          // when it sees a mesh with no material.  Here we replace
+          // that with our default_material which gets colored with
+          // new_message->color.
+          entity_->getSubEntity(i)->setMaterial( default_material );
+        }
       }
     }
     else
     {
-      // create a new single material for all the sub-entities
-      ss << "Material";
-      Ogre::MaterialPtr material = Ogre::MaterialManager::getSingleton().create( ss.str(), ROS_PACKAGE_NAME );
-      material->setReceiveShadows(false);
-      material->getTechnique(0)->setLightingEnabled(true);
-      material->getTechnique(0)->setAmbient( 0.5, 0.5, 0.5 );
-
-      entity_->setMaterial( material );
-      materials_.insert( material );
+      entity_->setMaterial( default_material );
     }
 
-    vis_manager_->getSelectionManager()->removeObject(coll_);
-    coll_ = vis_manager_->getSelectionManager()->createCollisionForEntity(entity_, SelectionHandlerPtr(new MarkerSelectionHandler(this, MarkerID(new_message->ns, new_message->id))), coll_);
+    context_->getSelectionManager()->removeObject(coll_);
+    coll_ = context_->getSelectionManager()->createCollisionForEntity(entity_, SelectionHandlerPtr(new MarkerSelectionHandler(this, MarkerID(new_message->ns, new_message->id))), coll_);
   }
 
   if( need_color ||
@@ -236,7 +250,10 @@ void MeshResourceMarker::onNewMessage(const MarkerConstPtr& old_message, const M
 S_MaterialPtr MeshResourceMarker::getMaterials()
 {
   S_MaterialPtr materials;
-  extractMaterials( entity_, materials );
+  if( entity_ )
+  {
+    extractMaterials( entity_, materials );
+  }
   return materials;
 }
 

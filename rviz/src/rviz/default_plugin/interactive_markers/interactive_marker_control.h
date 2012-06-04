@@ -30,18 +30,20 @@
 #ifndef INTERACTIVE_MARKER_CONTROL_H_
 #define INTERACTIVE_MARKER_CONTROL_H_
 
+#include <boost/shared_ptr.hpp>
+#include <boost/enable_shared_from_this.hpp>
+
 #include <visualization_msgs/InteractiveMarkerControl.h>
 
 #include "rviz/default_plugin/markers/marker_base.h"
 #include "rviz/selection/forwards.h"
 #include "rviz/viewport_mouse_event.h"
+#include "rviz/interactive_object.h"
 
 #include <OGRE/OgreRay.h>
 #include <OGRE/OgreVector3.h>
 #include <OGRE/OgreQuaternion.h>
 #include <OGRE/OgreSceneManager.h>
-
-#include <boost/shared_ptr.hpp>
 
 namespace Ogre
 {
@@ -50,22 +52,34 @@ namespace Ogre
 
 namespace rviz
 {
-class VisualizationManager;
+class DisplayContext;
 class InteractiveMarker;
 class PointsMarker;
 
 /**
  * A single control element of an InteractiveMarker.
  */
-class InteractiveMarkerControl : public Ogre::SceneManager::Listener
+class InteractiveMarkerControl: public Ogre::SceneManager::Listener,
+                                public InteractiveObject,
+                                public boost::enable_shared_from_this<InteractiveMarkerControl>
 {
 public:
-
-  InteractiveMarkerControl(VisualizationManager* vis_manager,
-      const visualization_msgs::InteractiveMarkerControl &message,
-      Ogre::SceneNode *reference_node, InteractiveMarker *parent );
+  /** @brief Constructor.
+   *
+   * Just creates Ogre::SceneNodes and sets some defaults.  To
+   * actually make it look like a
+   * visualization_msgs::InteractiveMarkerControl message specifies,
+   * call processMessage().
+   */
+  InteractiveMarkerControl( DisplayContext* context,
+                            Ogre::SceneNode *reference_node,
+                            InteractiveMarker *parent );
 
   virtual ~InteractiveMarkerControl();
+
+  /** @brief Set up or update the contents of this control to match the
+   *         specification in the message. */
+  void processMessage( const visualization_msgs::InteractiveMarkerControl &message );
 
   // called when interactive mode is globally switched on/off
   virtual void enableInteraction(bool enable);
@@ -91,6 +105,8 @@ protected:
 
   // when this is called, we will face the camera
   virtual void preFindVisibleObjects(Ogre::SceneManager *source, Ogre::SceneManager::IlluminationRenderStage irs, Ogre::Viewport *v);
+
+  void updateControlOrientationForViewFacing( Ogre::Viewport* v );
 
   /** Rotate the pose, following the mouse movement.  mouse_ray is
    * relative to the reference frame. */
@@ -152,11 +168,15 @@ protected:
                                            const Ogre::Vector3& line_dir,
                                            const Ogre::Vector3& test_point );
 
+  /** @brief Create marker objects from the message and add them to the internal marker arrays. */
+  void makeMarkers( const visualization_msgs::InteractiveMarkerControl &message );
+
   bool dragging_;
+  Ogre::Viewport* drag_viewport_;
 
   ViewportMouseEvent dragging_in_place_event_;
 
-  VisualizationManager* vis_manager_;
+  DisplayContext* context_;
 
   CollObjectHandle coll_object_handle_;
 
@@ -218,8 +238,6 @@ protected:
    * fixed-orientation rotation controls. */
   Ogre::Radian rotation_at_mouse_down_;
 
-  Ogre::Quaternion intitial_orientation_;
-
   /** The 3D position of the mouse click when the mouse button is
    * pressed, relative to the reference frame. */
   Ogre::Vector3 grab_point_;
@@ -254,6 +272,7 @@ protected:
   bool interaction_enabled_;
 
   bool visible_;
+  bool view_facing_;
 };
 
 }

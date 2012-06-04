@@ -1,14 +1,25 @@
 include_directories(.)
 
 qt4_wrap_cpp(MOC_FILES
+  axes_display.h
   camera_display.h
+  grid_cells_display.h
+  grid_display.h
   image_display.h
+  interactive_marker_display.h
   interactive_markers/integer_action.h
   interactive_markers/interactive_marker.h
+  map_display.h
+  marker_display.h
+  marker_array_display.h
+  odometry_display.h
+  path_display.h
+  polygon_display.h
+  range_display.h
+  robot_model_display.h
 )
 
 set(SOURCE_FILES
-  init.cpp
   axes_display.cpp
   camera_display.cpp
   grid_cells_display.cpp
@@ -19,7 +30,7 @@ set(SOURCE_FILES
   interactive_markers/interactive_marker_client.cpp
   interactive_markers/interactive_marker_control.cpp
   interactive_markers/interactive_marker.cpp
-  laser_scan_display.cpp
+#  laser_scan_display.cpp
   map_display.cpp
   marker_array_display.cpp
   marker_display.cpp
@@ -35,16 +46,22 @@ set(SOURCE_FILES
   markers/triangle_list_marker.cpp
   odometry_display.cpp
   path_display.cpp
-  point_cloud2_display.cpp
-  point_cloud_base.cpp
-  point_cloud_display.cpp
-  point_cloud_transformers.cpp
+#  point_cloud2_display.cpp
+#  point_cloud_base.cpp
+#  point_cloud_display.cpp
+#  point_cloud_transformers.cpp
   polygon_display.cpp
-  pose_array_display.cpp
-  pose_display.cpp
+#  pose_array_display.cpp
+#  pose_display.cpp
   range_display.cpp
   robot_model_display.cpp
-  tf_display.cpp
+#  tf_display.cpp
+  tools/move_tool.cpp
+#  tools/pose_tool.cpp
+#  tools/goal_tool.cpp
+#  tools/initial_pose_tool.cpp
+  tools/selection_tool.cpp
+  tools/interaction_tool.cpp
   ${MOC_FILES}
 )
 

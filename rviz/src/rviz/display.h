@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Willow Garage, Inc.
+ * Copyright (c) 2012, Willow Garage, Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -26,19 +26,15 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-
-#ifndef RVIZ_DISPLAY_H
-#define RVIZ_DISPLAY_H
-
-#include <QObject>
-
-#include "properties/forwards.h"
-#include "status_level.h"
+#ifndef DISPLAY_H
+#define DISPLAY_H
 
 #include <string>
-#include <boost/function.hpp>
 
 #include <ros/ros.h>
+
+#include "rviz/properties/status_property.h"
+#include "rviz/properties/property.h"
 
 namespace Ogre
 {
@@ -48,178 +44,147 @@ class SceneManager;
 namespace rviz
 {
 
-class PropertyManager;
-class CategoryProperty;
-class BoolProperty;
+class StatusList;
+class DisplayContext;
 
-class VisualizationManager;
-
-class Display;
-
-/**
- * \class Display
- * \brief Abstract base class for all displays.
- *
- * Provides a common interface for the visualization panel to interact with,
- * so that new displays can be added without the visualization panel knowing anything about them.
- */
-class Display: public QObject
+class Display: public Property
 {
 Q_OBJECT
 public:
   Display();
-  virtual ~Display();
 
-  /** Main initialization, called right after constructor. */
-  void initialize( const std::string& name, VisualizationManager* manager );
+  /** @brief Main initialization, called after constructor, before load() or setEnabled(). */
+  void initialize( DisplayContext* context );
 
-  /** Override this function to do subclass-specific initialization.
-   * This is called after vis_manager_ and scene_manager_ are set. */
-  virtual void onInitialize() {}
-
-  /**
-   * \brief Enable this display
-   * @param force If false, does not re-enable if this display is already enabled.  If true, it does.
+  /** @brief Return data appropriate for the given column (0 or 1) and
+   * role for this Display.
    */
-  void enable( bool force = false );
-  /**
-   * \brief Disable this display
-   * @param force If false, does not re-disable if this display is already disabled.  If true, it does.
-   */
-  void disable( bool force = false );
+  virtual QVariant getViewData( int column, int role ) const;
 
-  bool isEnabled() { return enabled_; }
-  void setEnabled(bool enable, bool force = false);
+  /** @brief Return item flags appropriate for the given column (0 or
+   * 1) for this Display. */
+  virtual Qt::ItemFlags getViewFlags( int column ) const;
 
-  const std::string& getName() const { return name_; }
-  void setName(const std::string& name);
+  /** @brief Return the class identifier which was used to create this
+   * instance.  This version just returns whatever was set with
+   * setClassId(). */
+  virtual QString getClassId() const { return class_id_; }
 
-  /**
-   * \brief Called periodically by the visualization panel
-   * @param dt Wall-clock time, in seconds, since the last time the update list was run through.
-   */
+  /** @brief Set the class identifier used to create this instance.
+   * Typically this will be set by the factory object which created it. */
+  virtual void setClassId( const QString& class_id ) { class_id_ = class_id; }
+
+  /** @brief Load the settings for this display from the given YAML
+   * node, which must be a map.
+   *
+   * Overridden from Property::load().  This version just calls
+   * loadChildren().
+   *
+   * load() is called after initialize(). */
+  virtual void load( const YAML::Node& yaml_node );
+
+  /** @brief Load the settings for this display from the given YAML
+   * node, which must be a map.
+   *
+   * Overridden from Property::loadChildren() to load the Display's
+   * name and enabled state, then call Property::loadChildren(). */
+  virtual void loadChildren( const YAML::Node& yaml_node );
+
+  /** @brief Write this display to the given YAML emitter.
+   *
+   * Overridden from Property::save().  This version just begins a
+   * map, calls saveChildren(), and ends the map. */
+  virtual void save( YAML::Emitter& emitter );
+
+  /** @brief Write the contents of this display to the given YAML
+   * emitter, which must be in a map context already. */
+  virtual void saveChildren( YAML::Emitter& emitter );
+
+  /** @brief Return true if this Display is enabled, false if not. */
+  bool isEnabled() const;
+
+  /** @brief Set the fixed frame in this display. */
+  void setFixedFrame( const QString& fixed_frame );
+
+  /** @brief Called periodically by the visualization manager.
+   * @param wall_dt Wall-clock time, in seconds, since the last time the update list was run through.
+   * @param ros_dt ROS time, in seconds, since the last time the update list was run through. */
   virtual void update( float wall_dt, float ros_dt ) {}
 
-  ///
-  /**
-   * \brief Set the callback used for causing a render to happen
-   * @param func a void(void) function that will cause a render to happen from the correct thread
-   */
-  void setRenderCallback( boost::function<void ()> func );
-
-  /// Set the callback used to lock the renderer
-  void setLockRenderCallback( boost::function<void ()> func );
-  /// Set the callback used to unlock the renderer
-  void setUnlockRenderCallback( boost::function<void ()> func );
-
-  /**
-   * \brief Sets the property manager and parent category for this display
-   * @param manager The property manager
-   * @param parent The parent category
-   */
-  void setPropertyManager( PropertyManager* manager, const CategoryPropertyWPtr& parent );
-
-  /**
-   * \brief Called from setPropertyManager, gives the display a chance to create some properties immediately.
-   *
-   * Once this function is called, the property_manager_ member is valid and will stay valid
-   */
-  virtual void createProperties() {}
-
-  /**
-   * \brief Set the fixed frame of this display.  This is a frame id which should generally be the top-level frame being broadcast through TF
-   * @param frame The fixed frame
-   */
-  void setFixedFrame( const std::string& frame );
-
-  /**
-   * \brief Override to handle changes to fixed_frame_.
-   * This base class implementation does nothing.
-   */
-  virtual void fixedFrameChanged() {}
-
-  /**
-   * \brief Called to tell the display to clear its state
-   */
+  /** @brief Called to tell the display to clear its state */
   virtual void reset();
 
-  void setStatus(StatusLevel level, const std::string& name, const std::string& text);
-  void deleteStatus(const std::string& name);
-  void clearStatuses();
-  StatusLevel getStatus();
+  /** @brief Show status level and text.
+   * @param level One of StatusProperty::Ok, StatusProperty::Warn, or StatusProperty::Error.
+   * @param name The name of the child entry to set.
+   * @param text Description of the child's state.
+   *
+   * Every Display has a StatusList to indicate how it is doing.  The
+   * StatusList has StatusPropertychildren indicating the status of
+   * various subcomponents of the Display.  Each child of the status
+   * has a level, a name, and descriptive text.  The top-level
+   * StatusList has a level which is set to the worst of all the
+   * children's levels.
+   */
+  virtual void setStatus( StatusProperty::Level level, const QString& name, const QString& text );
 
-Q_SIGNALS:
-  /** Emitted when this display goes from enabled to disabled or vice-versa. */
-  void stateChanged( Display* );
+  /** @brief Show status level and text, using a std::string.
+   * Convenience function which converts std::string to QString
+   * and calls setStatus(). */
+  void setStatusStd( StatusProperty::Level level, const std::string& name, const std::string& text )
+    {
+      setStatus( level, QString::fromStdString( name ), QString::fromStdString( text ));
+    }
+
+  virtual void deleteStatus( const QString& name );
+
+  void deleteStatusStd( const std::string& name ) { deleteStatus( QString::fromStdString( name )); }
+
+public Q_SLOTS:
+  /** @brief Enable or disable this Display.
+   *
+   * SetEnabled is called after initialize() and at the end of load(),
+   * if the Display settings are being loaded from a file. */
+  void setEnabled( bool enabled );
 
 protected:
-  /// Derived classes override this to do the actual work of enabling themselves
-  virtual void onEnable() = 0;
-  /// Derived classes override this to do the actual work of disabling themselves
-  virtual void onDisable() = 0;
+  /** @brief Override this function to do subclass-specific initialization.
+   *
+   * This is called after vis_manager_ and scene_manager_ are set, and
+   * before load() or setEnabled().
+   *
+   * setName() may or may not have been called before this. */
+  virtual void onInitialize() {}
 
-  ///
-  /**
-   * \brief Cause the scene we're in to be rendered.
-   * \note This does not immediately cause a render -- instead, one is queued and happens next run through the event loop.
-   */
-  void causeRender();
+  /** @brief Derived classes override this to do the actual work of enabling themselves. */
+  virtual void onEnable() {}
 
-  /// Lock the renderer
-  void lockRender();
-  /// Unlock the renderer
-  void unlockRender();
+  /** @brief Derived classes override this to do the actual work of disabling themselves. */
+  virtual void onDisable() {}
 
-  VisualizationManager* vis_manager_;
+  /** @brief Delete all status children.
+   *
+   * This removes all status children and updates the top-level status. */
+  virtual void clearStatuses();
 
-  Ogre::SceneManager* scene_manager_;                 ///< The scene manager we're associated with
-  std::string name_;                                  ///< The name of this display
-  bool enabled_;                                      ///< Are we enabled?
-  StatusLevel status_;
+  /** @brief Called by setFixedFrame().  Override to respond to changes to fixed_frame_. */
+  virtual void fixedFrameChanged() {}
 
+  DisplayContext* context_;
+  Ogre::SceneManager* scene_manager_;    ///< The scene manager we're associated with
   ros::NodeHandle update_nh_;
   ros::NodeHandle threaded_nh_;
+  QString fixed_frame_;
 
-  std::string fixed_frame_;                           ///< The frame we should transform all fixed data into
-
-  boost::function<void ()> render_callback_;          ///< Render callback
-  boost::function<void ()> render_lock_;              ///< Render lock callback
-  boost::function<void ()> render_unlock_;            ///< Render unlock callback
-
-  std::string property_prefix_;                       ///< Prefix to prepend to our properties
-
-  PropertyManager* property_manager_;                 ///< The property manager to use to create properties
-  CategoryPropertyWPtr parent_category_;                 ///< The parent category to use when creating properties
-  StatusPropertyWPtr status_property_;
-
-  friend class RenderAutoLock;
-};
-
-/**
- * \class RenderAutoLock
- * \brief A scoped lock on the renderer
- *
- * Constructor calls Display::lockRender<br>
- * Destructor calls Display::unlockRender
- */
-class RenderAutoLock
-{
-public:
-  RenderAutoLock( Display* display )
-  : display_( display )
-  {
-    display_->lockRender();
-  }
-
-  ~RenderAutoLock()
-  {
-    display_->unlockRender();
-  }
+private Q_SLOTS:
+  void onEnableChanged();
 
 private:
-  Display* display_;
+  StatusList* status_;
+  QString class_id_;
+  bool initialized_;
 };
 
-} // namespace rviz
+} // end namespace rviz
 
-#endif
+#endif // DISPLAY_H

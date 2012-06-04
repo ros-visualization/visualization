@@ -32,8 +32,9 @@
 #include "marker_selection_handler.h"
 #include "rviz/default_plugin/marker_display.h"
 #include "rviz/selection/selection_manager.h"
+#include "rviz/uniform_string_stream.h"
 
-#include "rviz/visualization_manager.h"
+#include "rviz/display_context.h"
 #include "rviz/mesh_loader.h"
 #include "marker_display.h"
 
@@ -47,15 +48,15 @@
 namespace rviz
 {
 
-TriangleListMarker::TriangleListMarker(MarkerDisplay* owner, VisualizationManager* manager, Ogre::SceneNode* parent_node)
-: MarkerBase(owner, manager, parent_node)
+TriangleListMarker::TriangleListMarker(MarkerDisplay* owner, DisplayContext* context, Ogre::SceneNode* parent_node)
+: MarkerBase(owner, context, parent_node)
 , manual_object_(0)
 {
 }
 
 TriangleListMarker::~TriangleListMarker()
 {
-  vis_manager_->getSceneManager()->destroyManualObject(manual_object_);
+  context_->getSceneManager()->destroyManualObject(manual_object_);
 
   for (size_t i = 0; i < material_->getNumTechniques(); ++i)
   {
@@ -76,12 +77,38 @@ void TriangleListMarker::onNewMessage(const MarkerConstPtr& old_message, const M
 {
   ROS_ASSERT(new_message->type == visualization_msgs::Marker::TRIANGLE_LIST);
 
+  size_t num_points = new_message->points.size();
+  if( (num_points % 3) != 0 || num_points == 0 )
+  {
+    std::stringstream ss;
+    if( num_points == 0 )
+    {
+      ss << "TriMesh marker [" << getStringID() << "] has no points.";
+    }
+    else
+    {
+      ss << "TriMesh marker [" << getStringID() << "] has a point count which is not divisible by 3 [" << num_points <<"]";
+    }
+    if ( owner_ )
+    {
+      owner_->setMarkerStatus(getID(), StatusProperty::Error, ss.str());
+    }
+    ROS_DEBUG("%s", ss.str().c_str());
+
+    scene_node_->setVisible( false );
+    return;
+  }
+  else
+  {
+    scene_node_->setVisible( true );
+  }
+
   if (!manual_object_)
   {
     static uint32_t count = 0;
-    std::stringstream ss;
+    UniformStringStream ss;
     ss << "Triangle List Marker" << count++;
-    manual_object_ = vis_manager_->getSceneManager()->createManualObject(ss.str());
+    manual_object_ = context_->getSceneManager()->createManualObject(ss.str());
     scene_node_->attachObject(manual_object_);
 
     ss << "Material";
@@ -91,28 +118,12 @@ void TriangleListMarker::onNewMessage(const MarkerConstPtr& old_message, const M
     material_->getTechnique(0)->setLightingEnabled(true);
     material_->setCullingMode(Ogre::CULL_NONE);
 
-    vis_manager_->getSelectionManager()->removeObject(coll_);
+    context_->getSelectionManager()->removeObject(coll_);
 
-    SelectionManager* sel_man = vis_manager_->getSelectionManager();
+    SelectionManager* sel_man = context_->getSelectionManager();
     coll_ = sel_man->createHandle();
     sel_man->addPickTechnique(coll_, material_);
     sel_man->addObject( coll_, SelectionHandlerPtr(new MarkerSelectionHandler(this, MarkerID(new_message->ns, new_message->id))) );
-  }
-
-  size_t num_points = new_message->points.size();
-  if ((num_points % 3) != 0)
-  {
-    std::stringstream ss;
-    ss << "TriMesh marker [" << getStringID() << "] has a point count which is not divisible by 3 [" << num_points <<"]";
-    if ( owner_ )
-    {
-      owner_->setMarkerStatus(getID(), status_levels::Error, ss.str());
-    }
-    ROS_DEBUG("%s", ss.str().c_str());
-
-    manual_object_->clear();
-    scene_node_->setVisible(false);
-    return;
   }
 
   Ogre::Vector3 pos, scale;
@@ -121,7 +132,7 @@ void TriangleListMarker::onNewMessage(const MarkerConstPtr& old_message, const M
 
   if ( owner_ &&  (new_message->scale.x * new_message->scale.y * new_message->scale.z == 0.0f) )
   {
-    owner_->setMarkerStatus(getID(), status_levels::Warn, "Scale of 0 in one of x/y/z");
+    owner_->setMarkerStatus(getID(), StatusProperty::Warn, "Scale of 0 in one of x/y/z");
   }
 
   setPosition(pos);

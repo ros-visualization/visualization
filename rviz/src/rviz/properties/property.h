@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Willow Garage, Inc.
+ * Copyright (c) 2012, Willow Garage, Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -26,638 +26,461 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-
-#ifndef RVIZ_PROPERTY_H
-#define RVIZ_PROPERTY_H
-
-#include <float.h>
-#include <limits.h>
-
-#include "rviz/helpers/color.h"
-#include "forwards.h"
-#include "rviz/status_level.h"
-
-#include <boost/function.hpp>
-#include <boost/enable_shared_from_this.hpp>
-#include <boost/thread/mutex.hpp>
-
-#include <ros/console.h>
-#include <ros/assert.h>
-
-#include <OGRE/OgreVector3.h>
-#include <OGRE/OgreQuaternion.h>
+#ifndef PROPERTY_H
+#define PROPERTY_H
 
 #include <string>
-#include <vector>
 
-class QColor;
+#include <QObject>
+#include <QVariant>
+
+namespace YAML
+{
+class Node;
+class Emitter;
+}
+
+class QModelIndex;
+class QPainter;
+class QStyleOptionViewItem;
 
 namespace rviz
 {
 
-class Config;
-class PropertyTreeWidget;
-class PropertyWidgetItem;
-class CategoryProperty;
-class VisualizationManager;
+class PropertyTreeModel;
 
-void setPropertyHelpText(PropertyTreeWidget* grid, PropertyWidgetItem* property, const std::string& text);
-void setPropertyToColors(PropertyTreeWidget* grid, PropertyWidgetItem* property, const QColor& fg_color, const QColor& bg_color, uint32_t column = 0);
-void setPropertyToError(PropertyTreeWidget* grid, PropertyWidgetItem* property, uint32_t column = 0);
-void setPropertyToWarn(PropertyTreeWidget* grid, PropertyWidgetItem* property, uint32_t column = 0);
-void setPropertyToOK(PropertyTreeWidget* grid, PropertyWidgetItem* property, uint32_t column = 0);
-void setPropertyToDisabled(PropertyTreeWidget* grid, PropertyWidgetItem* property, uint32_t column = 0);
-
-/**
- * \brief Abstract base class for properties
- */
-class PropertyBase : public boost::enable_shared_from_this<PropertyBase>
+/** @brief A single element of a property tree, with a name, value,
+ *         description, and possibly children.
+ *
+ * A Property in a property tree is a piece of data editable or at
+ * least displayable in a PropertyTreeWidget.  A Property object
+ * *owns* the data item in question.  When client code needs to be
+ * informed about changes, it can connect to the Property's
+ * `aboutToChange()` and `changed()` signals.  A slot receiving the
+ * `changed()` signal should then ask the Property itself for the new
+ * data.  Example:
+ *
+ *     RangeDisplay::RangeDisplay()
+ *     {
+ *       color_property_ = new ColorProperty( "Color", Qt::white,
+ *                                            "Color to draw the range.",
+ *                                            this, SLOT( updateColorAndAlpha() ));
+ *     
+ *       alpha_property_ = new FloatProperty( "Alpha", 0.5,
+ *                                            "Amount of transparency to apply to the range.",
+ *                                            this, SLOT( updateColorAndAlpha() ));
+ *     }
+ *     
+ *     void RangeDisplay::updateColorAndAlpha()
+ *     {
+ *       Ogre::ColourValue oc = color_property_->getOgreColor();
+ *       float alpha = alpha_property_->getFloat();
+ *       for( size_t i = 0; i < cones_.size(); i++ )
+ *       {
+ *         cones_[i]->setColor( oc.r, oc.g, oc.b, alpha );
+ *       }
+ *       context_->queueRender();
+ *     }
+ *
+ * Many subclasses of Property exist with specializations for storing
+ * specific types of data.  Most of these ultimately use
+ * Property::setValue() to store the data in a QVariant.
+ *
+ * It is important that knowledge of subclasses not be *required* to
+ * get and set data, so that external code can access and change
+ * properties without needing to `#include` and link against the code
+ * in question.  For instance:
+ *
+ *     prop->subProp( "Offset" )->subProp( "X" )->setValue( 3.14 );
+ *
+ * Sets the X component of the VectorProperty called "Offset" which is
+ * a child of `prop`.  This works without this code needing to know
+ * about the existence of VectorProperty.
+ *
+ * To show a Property tree in a PropertyTreeWidget, wrap the root
+ * Property in a PropertyTreeModel and call
+ * PropertyTreeWidget::setModel() with it. */
+class Property: public QObject
 {
+Q_OBJECT
 public:
-  PropertyBase();
-  virtual ~PropertyBase();
-  void writeToGrid();
-  virtual void doWriteToGrid() = 0;
-  virtual void readFromGrid() = 0;
-  virtual void saveToConfig( Config* config ) = 0;
-  virtual void loadFromConfig( Config* config ) = 0;
-
-  virtual std::string getName() = 0;
-  virtual std::string getPrefix() = 0;
-  virtual void setPrefix(const std::string& prefix) = 0;
-  virtual bool getSave() = 0;
-
-  virtual PropertyWidgetItem* getWidgetItem() = 0;
-
-  virtual CategoryPropertyWPtr getParent() = 0;
-
-  virtual void addLegacyName(const std::string& name) = 0;
-
-  virtual void setPropertyTreeWidget(PropertyTreeWidget* grid);
-  virtual PropertyTreeWidget* getPropertyTreeWidget() { return grid_; }
-
-  virtual void setUserData(void* user_data) { user_data_ = user_data; }
-  void* getUserData() { return user_data_; }
-
-  virtual void reset();
-
-  virtual void show();
-  virtual void hide();
-
-  virtual bool isSelected();
-
-  /**
-   * \brief Notify that the value in this property has changed.  Should be called from within the setter function.
+  /** @brief Constructor.
+   * @param name The name of this property.  Appears in the left column of a PropertyTreeWidget.
+   * @param default_value The initial value to store in the property.  Appears in the right column of a PropertyTreeWidget.
+   * @param description Text describing the property.  Is shown in the "help" area of a PropertyTreeWithHelp widget.
+   * @param parent The parent Property, or NULL if there is no parent at this time.
+   * @param changed_slot This should be a Qt slot specification,
+   *        generated by Qt's `SLOT()` macro.  It should be a slot on
+   *        the `receiver` object, or if `receiver` is not specified,
+   *        it should be a slot on the `parent`.
+   * @param receiver If receiver is non-NULL, the changed() signal is
+   *        connected to the `changed_slot` on the `receiver` object.
+   *
+   * All parameters to the constructor are optional and can all be set
+   * after construction as well.
+   *
+   * If a parent is given, this constructor calls `parent->addChild(
+   * this )` to add itself to the parent's list of children.
+   *
+   * If `changed_slot` is given and either `parent` or `receiver` is
+   * also, then the changed() signal is connected via
+   * QObject::connect() to the slot described by `changed_slot` on the
+   * parent or the receiver.  If both parent and receiver are
+   * specified, receiver is the one which gets connected.  If receiver
+   * is not specified, parent is used instead.
    */
+  Property( const QString& name = QString(),
+            const QVariant default_value = QVariant(),
+            const QString& description = QString(),
+            Property* parent = 0,
+            const char *changed_slot = 0,
+            QObject* receiver = 0 );
+
+  /** @brief Destructor.  Removes this property from its parent's list
+   * of children.
+   */
+  virtual ~Property();
+
+  /** @brief Remove and delete all child Properties.  Does not change
+   * the value of this Property.
+   *
+   * Does not use numChildren() or takeChildAt(), operates directly on internal children_ list. */
+  virtual void removeAllChildren();
+
+  /** @brief Set the new value for this property.  Returns true if the
+   * new value is different from the old value, false if same.
+   * @param new_value The new value to store.
+   * @return Returns true if `new_value` is different from current value, false if they are the same.
+   *
+   * If the new value is different from the old value, this emits
+   * aboutToChange() before changing the value and emits changed() after.
+   *
+   * If the value set is an invalid QVariant (`QVariant::isValid()`
+   * returns false), the value will not be editable in a
+   * PropertyTreeWidget. */
+  virtual bool setValue( const QVariant& new_value );
+
+  /** @brief Return the value of this Property as a QVariant.  If the
+   * value has never been set, an invalid QVariant is returned. */
+  virtual QVariant getValue() const;
+
+  /** @brief Set the name.
+   * @param name the new name.
+   *
+   * Internally, the name is stored with QObject::setObjectName(). */
+  virtual void setName( const QString& name );
+
+  /** @brief Return the name of this Property as a QString. */
+  virtual QString getName() const;
+
+  /** @brief Return the name of this Property as a std::string. */
+  std::string getNameStd() const { return getName().toStdString(); }
+
+  /** @brief Set the description.
+   * @param description the new description. */
+  virtual void setDescription( const QString& description );
+
+  /** @brief Return the description. */
+  virtual QString getDescription() const;
+
+  /** @brief Return the first child Property with the given name, or
+   * the FailureProperty if no child has the name.
+   *
+   * If no child is found with the given name, an instance of a
+   * special Property subclass named FailureProperty is returned and
+   * an error message is printed to stdout.
+   * FailureProperty::subProp() always returns itself, which means you
+   * can safely chain a bunch of subProp() calls together and not have
+   * a crash even if one of the sub-properties does not actually
+   * exist.  For instance:
+   *
+   *     float width = prop->subProp( "Dimenshons" )->subProp( "Width" )->getValue().toFloat();
+   *
+   * If the first property `prop` has a "Dimensions" property but not
+   * a "Dimenshons" one, `width` will end up set to 0 and an error
+   * message will be printed, but the program will not crash here.
+   *
+   * This is an Order(N) operation in the number of subproperties. */
+  virtual Property* subProp( const QString& sub_name );
+
+  /** @brief Return the number of child objects (Property or otherwise).
+   *
+   * You can override this in a subclass to implement different child
+   * storage. */
+  virtual int numChildren() const { return children_.size(); }
+
+  /** @brief Return the child Property with the given index, or NULL
+   * if the index is out of bounds or if the child at that index is
+   * not a Property.
+   *
+   * This just checks the index against 0 and numChildren() and then
+   * calls childAtUnchecked(), so it does not need to be overridden in
+   * a subclass. */
+  Property* childAt( int index ) const;
+
+  /** @brief Return the child Property with the given index, without
+   * checking whether the index is within bounds.
+   *
+   * You can override this in a subclass to implement different child
+   * storage. */
+  virtual Property* childAtUnchecked( int index ) const;
+
+  /** @brief Return the parent Property. */
+  Property* getParent() const;
+
+  /** @brief Set parent property, without telling the parent.
+   *
+   * Unlike specifying the parent property to the constructor,
+   * setParent() does not have any immediate side effects, like adding
+   * itself to be a child of the parent.  It should only be used by
+   * implementations of addChild() and takeChild() and such. */
+  void setParent( Property* new_parent );
+
+  /** @brief Return data appropriate for the given column (0 or 1) and role for this Property.
+   * @param column 0 for left column, 1 for right column.
+   * @param role is a Qt::ItemDataRole
+   *
+   * When overriding to add new data (like a color for example), check
+   * the role for the thing you know about, and if it matches, return
+   * your data.  If it does not match, call the parent class version
+   * of this function and return its result.
+   *
+   * Return values from this function or overridden versions of it are
+   * where background and foreground colors, check-box checked-state
+   * values, text, and fonts all come from. */
+  virtual QVariant getViewData( int column, int role ) const;
+
+  /** @brief Return item flags appropriate for the given column (0 or
+   * 1) for this Property.
+   * @param column 0 for left column, 1 for right column.
+   * @return The Qt::ItemFlags for the given column of this property, including Qt::ItemIsSelectable, Qt::ItemIsEditable, etc. */
+  virtual Qt::ItemFlags getViewFlags( int column ) const;
+
+  /** @brief Hook to provide custom painting of the value data (right-hand column) in a subclass.
+   * @param painter The QPainter to use.
+   * @param option A QStyleOptionViewItem with parameters of the paint job, like the rectangle, alignments, etc.
+   * @return true if painting has been done, false if not.  The default implementation always returns false.
+   *
+   * To implement a custom appearance of a Property value, override
+   * this function to do the painting and return true.
+   *
+   * If this function returns false, a QStyledItemDelegate will do the painting. */
+  virtual bool paint( QPainter* painter,
+                      const QStyleOptionViewItem& option ) const { return false; }
+
+
+  /** @brief Create an editor widget to edit the value of this property.
+   * @param parent The QWidget to set as the parent of the returned QWidget.
+   * @param option A QStyleOptionViewItem with parameters of the editor widget, like the rectangle, alignments, etc.
+   *
+   * @return the newly-created editor widget.  The default
+   *         implementation creates a QSpinBox for integer values, a
+   *         FloatEdit for float or double values, or a QLineEdit for
+   *         anything else.
+   *
+   * If this function returns NULL, a QStyledItemDelegate will make an editor widget.
+   *
+   * The widget returned by createEditor() must have one `Q_PROPERTY`
+   * with `USER` set to `true`.  The PropertyTreeDelegate finds it,
+   * sets it with the results of PropertyTreeModel::data() after
+   * creation, and after editing is finished it reads it and calls
+   * PropertyTreeModel::setData() with the contents.  */
+  virtual QWidget* createEditor( QWidget* parent,
+                                 const QStyleOptionViewItem& option );
+
+  /** @brief Returns true if `this` is an ancestor of
+   * `possible_child`, meaning is the parent or parent of parent
+   * etc. */
+  bool isAncestorOf( Property* possible_child ) const;
+
+  /** @brief Remove a given child object and return a pointer to it.
+   * @return If child is contained here, it is returned; otherwise NULL.
+   *
+   * This performs a linear search through all the children.
+   *
+   * This uses only virtual functions, numChildren(),
+   * childAtUnchecked(), and takeChildAt(), so it does not need to be
+   * virtual itself. */
+  Property* takeChild( Property* child );
+
+  /** @brief Take a child out of the child list, but don't destroy it.
+   * @return Returns the child property at the given index, or NULL if the index is out of bounds.
+   *
+   * This notifies the model about the removal. */
+  virtual Property* takeChildAt( int index );
+
+  /** @brief Add a child property.
+   * @param child The child property to add.
+   * @param index [optional] The index at which to add the child.  If
+   *   less than 0 or greater than the number of child properties, the
+   *   child will be added at the end. */
+  virtual void addChild( Property* child, int index = -1 );
+
+  /** @brief Set the model managing this Property and all its child properties, recursively. */
+  void setModel( PropertyTreeModel* model );
+
+  /** @brief Return the model managing this Property and its childrent. */
+  PropertyTreeModel* getModel() const { return model_; }
+
+  /** @brief Return the row number of this property within its parent,
+   * or -1 if it has no parent.
+   *
+   * This checks child_indexes_valid_ in the parent Property, and if
+   * it is false calls reindexChildren().  Then returns
+   * row_number_within_parent_ regardless.*/
+  int rowNumberInParent() const;
+
+  /** @brief Move the child at from_index to to_index. */
+  virtual void moveChild( int from_index, int to_index );
+
+  /** @brief Load the value of this property and/or its children from
+   * the given YAML node. */
+  virtual void load( const YAML::Node& yaml_node );
+
+  /** @brief Write the value of this property and/or its children to
+   * the given YAML emitter. */
+  virtual void save( YAML::Emitter& emitter );
+
+  /** @brief Load the children of this property from the given YAML
+   * node, which should be a map node.
+   *
+   * This base version presumes the children to be loaded already
+   * exist as sub-properties of this, and looks for keys in the YAML
+   * map which match their names. */
+  virtual void loadChildren( const YAML::Node& yaml_node );
+
+  /** @brief Write the children of this property to the given YAML
+   * emitter, which should be in a map context. */
+  virtual void saveChildren( YAML::Emitter& emitter );
+
+  /** @brief Override this function to return true if this property
+   * should be saved to the config file, or false if it should not.
+   * The default implementation returns the opposite of getReadOnly(). */
+  virtual bool shouldBeSaved() const { return !is_read_only_; }
+
+  /** @brief Hide this Property in any PropertyTreeWidgets.
+   *
+   * This is a convenience function which calls setHidden( true ).
+   * @sa show(), setHidden(), getHidden() */
+  void hide() { setHidden( true ); }
+
+  /** @brief Show this Property in any PropertyTreeWidgets.
+   *
+   * This is a convenience function which calls setHidden( false ).
+   * @sa show(), setHidden(), getHidden() */
+  void show() { setHidden( false ); }
+
+  /** @brief Hide or show this property in any PropertyTreeWidget
+   * viewing its parent.
+   *
+   * Causes hiddenChanged() signal to be emitted
+   * if this changes the state.
+   *
+   * The hidden/shown state is not saved or loaded, it is expected to
+   * be managed by the owner of the property. */
+  virtual void setHidden( bool hidden );
+
+  /** @brief Return the hidden/shown state.  True means hidden, false
+   * means visible. */
+  virtual bool getHidden() const { return hidden_; }
+
+  /** @brief Prevent or allow users to edit this property from a PropertyTreeWidget.
+   *
+   * This only applies to user edits.  Calling setValue() will still change the value.
+   *
+   * This is not inherently recursive.  Parents which need this to
+   * propagate to their children must override this to implement
+   * that. */
+  virtual void setReadOnly( bool read_only ) { is_read_only_ = read_only; }
+
+  /** @brief Return the read-only-ness of this property.
+   * @sa setReadOnly() */
+  virtual bool getReadOnly() { return is_read_only_; }
+
+  /** @brief Collapse (hide the children of) this Property.
+   *
+   * @note Properties start out collapsed by default.
+   * @sa expand() */
+  virtual void collapse();
+
+  /** @brief Expand (show the children of) this Property.
+   *
+   * @note Properties start out collapsed by default.
+   *
+   * This function only works if the property is already owned by a
+   * PropertyTreeModel connected to a PropertyTreeWidget.  If this is
+   * called and the model is subsequently attached to a widget, it
+   * will not have any effect.
+   * @sa collapse() */
+  virtual void expand();
+
+Q_SIGNALS:
+  /** @brief Emitted by setValue() just before the value has changed. */
+  void aboutToChange();
+  /** @brief Emitted by setValue() just after the value has changed. */
   void changed();
 
+  /** @brief Emitted by setHidden(). */
+  void hiddenChanged( bool hidden );
+
 protected:
-  PropertyTreeWidget* grid_;
-  PropertyWidgetItem* widget_item_;
-  void* user_data_;
-
-private:
-  // I needed to purge boost::signal, and I didn't really want to make
-  // every Property a QObject.  There is only one class which needs to
-  // be notified of property changes, and that is PropertyManager.
-  // Therefore I'm making an explicit function call connection instead
-  // of a Qt signal or a boost signal.
-  friend class PropertyManager;
-  PropertyManager* manager_;
-};
-
-class StatusProperty : public PropertyBase
-{
-public:
-  StatusProperty(const std::string& name, const std::string& prefix, const CategoryPropertyWPtr& parent, void* user_data);
-  ~StatusProperty();
-
-  virtual void doWriteToGrid();
-  virtual void readFromGrid() {}
-  virtual void saveToConfig(Config* config) {}
-  virtual void loadFromConfig(Config* config) {}
-
-  virtual std::string getName() { return name_; }
-  virtual std::string getPrefix() { return prefix_; }
-  virtual void setPrefix(const std::string& prefix);
-  virtual bool getSave() { return false; }
-
-  virtual CategoryPropertyWPtr getParent() { return parent_; }
-
-  virtual PropertyWidgetItem* getWidgetItem() { return 0; }
-  virtual void addLegacyName(const std::string& name) {}
-
-  void setStatus(StatusLevel status, const std::string& name, const std::string& text);
-  void deleteStatus(const std::string& name);
-  void clear();
-
-  void disable();
-  void enable();
-
-  StatusLevel getTopLevelStatus();
-
-private:
-  void updateTopLevelStatus();
-
-  std::string name_;
-  std::string prefix_;
-  CategoryPropertyWPtr parent_;
-
-  PropertyWidgetItem* top_widget_item_;
-
-  struct Status
-  {
-    Status()
-    : level(status_levels::Ok)
-    , widget_item(0)
-    , kill(false)
-    {}
-
-    StatusLevel level;
-    std::string name;
-    std::string text;
-    PropertyWidgetItem* widget_item;
-    bool kill;
-  };
-  typedef std::map<std::string, Status> M_StringToStatus;
-  boost::mutex status_mutex_;
-  M_StringToStatus statuses_;
-
-  bool enabled_;
-  bool prefix_changed_;
-
-  StatusLevel top_status_;
-};
-
-/**
- * \class Property
- * \brief Base class for properties
- *
- * The Property (and PropertyManager) interfaces abstract away the various things that must be done with properties,
- * such as setting/getting the value in a PropertyTreeWidget, saving the property to disk, etc.  Every property
- * references a Getter and Setter, which it uses to get and set the value.  Properties should not be created
- * directly, rather they should be created through the PropertyManager class.
- */
-template<typename T>
-class Property : public PropertyBase
-{
-public:
-  typedef boost::function<T (void)> Getter;
-  typedef boost::function<void (const T&)> Setter;
-
-public:
-  /**
-   * \brief Constructor
+  /** @brief Load the value of this property specifically, not including children.
    *
-   * @param name Name of this property (eg, "Color")
-   * @param prefix Prefix for this property (eg, "Head Laser Scan")
-   * @param grid The PropertyTreeWidget to use
-   * @param parent The parent to put this property under
-   * @param getter Getter function/method.  See boost::function and boost::bind for more information
-   * @param setter Setter function/method.  See boost::function and boost::bind for more information
-   * @return
-   */
-  Property( const std::string& name, const std::string& prefix, const CategoryPropertyWPtr& parent, const Getter& getter, const Setter& setter )
-  : name_( name )
-  , prefix_( prefix )
-  , parent_( parent )
-  , save_( true )
-  , getter_( getter )
-  , setter_( setter )
-  {
-    if ( setter_ == 0 )
-    {
-      save_ = false;
-    }
-  }
+   * This base implementation handles value_ types of string, double,
+   * float, and int.  Override to handle other types. */
+  void loadValue( const YAML::Node& yaml_node );
 
-  /**
-   * Destructor
-   */
-  virtual ~Property()
-  {
-  }
+  /** @brief Save the value of this property specifically, not including children.
+   *
+   * This base implementation handles value_ types of string, double,
+   * float, and int.  Override to handle other types. */
+  void saveValue( YAML::Emitter& emitter );
 
-  /**
-   * \brief Get the current value
-   * @return The current value
-   */
-  T get() { return getter_(); }
-  /**
-   * \brief Set the value of this property
-   * @param val The value
-   */
-  void set( const T& val )
-  {
-    if( hasSetter() )
-    {
-      setter_( val );
-      changed();
-    }
-  }
+  /** @brief This is the central property value.  If you set it
+   * directly in a subclass, do so with care because many things
+   * depend on the aboutToChange() and changed() events emitted by
+   * setValue(). */
+  QVariant value_;
 
-  bool hasGetter() { return getter_ != 0; }
-  bool hasSetter() { return setter_ != 0; }
+  /** @brief Pointer to the PropertyTreeModel managing this property tree.
+   *
+   * Any time there is a data value or structural change to the
+   * properties in this tree, and `model_` is non-NULL, it must be
+   * notified of the change.  Functions to notify it of changes
+   * include PropertyTreeModel::beginInsert(),
+   * PropertyTreeModel::endInsert(), PropertyTreeModel::beginRemove(),
+   * PropertyTreeModel::endRemove(), and
+   * PropertyTreeModel::emitDataChanged().  The Property class already
+   * does this for itself, but subclasses must be aware of it if they
+   * override functions which modify the structure or contents of the
+   * tree. */
+  PropertyTreeModel* model_;
 
-  /**
-   * \brief Set whether we should save this property to disk or not
-   * @param save If true, this property will be saved to disk
-   */
-  void setSave( bool save ) { save_ = save; }
-  /**
-   * \brief Returns whether or not this property should be saved to disk.
-   */
-  bool getSave() { return save_; }
-
-  /**
-   * \brief Get the name of this property
-   * @return The name of this property
-   */
-  virtual std::string getName() { return name_; }
-  /**
-   * \brief Get the prefix of this property
-   * @return The prefix of this property
-   */
-  virtual std::string getPrefix() { return prefix_; }
-
-  /**
-   * \brief Get the PropertyWidgetItem associated with this property.
-   * @return The PropertyWidgetItem
-   */
-  virtual PropertyWidgetItem* getWidgetItem()
-  {
-    return widget_item_;
-  }
-
-  virtual CategoryPropertyWPtr getParent() { return parent_; }
-
-  virtual void addLegacyName(const std::string& name)
-  {
-    legacy_names_.push_back(name);
-  }
-
-  virtual void setToError()
-  {
-    setPropertyToError(grid_, widget_item_);
-  }
-
-  virtual void setToWarn()
-  {
-    setPropertyToWarn(grid_, widget_item_);
-  }
-
-  virtual void setToOK()
-  {
-    setPropertyToOK(grid_, widget_item_);
-  }
-
-  virtual void setToDisabled()
-  {
-    setPropertyToDisabled(grid_, widget_item_);
-  }
-
-  virtual void setHelpText(const std::string& text)
-  {
-    help_text_ = text;
-    changed();
-  }
-
-  virtual void setPrefix(const std::string& prefix)
-  {
-    prefix_ = prefix;
-  }
-
-protected:
-  std::string name_;
-  std::string prefix_;
-  CategoryPropertyWPtr parent_;
-
-  bool save_;
-
-  typedef std::vector<std::string> V_string;
-  V_string legacy_names_;
-
-  std::string help_text_;
+  /** @brief True if row_number_within_parent_ of all children is
+   * valid, false if not.
+   *
+   * Subclasses should set this false when they add, remove, or
+   * reorder children. */
+  bool child_indexes_valid_;
 
 private:
-  Getter getter_;
-  Setter setter_;
+  /** @brief Set row_number_within_parent_ correctly for every child.
+   * Sets child_indexes_valid_ to true when done. */
+  void reindexChildren();
+
+  Property* parent_;
+  QList<Property*> children_;
+  QString description_;
+  bool hidden_;
+
+  /** @brief The property returned by subProp() when the requested
+   * name is not found. */
+  static Property* failprop_;
+
+  int row_number_within_parent_;
+  bool is_read_only_;
 };
 
-class BoolProperty : public Property<bool>
-{
-public:
-  BoolProperty( const std::string& name, const std::string& prefix, const CategoryPropertyWPtr& parent, const Getter& getter, const Setter& setter )
-  : Property<bool>( name, prefix, parent, getter, setter )
-  {
-  }
+} // end namespace rviz
 
-  virtual void doWriteToGrid();
-  virtual void readFromGrid();
-  virtual void saveToConfig( Config* config );
-  virtual void loadFromConfig( Config* config );
-};
-
-class IntProperty : public Property<int>
-{
-public:
-  IntProperty( const std::string& name, const std::string& prefix, const CategoryPropertyWPtr& parent, const Getter& getter, const Setter& setter )
-  : Property<int>( name, prefix, parent, getter, setter )
-  , min_( INT_MIN )
-  , max_( INT_MAX )
-  {
-  }
-
-  void setMin( int min );
-  void setMax( int max );
-
-  virtual void doWriteToGrid();
-  virtual void readFromGrid();
-  virtual void saveToConfig( Config* config );
-  virtual void loadFromConfig( Config* config );
-
-private:
-  int min_;
-  int max_;
-};
-
-class FloatProperty : public Property<float>
-{
-public:
-  FloatProperty( const std::string& name, const std::string& prefix, const CategoryPropertyWPtr& parent, const Getter& getter, const Setter& setter )
-  : Property<float>( name, prefix, parent, getter, setter )
-  , min_( -FLT_MAX )
-  , max_( FLT_MAX )
-  {
-  }
-
-  void setMin( float min );
-  void setMax( float max );
-
-  virtual void doWriteToGrid();
-  virtual void readFromGrid();
-  virtual void saveToConfig( Config* config );
-  virtual void loadFromConfig( Config* config );
-
-private:
-  float min_;
-  float max_;
-};
-
-class StringProperty : public Property<std::string>
-{
-public:
-  StringProperty( const std::string& name, const std::string& prefix, const CategoryPropertyWPtr& parent, const Getter& getter, const Setter& setter )
-  : Property<std::string>( name, prefix, parent, getter, setter )
-  {
-  }
-
-  virtual void doWriteToGrid();
-  virtual void readFromGrid();
-  virtual void saveToConfig( Config* config );
-  virtual void loadFromConfig( Config* config );
-};
-
-class ROSTopicStringProperty : public StringProperty
-{
-public:
-  ROSTopicStringProperty( const std::string& name, const std::string& prefix, const CategoryPropertyWPtr& parent, const Getter& getter, const Setter& setter )
-  : StringProperty( name, prefix, parent, getter, setter )
-  {
-  }
-
-  void setMessageType(const std::string& message_type) { message_type_ = message_type; }
-
-  virtual void doWriteToGrid();
-  virtual void readFromGrid();
-
-private:
-  std::string message_type_;
-};
-
-class ColorProperty : public Property<Color>
-{
-public:
-  ColorProperty( const std::string& name, const std::string& prefix, const CategoryPropertyWPtr& parent, const Getter& getter, const Setter& setter )
-  : Property<Color>( name, prefix, parent, getter, setter )
-  {
-  }
-
-  virtual void doWriteToGrid();
-  virtual void readFromGrid();
-  virtual void saveToConfig( Config* config );
-  virtual void loadFromConfig( Config* config );
-};
-
-typedef std::pair<std::string, int> Choice;
-typedef std::vector<Choice> Choices;
-
-class EnumProperty : public Property<int>
-{
-public:
-  EnumProperty( const std::string& name, const std::string& prefix, const CategoryPropertyWPtr& parent, const Getter& getter, const Setter& setter )
-  : Property<int>( name, prefix, parent, getter, setter )
-  {
-  }
-
-  void addOption( const std::string& name, int value );
-  void clear ();
-
-  virtual void doWriteToGrid();
-  virtual void readFromGrid();
-  virtual void saveToConfig( Config* config );
-  virtual void loadFromConfig( Config* config );
-
-private:
-  Choices choices_;
-
-  boost::mutex mutex_;
-};
-
-class EditEnumProperty : public Property<std::string>
-{
-public:
-  EditEnumProperty( const std::string& name, const std::string& prefix, const CategoryPropertyWPtr& parent, const Getter& getter, const Setter& setter )
-  : Property<std::string>( name, prefix, parent, getter, setter )
-    {}
-
-  void addOption( const std::string& name );
-  void clear ();
-
-  void setOptionCallback(const EditEnumOptionCallback& cb);
-
-  virtual void doWriteToGrid();
-  virtual void readFromGrid();
-  virtual void saveToConfig( Config* config );
-  virtual void loadFromConfig( Config* config );
-
-private:
-  std::vector<std::string> choices_;
-  EditEnumOptionCallback option_cb_;
-
-  boost::mutex mutex_;
-};
-
-class TFFrameProperty : public EditEnumProperty
-{
-public:
-  TFFrameProperty( const std::string& name, const std::string& prefix, const CategoryPropertyWPtr& parent, const Getter& getter, const Setter& setter )
-  : EditEnumProperty( name, prefix, parent, getter, setter )
-  {
-  }
-
-  void optionCallback( V_string& options_out );
-
-  virtual void doWriteToGrid();
-};
-
-
-class CategoryProperty : public Property<bool>
-{
-public:
-  CategoryProperty( const std::string& label, const std::string& name, const std::string& prefix, const CategoryPropertyWPtr& parent, const Getter& getter, const Setter& setter, bool checkbox )
-  : Property<bool>( name, prefix, parent, getter, setter )
-  , label_(label)
-  , checkbox_(checkbox)
-  {
-  }
-
-  virtual ~CategoryProperty();
-  virtual void reset();
-
-  void setLabel( const std::string& label );
-  void expand();
-  void collapse();
-
-  virtual void doWriteToGrid();
-  virtual void readFromGrid();
-  virtual void saveToConfig( Config* config );
-  virtual void loadFromConfig( Config* config );
-
-  virtual void setToOK();
-
-private:
-  std::string label_;
-  bool checkbox_;
-};
-
-class Vector3Property : public Property<Ogre::Vector3>
-{
-public:
-  Vector3Property( const std::string& name, const std::string& prefix, const CategoryPropertyWPtr& parent, const Getter& getter, const Setter& setter )
-  : Property<Ogre::Vector3>( name, prefix, parent, getter, setter )
-  , x_( NULL )
-  , y_( NULL )
-  , z_( NULL )
-  {
-  }
-
-  virtual void doWriteToGrid();
-  virtual void readFromGrid();
-  virtual void saveToConfig( Config* config );
-  virtual void loadFromConfig( Config* config );
-  virtual void reset();
-
-  virtual void setToError()
-  {
-    setPropertyToError(grid_, widget_item_);
-    setPropertyToError(grid_, x_);
-    setPropertyToError(grid_, y_);
-    setPropertyToError(grid_, z_);
-  }
-
-  virtual void setToWarn()
-  {
-    setPropertyToWarn(grid_, widget_item_);
-    setPropertyToWarn(grid_, x_);
-    setPropertyToWarn(grid_, y_);
-    setPropertyToWarn(grid_, z_);
-  }
-
-  virtual void setToOK()
-  {
-    setPropertyToOK(grid_, widget_item_);
-    setPropertyToOK(grid_, x_);
-    setPropertyToOK(grid_, y_);
-    setPropertyToOK(grid_, z_);
-  }
-
-  virtual void setToDisabled()
-  {
-    setPropertyToDisabled(grid_, widget_item_);
-    setPropertyToDisabled(grid_, x_);
-    setPropertyToDisabled(grid_, y_);
-    setPropertyToDisabled(grid_, z_);
-  }
-
-protected:
-  PropertyWidgetItem* x_;
-  PropertyWidgetItem* y_;
-  PropertyWidgetItem* z_;
-};
-
-class QuaternionProperty : public Property<Ogre::Quaternion>
-{
-public:
-  QuaternionProperty( const std::string& name, const std::string& prefix, const CategoryPropertyWPtr& parent, const Getter& getter, const Setter& setter )
-  : Property<Ogre::Quaternion>( name, prefix, parent, getter, setter )
-  , x_( NULL )
-  , y_( NULL )
-  , z_( NULL )
-  , w_( NULL )
-  {
-  }
-
-  virtual void doWriteToGrid();
-  virtual void readFromGrid();
-  virtual void saveToConfig( Config* config );
-  virtual void loadFromConfig( Config* config );
-  virtual void reset();
-
-  virtual void setToError()
-  {
-    setPropertyToError( grid_, widget_item_);
-    setPropertyToError( grid_, x_);
-    setPropertyToError( grid_, y_);
-    setPropertyToError( grid_, z_);
-    setPropertyToError( grid_, w_);
-  }
-
-  virtual void setToWarn()
-  {
-    setPropertyToWarn( grid_, widget_item_);
-    setPropertyToWarn( grid_, x_);
-    setPropertyToWarn( grid_, y_);
-    setPropertyToWarn( grid_, z_);
-    setPropertyToWarn( grid_, w_);
-  }
-
-  virtual void setToOK()
-  {
-    setPropertyToOK( grid_, widget_item_);
-    setPropertyToOK( grid_, x_);
-    setPropertyToOK( grid_, y_);
-    setPropertyToOK( grid_, z_);
-    setPropertyToOK( grid_, w_);
-  }
-
-  virtual void setToDisabled()
-  {
-    setPropertyToDisabled( grid_, widget_item_);
-    setPropertyToDisabled( grid_, x_);
-    setPropertyToDisabled( grid_, y_);
-    setPropertyToDisabled( grid_, z_);
-    setPropertyToDisabled( grid_, w_);
-  }
-
-protected:
-  PropertyWidgetItem* x_;
-  PropertyWidgetItem* y_;
-  PropertyWidgetItem* z_;
-  PropertyWidgetItem* w_;
-};
-
-
-} // namespace rviz
-
-#endif
+#endif // PROPERTY_H

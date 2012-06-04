@@ -27,53 +27,57 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "selection_manager.h"
-#include "properties/property.h"
-#include "properties/property_manager.h"
-#include "visualization_manager.h"
-#include "render_panel.h"
-#include "view_controller.h"
+#include <algorithm>
 
-#include <ogre_helpers/shape.h>
-#include <ogre_helpers/axes.h>
-#include <ogre_helpers/arrow.h>
-#include <ogre_helpers/qt_ogre_render_window.h>
+#include <OGRE/OgreCamera.h>
+#include <OGRE/OgreEntity.h>
+#include <OGRE/OgreHardwarePixelBuffer.h>
+#include <OGRE/OgreManualObject.h>
+#include <OGRE/OgreMaterialManager.h>
+#include <OGRE/OgreRenderSystem.h>
+#include <OGRE/OgreRenderTexture.h>
+#include <OGRE/OgreRoot.h>
+#include <OGRE/OgreSceneManager.h>
+#include <OGRE/OgreSceneNode.h>
+#include <OGRE/OgreSubEntity.h>
+#include <OGRE/OgreTextureManager.h>
+#include <OGRE/OgreViewport.h>
+#include <OGRE/OgreWireBoundingBox.h>
 
 #include <ros/assert.h>
 
-#include <OGRE/OgreCamera.h>
-#include <OGRE/OgreViewport.h>
-#include <OGRE/OgreRenderSystem.h>
-#include <OGRE/OgreRenderTexture.h>
-#include <OGRE/OgreTextureManager.h>
-#include <OGRE/OgreSceneNode.h>
-#include <OGRE/OgreSceneManager.h>
-#include <OGRE/OgreManualObject.h>
-#include <OGRE/OgreWireBoundingBox.h>
-#include <OGRE/OgreRoot.h>
-#include <OGRE/OgreHardwarePixelBuffer.h>
-#include <OGRE/OgreMaterialManager.h>
-#include <OGRE/OgreEntity.h>
-#include <OGRE/OgreSubEntity.h>
+#include "rviz/ogre_helpers/arrow.h"
+#include "rviz/ogre_helpers/axes.h"
+#include "rviz/ogre_helpers/qt_ogre_render_window.h"
+#include "rviz/ogre_helpers/shape.h"
+#include "rviz/properties/property.h"
+#include "rviz/properties/property_tree_model.h"
+#include "rviz/render_panel.h"
+#include "rviz/view_controller.h"
+#include "rviz/visualization_manager.h"
 
-#include <boost/scoped_array.hpp>
-
-#include <algorithm>
+#include "rviz/selection/selection_manager.h"
 
 namespace rviz
 {
 
 SelectionManager::SelectionManager(VisualizationManager* manager)
-: vis_manager_(manager)
-, highlight_enabled_(false)
-, uid_counter_(0)
-, interaction_enabled_(false)
+  : vis_manager_(manager)
+  , highlight_enabled_(false)
+  , uid_counter_(0)
+  , interaction_enabled_(false)
+  , property_model_( new PropertyTreeModel( new Property( "root" )))
+  , setting_( false )
 {
   for (uint32_t i = 0; i < s_num_render_textures_; ++i)
   {
     pixel_boxes_[i].data = 0;
   }
   depth_pixel_box_.data = 0;
+
+  QTimer* timer = new QTimer( this );
+  connect( timer, SIGNAL( timeout() ), this, SLOT( updateProperties() ));
+  timer->start( 200 );
 }
 
 SelectionManager::~SelectionManager()
@@ -92,6 +96,8 @@ SelectionManager::~SelectionManager()
   delete [] (uint8_t*)depth_pixel_box_.data;
 
   vis_manager_->getSceneManager()->destroyCamera( camera_ );
+
+  delete property_model_;
 }
 
 void SelectionManager::initialize( bool debug )
@@ -408,7 +414,11 @@ void SelectionManager::enableInteraction( bool enable )
   for (; handler_it != handler_end; ++handler_it)
   {
     const SelectionHandlerPtr& handler = handler_it->second;
-    handler->enableInteraction(enable);
+    InteractiveObjectPtr object = handler->getInteractiveObject().lock();
+    if( object )
+    {
+      object->enableInteraction( enable );
+    }
   }
 }
 
@@ -445,7 +455,12 @@ void SelectionManager::addObject(CollObjectHandle obj, const SelectionHandlerPtr
   boost::recursive_mutex::scoped_lock lock(global_mutex_);
 
   handler->initialize(vis_manager_);
-  handler->enableInteraction(interaction_enabled_);
+
+  InteractiveObjectPtr object = handler->getInteractiveObject().lock();
+  if( object )
+  {
+    object->enableInteraction( interaction_enabled_ );
+  }
 
   bool inserted = objects_.insert(std::make_pair(obj, handler)).second;
   ROS_ASSERT(inserted);
@@ -649,6 +664,10 @@ bool SelectionManager::render(Ogre::Viewport* viewport, Ogre::TexturePtr tex,
   camera_->setCustomProjectionMatrix( true, scale_matrix * trans_matrix * proj_matrix );
   camera_->setPosition( viewport->getCamera()->getDerivedPosition() );
   camera_->setOrientation( viewport->getCamera()->getDerivedOrientation() );
+
+  // Note: if you change this far-clip distance, update
+  // fixed_orientation_ortho_view_controller.cpp where it sets the
+  // camera position Z value ot half of this.
   camera_->setFarClipDistance( 1000 );
   camera_->setNearClipDistance( 0.1 );
 
@@ -1149,10 +1168,10 @@ void SelectionManager::removeSelection(const M_Picked& objs)
   M_Picked::const_iterator end = objs.end();
   for (; it != end; ++it)
   {
-    removeSelection(it->second);
+    removeSelectedObject(it->second);
   }
 
-  Q_EMIT selectionRemoved( objs );
+  selectionRemoved( objs );
 }
 
 void SelectionManager::addSelection(const M_Picked& objs)
@@ -1164,31 +1183,31 @@ void SelectionManager::addSelection(const M_Picked& objs)
   M_Picked::const_iterator end = objs.end();
   for (; it != end; ++it)
   {
-    std::pair<Picked, bool> ppb = addSelection(it->second);
+    std::pair<Picked, bool> ppb = addSelectedObject(it->second);
     if (ppb.second)
     {
       added.insert(std::make_pair(it->first, ppb.first));
     }
   }
 
-  Q_EMIT selectionAdded( added );
+  selectionAdded( added );
 }
 
 void SelectionManager::setSelection(const M_Picked& objs)
 {
   boost::recursive_mutex::scoped_lock lock(global_mutex_);
 
-  Q_EMIT selectionSetting();
+  setting_ = true;
+  property_model_->getRoot()->removeAllChildren();
 
   M_Picked original(selection_.begin(), selection_.end());
 
   removeSelection(original);
   addSelection(objs);
-
-  Q_EMIT selectionSet( original, selection_ );
+  setting_ = false;
 }
 
-std::pair<Picked, bool> SelectionManager::addSelection(const Picked& obj)
+std::pair<Picked, bool> SelectionManager::addSelectedObject(const Picked& obj)
 {
   boost::recursive_mutex::scoped_lock lock(global_mutex_);
 
@@ -1227,7 +1246,7 @@ std::pair<Picked, bool> SelectionManager::addSelection(const Picked& obj)
   return std::make_pair(Picked(0), false);
 }
 
-void SelectionManager::removeSelection(const Picked& obj)
+void SelectionManager::removeSelectedObject(const Picked& obj)
 {
   boost::recursive_mutex::scoped_lock lock(global_mutex_);
 
@@ -1288,5 +1307,53 @@ void SelectionManager::focusOnSelection()
     controller->lookAt(center);
   }
 }
+
+void SelectionManager::selectionRemoved( const M_Picked& removed )
+{
+  if (setting_)
+  {
+    return;
+  }
+
+  M_Picked::const_iterator it = removed.begin();
+  M_Picked::const_iterator end = removed.end();
+  for (; it != end; ++it)
+  {
+    const Picked& picked = it->second;
+    SelectionHandlerPtr handler = getHandler(picked.handle);
+    ROS_ASSERT(handler);
+
+    handler->destroyProperties( picked );
+  }
+}
+
+void SelectionManager::selectionAdded( const M_Picked& added )
+{
+  M_Picked::const_iterator it = added.begin();
+  M_Picked::const_iterator end = added.end();
+  for (; it != end; ++it)
+  {
+    const Picked& picked = it->second;
+    SelectionHandlerPtr handler = getHandler(picked.handle);
+    ROS_ASSERT(handler);
+
+    handler->createProperties( picked, property_model_->getRoot() );
+  }
+  property_model_->sort( 0, Qt::AscendingOrder );
+}
+
+void SelectionManager::updateProperties()
+{
+  M_Picked::const_iterator it = selection_.begin();
+  M_Picked::const_iterator end = selection_.end();
+  for (; it != end; ++it)
+  {
+    CollObjectHandle handle = it->first;
+    SelectionHandlerPtr handler = getHandler(handle);
+
+    handler->updateProperties();
+  }
+}
+
 
 } // namespace rviz

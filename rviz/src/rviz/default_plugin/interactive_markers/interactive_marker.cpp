@@ -42,7 +42,7 @@
 #include <interactive_markers/tools.h>
 
 #include "rviz/frame_manager.h"
-#include "rviz/visualization_manager.h"
+#include "rviz/display_context.h"
 #include "rviz/selection/selection_manager.h"
 #include "rviz/frame_manager.h"
 #include "rviz/default_plugin/interactive_marker_display.h"
@@ -54,9 +54,9 @@
 namespace rviz
 {
 
-InteractiveMarker::InteractiveMarker( InteractiveMarkerDisplay *owner, VisualizationManager *vis_manager, std::string topic_ns, std::string client_id ) :
+InteractiveMarker::InteractiveMarker( InteractiveMarkerDisplay *owner, DisplayContext* context, std::string topic_ns, std::string client_id ) :
   owner_(owner)
-, vis_manager_(vis_manager)
+, context_(context)
 , pose_changed_(false)
 , time_since_last_feedback_(0)
 , dragging_(false)
@@ -69,24 +69,17 @@ InteractiveMarker::InteractiveMarker( InteractiveMarkerDisplay *owner, Visualiza
   std::string feedback_topic = topic_ns+"/feedback";
   feedback_pub_ = nh.advertise<visualization_msgs::InteractiveMarkerFeedback>( feedback_topic, 100, false );
 
-  reference_node_ = vis_manager->getSceneManager()->getRootSceneNode()->createChildSceneNode();
+  reference_node_ = context->getSceneManager()->getRootSceneNode()->createChildSceneNode();
 
   axes_node_ = reference_node_->createChildSceneNode();
-  axes_ = new Axes( vis_manager->getSceneManager(), axes_node_, 1, 0.05 );
+  axes_ = new Axes( context->getSceneManager(), axes_node_, 1, 0.05 );
 }
 
 InteractiveMarker::~InteractiveMarker()
 {
   delete axes_;
-  vis_manager_->getSceneManager()->destroySceneNode( axes_node_ );
-  vis_manager_->getSceneManager()->destroySceneNode( reference_node_ );
-}
-
-void InteractiveMarker::reset()
-{
-  boost::recursive_mutex::scoped_lock lock(mutex_);
-  controls_.clear();
-  menu_entries_.clear();
+  context_->getSceneManager()->destroySceneNode( axes_node_ );
+  context_->getSceneManager()->destroySceneNode( reference_node_ );
 }
 
 void InteractiveMarker::processMessage( visualization_msgs::InteractiveMarkerPoseConstPtr message )
@@ -106,13 +99,12 @@ void InteractiveMarker::processMessage( visualization_msgs::InteractiveMarkerPos
   frame_locked_ = (message->header.stamp == ros::Time(0));
 
   requestPoseUpdate( position, orientation );
-  vis_manager_->queueRender();
+  context_->queueRender();
 }
 
 bool InteractiveMarker::processMessage( visualization_msgs::InteractiveMarkerConstPtr message )
 {
   boost::recursive_mutex::scoped_lock lock(mutex_);
-  reset();
 
   visualization_msgs::InteractiveMarker auto_message = *message;
   interactive_markers::autoComplete( auto_message );
@@ -124,7 +116,7 @@ bool InteractiveMarker::processMessage( visualization_msgs::InteractiveMarkerCon
 
   if ( auto_message.controls.size() == 0 )
   {
-    owner_->setStatus( status_levels::Ok, name_, "Marker empty.");
+    owner_->setStatusStd( StatusProperty::Ok, name_, "Marker empty.");
     return false;
   }
 
@@ -155,22 +147,74 @@ bool InteractiveMarker::processMessage( visualization_msgs::InteractiveMarkerCon
 
   updateReferencePose();
 
-  for ( unsigned i=0; i<auto_message.controls.size(); i++ )
+  // Instead of just erasing all the old controls and making new ones
+  // here, we want to preserve as much as possible from the old ones,
+  // so that we don't lose the drag action in progress if a control is
+  // being dragged when this update comes in.
+  //
+  // Controls are stored in a map from control name to control
+  // pointer, so we loop over the incoming control messages looking
+  // for names we already know about.  When we find them, we just call
+  // the control's processMessage() function to update it.  When we
+  // don't find them, we create a new Control.  We also keep track of
+  // which control names we used to have but which are not present in
+  // the incoming message, which we use to delete the unwanted
+  // controls.
+
+  // Make set of old-names called old-names-to-delete.
+  std::set<std::string> old_names_to_delete;
+  M_ControlPtr::const_iterator ci;
+  for( ci = controls_.begin(); ci != controls_.end(); ci++ )
   {
-    controls_.push_back( boost::make_shared<InteractiveMarkerControl>(
-        vis_manager_, auto_message.controls[i], reference_node_, this ) );
+    old_names_to_delete.insert( (*ci).first );
   }
 
-  description_control_ = boost::make_shared<InteractiveMarkerControl>(
-      vis_manager_, interactive_markers::makeTitle( auto_message ), reference_node_, this );
-  controls_.push_back( description_control_ );
+  // Loop over new array:
+  for ( unsigned i = 0; i < auto_message.controls.size(); i++ )
+  {
+    visualization_msgs::InteractiveMarkerControl& control_message = auto_message.controls[ i ];
+    M_ControlPtr::iterator search_iter = controls_.find( control_message.name );
+    InteractiveMarkerControlPtr control;
 
+    // If message->name in map,
+    if( search_iter != controls_.end() )
+    {    
+      // Use existing control
+      control = (*search_iter).second;
+    }
+    else
+    {
+      // Else make new control
+      control = boost::make_shared<InteractiveMarkerControl>( context_, reference_node_, this );
+      controls_[ control_message.name ] = control;
+    }
+    // Update the control with the message data
+    control->processMessage( control_message );
+
+    // Remove message->name from old-names-to-delete
+    old_names_to_delete.erase( control_message.name );
+  }
+
+  // Loop over old-names-to-delete
+  std::set<std::string>::iterator si;
+  for( si = old_names_to_delete.begin(); si != old_names_to_delete.end(); si++ )
+  {
+    // Remove Control object from map for name-to-delete
+    controls_.erase( *si );
+  }
+
+  description_control_ =
+    boost::make_shared<InteractiveMarkerControl>( context_,
+                                                  reference_node_, this );
+
+  description_control_->processMessage( interactive_markers::makeTitle( auto_message ));
 
   //create menu
+  menu_entries_.clear();
+  menu_.reset();
   if ( message->menu_entries.size() > 0 )
   {
     menu_.reset( new QMenu() );
-    menu_entries_.clear();
     top_level_menu_ids_.clear();
 
     // Put all menu entries into the menu_entries_ map and create the
@@ -197,12 +241,11 @@ bool InteractiveMarker::processMessage( visualization_msgs::InteractiveMarkerCon
           (*parent_it).second.child_ids.push_back( entry.id );
         }
       }
-    }      
-
+    }
     populateMenu( menu_.get(), top_level_menu_ids_ );
   }
 
-  owner_->setStatus( status_levels::Ok, name_, "OK");
+  owner_->setStatusStd( StatusProperty::Ok, name_, "OK");
   return true;
 }
 
@@ -263,7 +306,7 @@ void InteractiveMarker::updateReferencePose()
   // actually is so we send back correct feedback
   if ( frame_locked_ )
   {
-    std::string fixed_frame = FrameManager::instance()->getFixedFrame();
+    std::string fixed_frame = context_->getFrameManager()->getFixedFrame();
     if ( reference_frame_ == fixed_frame )
     {
       // if the two frames are identical, we don't need to do anything.
@@ -272,26 +315,26 @@ void InteractiveMarker::updateReferencePose()
     else
     {
       std::string error;
-      int retval = FrameManager::instance()->getTFClient()->getLatestCommonTime(
+      int retval = context_->getFrameManager()->getTFClient()->getLatestCommonTime(
           reference_frame_, fixed_frame, reference_time_, &error );
       if ( retval != tf::NO_ERROR )
       {
         std::ostringstream s;
         s <<"Error getting time of latest transform between " << reference_frame_
             << " and " << fixed_frame << ": " << error << " (error code: " << retval << ")";
-        owner_->setStatus( status_levels::Error, name_, s.str() );
+        owner_->setStatusStd( StatusProperty::Error, name_, s.str() );
         reference_node_->setVisible( false );
         return;
       }
     }
   }
 
-  if (!FrameManager::instance()->getTransform( reference_frame_, reference_time_,
+  if (!context_->getFrameManager()->getTransform( reference_frame_, reference_time_,
       reference_position, reference_orientation ))
   {
     std::string error;
-    FrameManager::instance()->transformHasProblems(reference_frame_, reference_time_, error);
-    owner_->setStatus( status_levels::Error, name_, error);
+    context_->getFrameManager()->transformHasProblems(reference_frame_, reference_time_, error);
+    owner_->setStatusStd( StatusProperty::Error, name_, error);
     reference_node_->setVisible( false );
     return;
   }
@@ -300,7 +343,7 @@ void InteractiveMarker::updateReferencePose()
   reference_node_->setOrientation( reference_orientation );
   reference_node_->setVisible( true, false );
 
-  vis_manager_->queueRender();
+  context_->queueRender();
 }
 
 void InteractiveMarker::update(float wall_dt)
@@ -312,10 +355,14 @@ void InteractiveMarker::update(float wall_dt)
     updateReferencePose();
   }
 
-  std::list<InteractiveMarkerControlPtr>::iterator it;
+  M_ControlPtr::iterator it;
   for ( it = controls_.begin(); it != controls_.end(); it++ )
   {
-    (*it)->update();
+    (*it).second->update();
+  }
+  if( description_control_ )
+  {
+    description_control_->update();
   }
 
   if ( dragging_ )
@@ -371,10 +418,14 @@ void InteractiveMarker::setPose( Ogre::Vector3 position, Ogre::Quaternion orient
   axes_->setPosition(position_);
   axes_->setOrientation(orientation_);
 
-  std::list<InteractiveMarkerControlPtr>::iterator it;
+  M_ControlPtr::iterator it;
   for ( it = controls_.begin(); it != controls_.end(); it++ )
   {
-    (*it)->interactiveMarkerPoseChanged( position_, orientation_ );
+    (*it).second->interactiveMarkerPoseChanged( position_, orientation_ );
+  }
+  if( description_control_ )
+  {
+    description_control_->interactiveMarkerPoseChanged( position_, orientation_ );
   }
 }
 
@@ -436,7 +487,7 @@ bool InteractiveMarker::handleMouseEvent(ViewportMouseEvent& event, const std::s
   {
     Ogre::Vector3 point_rel_world;
     bool got_3D_point =
-      vis_manager_->getSelectionManager()->get3DPoint( event.viewport, event.x, event.y, point_rel_world );
+      context_->getSelectionManager()->get3DPoint( event.viewport, event.x, event.y, point_rel_world );
 
     visualization_msgs::InteractiveMarkerFeedback feedback;
     feedback.event_type = (event.type == QEvent::MouseButtonPress ?
@@ -461,7 +512,7 @@ bool InteractiveMarker::handleMouseEvent(ViewportMouseEvent& event, const std::s
     {
       // Save the 3D mouse point to send with the menu feedback, if any.
       got_3d_point_for_menu_ =
-        vis_manager_->getSelectionManager()->get3DPoint( event.viewport, event.x, event.y, three_d_point_for_menu_ );
+        context_->getSelectionManager()->get3DPoint( event.viewport, event.x, event.y, three_d_point_for_menu_ );
 
       event.panel->showContextMenu( menu_ );
 
@@ -545,7 +596,7 @@ void InteractiveMarker::publishFeedback(visualization_msgs::InteractiveMarkerFee
   }
   else
   {
-    feedback.header.frame_id = vis_manager_->getFixedFrame();
+    feedback.header.frame_id = context_->getFixedFrame().toStdString();
     feedback.header.stamp = ros::Time::now();
 
     Ogre::Vector3 world_position = reference_node_->convertLocalToWorldPosition( position_ );

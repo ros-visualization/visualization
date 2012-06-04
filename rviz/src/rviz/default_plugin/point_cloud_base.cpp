@@ -32,12 +32,13 @@
 #include "point_cloud_base.h"
 #include "point_cloud_transformer.h"
 #include "point_cloud_transformers.h"
-#include "rviz/visualization_manager.h"
+#include "rviz/display_context.h"
 #include "rviz/selection/selection_manager.h"
 #include "rviz/properties/property.h"
 #include "rviz/properties/property_manager.h"
 #include "rviz/validate_floats.h"
 #include "rviz/frame_manager.h"
+#include "rviz/uniform_string_stream.h"
 
 #include <ros/time.h>
 #include "rviz/ogre_helpers/point_cloud.h"
@@ -192,7 +193,7 @@ void PointCloudSelectionHandler::createProperties(const Picked& obj, PropertyMan
 
       const sensor_msgs::PointCloud2ConstPtr& message = cloud->message_;
 
-      std::stringstream prefix;
+      UniformStringStream prefix;
       prefix << "Point " << index << " [cloud " << message.get() << "]";
 
       if (property_manager->hasProperty(prefix.str(), ""))
@@ -204,7 +205,7 @@ void PointCloudSelectionHandler::createProperties(const Picked& obj, PropertyMan
 
       // Do xyz first, from the transformed xyz
       {
-        std::stringstream ss;
+        UniformStringStream ss;
         ss << "Position";
         Ogre::Vector3 pos(cloud->transformed_points_[index].position);
         property_manager->createProperty<Vector3Property>(ss.str(), prefix.str(), boost::bind(getValue<Ogre::Vector3>, pos), Vector3Property::Setter(), cat);
@@ -222,7 +223,7 @@ void PointCloudSelectionHandler::createProperties(const Picked& obj, PropertyMan
 
         float val = valueFromCloud<float>(message, f.offset, f.datatype, message->point_step, index);
 
-        std::stringstream ss;
+        UniformStringStream ss;
         ss << field << ": " << name;
         property_manager->createProperty<FloatProperty>(ss.str(), prefix.str(), boost::bind(getValue<float>, val), FloatProperty::Setter(), cat);
       }
@@ -262,7 +263,7 @@ void PointCloudSelectionHandler::destroyProperties(const Picked& obj, PropertyMa
 
       const sensor_msgs::PointCloud2ConstPtr& message = cloud->message_;
 
-      std::stringstream prefix;
+      UniformStringStream prefix;
       prefix << "Point " << index << " [cloud " << message.get() << "]";
 
       if (property_manager->hasProperty(prefix.str(), ""))
@@ -400,7 +401,7 @@ PointCloudBase::~PointCloudBase()
 
   if (coll_handle_)
   {
-    SelectionManager* sel_manager = vis_manager_->getSelectionManager();
+    SelectionManager* sel_manager = context_->getSelectionManager();
     sel_manager->removeObject(coll_handle_);
   }
 
@@ -470,7 +471,7 @@ void PointCloudBase::setSelectable( bool selectable )
 {
   if (selectable_ != selectable)
   {
-    SelectionManager* sel_manager = vis_manager_->getSelectionManager();
+    SelectionManager* sel_manager = context_->getSelectionManager();
 
     if (selectable)
     {
@@ -504,7 +505,7 @@ void PointCloudBase::setDecayTime( float time )
 
   propertyChanged(decay_time_property_);
 
-  causeRender();
+  context_->queueRender();
 }
 
 void PointCloudBase::setStyle( int style )
@@ -540,7 +541,7 @@ void PointCloudBase::setStyle( int style )
 
   propertyChanged(style_property_);
 
-  causeRender();
+  context_->queueRender();
 }
 
 void PointCloudBase::setBillboardSize( float size )
@@ -551,7 +552,7 @@ void PointCloudBase::setBillboardSize( float size )
 
   propertyChanged(billboard_size_property_);
 
-  causeRender();
+  context_->queueRender();
 }
 
 void PointCloudBase::onEnable()
@@ -607,7 +608,7 @@ void PointCloudBase::update(float wall_dt, float ros_dt)
       if (removed)
       {
         cloud_->popPoints(points_to_pop);
-        causeRender();
+        context_->queueRender();
       }
     }
   }
@@ -803,19 +804,19 @@ void PointCloudBase::updateStatus()
 {
   if (messages_received_ == 0)
   {
-    setStatus(status_levels::Warn, "Topic", "No messages received");
+    setStatus(StatusProperty::Warn, "Topic", "No messages received");
   }
   else
   {
     std::stringstream ss;
     ss << messages_received_ << " messages received";
-    setStatus(status_levels::Ok, "Topic", ss.str());
+    setStatus(StatusProperty::Ok, "Topic", ss.str());
   }
 
   {
     std::stringstream ss;
     ss << "Showing [" << total_point_count_ << "] points from [" << clouds_.size() << "] messages";
-    setStatus(status_levels::Ok, "Points", ss.str());
+    setStatus(StatusProperty::Ok, "Points", ss.str());
   }
 }
 
@@ -945,11 +946,11 @@ bool PointCloudBase::transformCloud(const CloudInfoPtr& info, V_Point& points, b
   {
     Ogre::Vector3 pos;
     Ogre::Quaternion orient;
-    if (!vis_manager_->getFrameManager()->getTransform(info->message_->header, pos, orient))
+    if (!context_->getFrameManager()->getTransform(info->message_->header, pos, orient))
     {
       std::stringstream ss;
-      ss << "Failed to transform from frame [" << info->message_->header.frame_id << "] to frame [" << vis_manager_->getFrameManager()->getFixedFrame() << "]";
-      setStatus(status_levels::Error, "Message", ss.str());
+      ss << "Failed to transform from frame [" << info->message_->header.frame_id << "] to frame [" << context_->getFrameManager()->getFixedFrame() << "]";
+      setStatus(StatusProperty::Error, "Message", ss.str());
       return false;
     }
 
@@ -978,7 +979,7 @@ bool PointCloudBase::transformCloud(const CloudInfoPtr& info, V_Point& points, b
     {
       std::stringstream ss;
       ss << "No position transformer available for cloud";
-      setStatus(status_levels::Error, "Message", ss.str());
+      setStatus(StatusProperty::Error, "Message", ss.str());
       return false;
     }
 
@@ -986,7 +987,7 @@ bool PointCloudBase::transformCloud(const CloudInfoPtr& info, V_Point& points, b
     {
       std::stringstream ss;
       ss << "No color transformer available for cloud";
-      setStatus(status_levels::Error, "Message", ss.str());
+      setStatus(StatusProperty::Error, "Message", ss.str());
       return false;
     }
 
@@ -1109,13 +1110,13 @@ void PointCloudBase::onTransformerOptions(V_string& ops, uint32_t mask)
 
 void PointCloudBase::createProperties()
 {
-  selectable_property_ = property_manager_->createProperty<BoolProperty>( "Selectable", property_prefix_,
+  selectable_property_ = new BoolProperty( "Selectable", property_prefix_,
                                                                           boost::bind( &PointCloudBase::getSelectable, this ),
                                                                           boost::bind( &PointCloudBase::setSelectable, this, _1 ),
                                                                           parent_category_, this );
   setPropertyHelpText( selectable_property_, "Whether or not the points in this point cloud are selectable." );
 
-  style_property_ = property_manager_->createProperty<EnumProperty>( "Style", property_prefix_,
+  style_property_ = new EnumProperty( "Style", property_prefix_,
                                                                      boost::bind( &PointCloudBase::getStyle, this ),
                                                                      boost::bind( &PointCloudBase::setStyle, this, _1 ),
                                                                      parent_category_, this );
@@ -1126,7 +1127,7 @@ void PointCloudBase::createProperties()
   enum_prop->addOption( "Billboard Spheres", BillboardSpheres );
   enum_prop->addOption( "Boxes", Boxes );
 
-  billboard_size_property_ = property_manager_->createProperty<FloatProperty>( "Billboard Size", property_prefix_,
+  billboard_size_property_ = new FloatProperty( "Billboard Size", property_prefix_,
                                                                                boost::bind( &PointCloudBase::getBillboardSize, this ),
                                                                                boost::bind( &PointCloudBase::setBillboardSize, this, _1 ),
                                                                                parent_category_, this );
@@ -1134,20 +1135,20 @@ void PointCloudBase::createProperties()
   FloatPropertyPtr float_prop = billboard_size_property_.lock();
   float_prop->setMin( 0.0001 );
 
-  alpha_property_ = property_manager_->createProperty<FloatProperty>( "Alpha", property_prefix_,
+  alpha_property_ = new FloatProperty( "Alpha", property_prefix_,
                                                                       boost::bind( &PointCloudBase::getAlpha, this ),
                                                                       boost::bind( &PointCloudBase::setAlpha, this, _1 ),
                                                                       parent_category_, this );
   setPropertyHelpText( alpha_property_,
                        "Amount of transparency to apply to the points.  Note that this is experimental and does not always look correct." );
-  decay_time_property_ = property_manager_->createProperty<FloatProperty>( "Decay Time", property_prefix_,
+  decay_time_property_ = new FloatProperty( "Decay Time", property_prefix_,
                                                                            boost::bind( &PointCloudBase::getDecayTime, this ),
                                                                            boost::bind( &PointCloudBase::setDecayTime, this, _1 ),
                                                                            parent_category_, this );
   setPropertyHelpText( decay_time_property_, "Duration, in seconds, to keep the incoming points.  0 means only show the latest points." );
 
   xyz_transformer_property_ =
-    property_manager_->createProperty<EditEnumProperty>( "Position Transformer", property_prefix_,
+    new EditableEnumProperty( "Position Transformer", property_prefix_,
                                                          boost::bind( &PointCloudBase::getXYZTransformer, this ),
                                                          boost::bind( &PointCloudBase::setXYZTransformer, this, _1 ),
                                                          parent_category_, this );
@@ -1156,7 +1157,7 @@ void PointCloudBase::createProperties()
   edit_enum_prop->setOptionCallback( boost::bind( &PointCloudBase::onTransformerOptions, this, _1, PointCloudTransformer::Support_XYZ ));
 
   color_transformer_property_ =
-    property_manager_->createProperty<EditEnumProperty>( "Color Transformer", property_prefix_,
+    new EditableEnumProperty( "Color Transformer", property_prefix_,
                                                          boost::bind( &PointCloudBase::getColorTransformer, this ),
                                                          boost::bind( &PointCloudBase::setColorTransformer, this, _1 ),
                                                          parent_category_, this );

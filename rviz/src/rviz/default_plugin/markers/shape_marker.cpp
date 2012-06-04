@@ -31,7 +31,7 @@
 #include "marker_selection_handler.h"
 #include "rviz/default_plugin/marker_display.h"
 
-#include "rviz/visualization_manager.h"
+#include "rviz/display_context.h"
 #include "rviz/selection/selection_manager.h"
 
 #include <rviz/ogre_helpers/shape.h>
@@ -42,9 +42,11 @@
 namespace rviz
 {
 
-ShapeMarker::ShapeMarker( MarkerDisplay* owner, VisualizationManager* manager,
-    Ogre::SceneNode* parent_node ) :
-  MarkerBase(owner, manager, parent_node), shape_(0)
+ShapeMarker::ShapeMarker( MarkerDisplay* owner,
+                          DisplayContext* context,
+                          Ogre::SceneNode* parent_node )
+  : MarkerBase( owner, context, parent_node )
+  , shape_( 0 )
 {
 }
 
@@ -66,21 +68,21 @@ void ShapeMarker::onNewMessage( const MarkerConstPtr& old_message,
       case visualization_msgs::Marker::CUBE:
       {
         shape_ = new Shape(Shape::Cube,
-            vis_manager_->getSceneManager(), scene_node_);
+            context_->getSceneManager(), scene_node_);
       }
         break;
 
       case visualization_msgs::Marker::CYLINDER:
       {
         shape_ = new Shape(Shape::Cylinder,
-            vis_manager_->getSceneManager(), scene_node_);
+            context_->getSceneManager(), scene_node_);
       }
         break;
 
       case visualization_msgs::Marker::SPHERE:
       {
         shape_ = new Shape(Shape::Sphere,
-            vis_manager_->getSceneManager(), scene_node_);
+            context_->getSceneManager(), scene_node_);
       }
         break;
 
@@ -89,8 +91,8 @@ void ShapeMarker::onNewMessage( const MarkerConstPtr& old_message,
         break;
     }
 
-    vis_manager_->getSelectionManager()->removeObject(coll_);
-    coll_ = vis_manager_->getSelectionManager()->createCollisionForObject(
+    context_->getSelectionManager()->removeObject(coll_);
+    coll_ = context_->getSelectionManager()->createCollisionForObject(
         shape_, SelectionHandlerPtr(new MarkerSelectionHandler(this, MarkerID(
             new_message->ns, new_message->id))), coll_);
   }
@@ -102,7 +104,7 @@ void ShapeMarker::onNewMessage( const MarkerConstPtr& old_message,
   if (owner_ && (new_message->scale.x * new_message->scale.y
       * new_message->scale.z == 0.0f))
   {
-    owner_->setMarkerStatus(getID(), status_levels::Warn,
+    owner_->setMarkerStatus(getID(), StatusProperty::Warn,
         "Scale of 0 in one of x/y/z");
   }
 

@@ -40,13 +40,17 @@
 
 #include <pluginlib/class_loader.h>
 
+#include <yaml-cpp/emitter.h>
+#include <yaml-cpp/node.h>
+
 #include "rviz/window_manager_interface.h"
-#include "rviz/config.h"
 #include "rviz/panel.h"
+#include "rviz/status_callback.h"
 
 class QSplashScreen;
 class QAction;
 class QActionGroup;
+class QTimer;
 
 namespace rviz
 {
@@ -60,6 +64,8 @@ class SelectionPanel;
 class ToolPropertiesPanel;
 class VisualizationManager;
 class Tool;
+class HelpPanel;
+class WidgetGeometryChangeDetector;
 
 /** @brief The main rviz window.
  *
@@ -81,6 +87,7 @@ public:
                    const std::string& fixed_frame = "",
                    const std::string& target_frame = "",
                    const std::string& splash_path = "",
+                   const std::string& help_path = "",
                    bool verbose = false,
                    bool show_choose_new_master_option = false );
 
@@ -93,49 +100,78 @@ public:
                                     Qt::DockWidgetArea area = Qt::LeftDockWidgetArea,
                                     bool floating = true );
 
+public Q_SLOTS:
+  /** @brief Call this to let the frame know that something that would
+   *         get saved in the display config has changed. */
+  void setDisplayConfigModified();
+
 protected Q_SLOTS:
   void onOpen();
-  void onSave();
+  void save();
+  void saveAs();
+  void onSaveImage();
   void onRecentConfigSelected();
   void onHelpWiki();
   void openNewPanelDialog();
+  void openNewToolDialog();
+  void showHelpPanel();
 
-  /** Looks up the Tool for this action and calls
+  /** @brief Remove a the tool whose name is given by remove_tool_menu_action->text(). */ 
+  void onToolbarRemoveTool( QAction* remove_tool_menu_action );
+
+  /** @brief Looks up the Tool for this action and calls
    * VisualizationManager::setCurrentTool(). */
   void onToolbarActionTriggered( QAction* action );
 
-  /** Add the given tool to this frame's toolbar.  This creates a
-   * QAction internally which listens for the Tool's shortcut key.
-   * When the action is triggered by the toolbar or by the shortcut
-   * key, onToolbarActionTriggered() is called. */
-  void addTool(Tool* tool);
+  /** @brief Add the given tool to this frame's toolbar.
+   *
+   * This creates a QAction internally which listens for the Tool's
+   * shortcut key.  When the action is triggered by the toolbar or by
+   * the shortcut key, onToolbarActionTriggered() is called. */
+  void addTool( Tool* tool );
 
-  /** Mark the given tool as the current one.  This is purely a visual
-   * change in the GUI, it does not call any tool functions. */
+  /** @brief Remove the given tool from the frame's toolbar. */
+  void removeTool( Tool* tool );
+
+  /** @brief Mark the given tool as the current one.
+   *
+   * This is purely a visual change in the GUI, it does not call any
+   * tool functions. */
   void indicateToolIsCurrent(Tool* tool);
 
-  /** Save the current state and quit with exit code 255 to signal the
-   * wrapper that we would like to restart with a different ROS master
-   * URI. */
+  /** @brief Save the current state and quit with exit code 255 to
+   * signal the wrapper that we would like to restart with a different
+   * ROS master URI. */
   void changeMaster();
 
-  /** Remove the given panel's name from the list of current panel names. */
-  void onPanelRemoved( QObject* panel );
-
-  /** Delete a panel widget.  sender() of the signal should be a
-   * QAction whose text() is the name of the panel. */
+  /** @brief Delete a panel widget.
+   *
+   * The sender() of the signal should be a QAction whose text() is
+   * the name of the panel. */
   void onDeletePanel();
 
+protected Q_SLOTS:
+  /** @brief Set loading_ to false. */
+  void markLoadingDone();
+
+  /** @brief Set the default directory in which to save screenshot images. */
+  void setImageSaveDirectory( const QString& directory );
+
 protected:
-  void initConfigs();
+  /** @brief Initialize the default config directory (~/.rviz) and set
+   * up the general_config_file_ and display_config_file_
+   * variables.
+   * @param display_config_file_override The display config file passed in to initialize(). */
+  void initConfigs( const std::string& display_config_file_override );
+
   void initMenus();
-  void loadDisplayConfig(const std::string& path);
-  void saveConfigs();
 
-  void moveEvent( QMoveEvent* event );
-  void closeEvent( QCloseEvent* event );
+  /** @brief Check for unsaved changes, prompt to save config, etc.
+   * @return true if it is OK to exit, false if not. */
+  bool prepareToExit();
 
-/////  void onManagePlugins(wxCommandEvent& event);
+  virtual void moveEvent( QMoveEvent* event );
+  virtual void closeEvent( QCloseEvent* event );
 
   void setSplashStatus( const std::string& status );
 
@@ -149,8 +185,59 @@ protected:
                                    Qt::DockWidgetArea area = Qt::LeftDockWidgetArea,
                                    bool floating = true );
 
-  void loadCustomPanels( const boost::shared_ptr<Config>& config );
-  void saveCustomPanels( const boost::shared_ptr<Config>& config );
+/////  void loadCustomPanels( const boost::shared_ptr<Config>& config );
+/////  void saveCustomPanels( const boost::shared_ptr<Config>& config );
+/////
+/////  void loadWindowGeometry( const boost::shared_ptr<Config>& config );
+/////  void saveWindowGeometry( const boost::shared_ptr<Config>& config );
+
+  /** @brief Load the "general" config file, which has just the few
+   * things which should not be saved with a display config.
+   *
+   * Loads from the file named in general_config_file_. */
+  void loadGeneralConfig();
+
+  /** @brief Save the "general" config file, which has just the few
+   * things which should not be saved with a display config.
+   *
+   * Saves to the file named in general_config_file_. */
+  void saveGeneralConfig();
+
+  /** @brief Load display and other settings from the given file.
+   * @param path The full path of the config file to load from. */
+  void loadDisplayConfig( const std::string& path );
+
+  /** @brief Save display and other settings to the given file.
+   * @param path The full path of the config file to save into. */
+  void saveDisplayConfig( const std::string& path );
+
+  /** @brief Load the properties of all subsystems from the given yaml node.
+   * 
+   * This is what is called when loading a "*.rviz" file.
+   *
+   * @param yaml_node Must be a YAML map.
+   * @param cb An optional callback function to call with status
+   *        updates, such as "loading displays".
+   * @sa save()
+   */
+  virtual void load( const YAML::Node& yaml_node, const StatusCallback& cb );
+
+  /**
+   * \brief Save the properties of each subsystem and most editable rviz
+   *        data.  Emitter must be in a map context.
+   * \param emitter The yaml emitter to write to.
+   * \sa loadDisplayConfig()
+   */
+  virtual void save( YAML::Emitter& emitter );
+
+  /** @brief Return true if the give file is writable, false if not. */
+  bool fileIsWritable( const std::string& path );
+  
+  /** @brief Set the display config file path.
+   *
+   * This does not load the given file, it just sets the member
+   * variable and updates the window title. */
+  void setDisplayConfigFile( const std::string& path );
 
   RenderPanel* render_panel_;
   DisplaysPanel* displays_panel_;
@@ -159,12 +246,16 @@ protected:
   SelectionPanel* selection_panel_;
   ToolPropertiesPanel* tool_properties_panel_;
 
-  boost::shared_ptr<Config> general_config_;
-  boost::shared_ptr<Config> display_config_;
+  HelpPanel* help_panel_;
+  QAction* show_help_action_;
+
   std::string config_dir_;
   std::string general_config_file_;
   std::string display_config_file_;
+  std::string default_display_config_file_;
   std::string last_config_dir_;
+  std::string last_image_dir_;
+  std::string home_dir_;
 
   QMenu* file_menu_;
   QMenu* recent_configs_menu_;
@@ -178,6 +269,7 @@ protected:
   VisualizationManager* manager_;
 
   std::string package_path_;
+  std::string help_path_;
 
   QSplashScreen* splash_;
 
@@ -192,8 +284,6 @@ protected:
   std::map<Tool*,QAction*> tool_to_action_map_;
   bool show_choose_new_master_option_;
 
-  typedef std::set<std::string> S_string;
-  S_string panel_names_;
   pluginlib::ClassLoader<Panel>* panel_class_loader_;
 
   struct PanelRecord
@@ -206,6 +296,14 @@ protected:
   };
   typedef std::map<std::string, PanelRecord> M_PanelRecord;
   M_PanelRecord custom_panels_;
+
+  QAction* add_tool_action_;
+  QMenu* remove_tool_menu_;
+
+  bool initialized_;
+  WidgetGeometryChangeDetector* geom_change_detector_;
+  bool loading_; ///< True just when loading a display config file, false all other times.
+  QTimer* post_load_timer_; ///< Single-shot timer for calling postLoad() a short time after loadDisplayConfig() finishes.
 };
 
 }

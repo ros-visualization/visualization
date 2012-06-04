@@ -32,11 +32,17 @@
 #include <QSplitter>
 
 class QTextBrowser;
-class QTreeWidgetItem;
+
+namespace YAML
+{
+class Node;
+class Emitter;
+}
 
 namespace rviz
 {
 
+class Property;
 class PropertyTreeWidget;
 
 /** A PropertyTreeWidget with built-in help info display. */
@@ -48,8 +54,14 @@ public:
 
   PropertyTreeWidget* getTree() { return property_tree_; }
 
+  /** @brief Write state to the given YAML emitter. */
+  void save( YAML::Emitter& emitter );
+
+  /** @brief Read state from the given YAML node. */
+  void load( const YAML::Node& yaml_node );
+
 private Q_SLOTS:
-  void onCurrentItemChanged( QTreeWidgetItem* current );
+  void showHelpForProperty( const Property* property );
 
 private:
   PropertyTreeWidget* property_tree_;

@@ -27,17 +27,12 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef RVIZ_NEW_DISPLAY_DIALOG_H
-#define RVIZ_NEW_DISPLAY_DIALOG_H
+#ifndef RVIZ_NEW_OBJECT_DIALOG_H
+#define RVIZ_NEW_OBJECT_DIALOG_H
 
 #include <QDialog>
 
-#include <vector>
-#include <set>
-#include <string>
-
-#include <pluginlib/class_loader.h>
-#include "rviz/display.h"
+#include "rviz/factory.h"
 
 class QTreeWidget;
 class QTreeWidgetItem;
@@ -49,18 +44,32 @@ class QLabel;
 namespace rviz
 {
 
-typedef std::vector<std::string> V_string;
-typedef std::set<std::string> S_string;
-
 class NewObjectDialog : public QDialog
 {
 Q_OBJECT
 public:
-  NewObjectDialog( pluginlib::ClassLoaderBase* class_loader,
-                    const S_string& current_display_names,
-                    std::string* lookup_name_output,
-                    std::string* display_name_output,
-                    QWidget* parent = 0 );
+  /** Dialog for choosing a new object to load with a pluginlib ClassLoader.
+   *
+   * @param disallowed_display_names set of display names to prevent
+   *        the user from using.
+   *
+   * @param disallowed_class_lookup_names set of class lookup names to
+   *        prevent the user from selecting.  Names found in the class loader
+   *        which are in this list will appear disabled.
+   *
+   * @param lookup_name_output Pointer to a string where dialog will
+   *        put the class lookup name chosen.
+   *
+   * @param display_name_output Pointer to a string where dialog will
+   *        put the display name entered, or NULL (default) if display
+   *        name entry field should not be shown. */
+  NewObjectDialog( Factory* factory,
+                   const QString& object_type,
+                   const QStringList& disallowed_display_names,
+                   const QStringList& disallowed_class_lookup_names,
+                   QString* lookup_name_output,
+                   QString* display_name_output = 0,
+                   QWidget* parent = 0 );
 
 public Q_SLOTS:
   virtual void accept();
@@ -81,11 +90,12 @@ private:
    * error message if error_text is empty. */
   void setError( const QString& error_text );
 
-  pluginlib::ClassLoaderBase* class_loader_;
-  const S_string& current_display_names_;
+  Factory* factory_;
+  const QStringList& disallowed_display_names_;
+  const QStringList& disallowed_class_lookup_names_;
 
-  std::string* lookup_name_output_;
-  std::string* display_name_output_;
+  QString* lookup_name_output_;
+  QString* display_name_output_;
 
   /** Widget showing description of the class. */
   QTextBrowser* description_;
@@ -97,9 +107,9 @@ private:
 
   /** Current value of selected class-lookup name.  Copied to
    * *lookup_name_output_ when "ok" is clicked. */
-  std::string lookup_name_;
+  QString lookup_name_;
 };
 
 } //namespace rviz
 
-#endif
+#endif // RVIZ_NEW_OBJECT_DIALOG_H

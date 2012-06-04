@@ -50,11 +50,16 @@
 #include "range_display.h"
 #include "robot_model_display.h"
 #include "tf_display.h"
+#include "tools/move_tool.h"
+#include "tools/goal_tool.h"
+#include "tools/initial_pose_tool.h"
+#include "tools/selection_tool.h"
+#include "tools/interaction_tool.h"
+
 
 PLUGINLIB_DECLARE_CLASS( rviz, Axes, rviz::AxesDisplay, rviz::Display )
 PLUGINLIB_DECLARE_CLASS( rviz, Camera, rviz::CameraDisplay, rviz::Display )
 PLUGINLIB_DECLARE_CLASS( rviz, GridCells, rviz::GridCellsDisplay, rviz::Display )
-PLUGINLIB_DECLARE_CLASS( rviz, Grid, rviz::GridDisplay, rviz::Display )
 PLUGINLIB_DECLARE_CLASS( rviz, Image, rviz::ImageDisplay, rviz::Display )
 PLUGINLIB_DECLARE_CLASS( rviz, InteractiveMarker, rviz::InteractiveMarkerDisplay, rviz::Display )
 PLUGINLIB_DECLARE_CLASS( rviz, LaserScan, rviz::LaserScanDisplay, rviz::Display )
@@ -78,3 +83,14 @@ PLUGINLIB_DECLARE_CLASS( rviz, Intensity, rviz::IntensityPCTransformer, rviz::Po
 PLUGINLIB_DECLARE_CLASS( rviz, RGB8, rviz::RGB8PCTransformer, rviz::PointCloudTransformer )
 PLUGINLIB_DECLARE_CLASS( rviz, RGBF32, rviz::RGBF32PCTransformer, rviz::PointCloudTransformer )
 PLUGINLIB_DECLARE_CLASS( rviz, XYZ, rviz::XYZPCTransformer, rviz::PointCloudTransformer )
+
+#include "tools/move_tool.h"
+#include "tools/goal_tool.h"
+#include "tools/initial_pose_tool.h"
+#include "tools/selection_tool.h"
+#include "tools/interaction_tool.h"
+PLUGINLIB_DECLARE_CLASS( rviz, MoveCamera, rviz::MoveTool, rviz::Tool )
+PLUGINLIB_DECLARE_CLASS( rviz, SetGoal, rviz::GoalTool, rviz::Tool )
+PLUGINLIB_DECLARE_CLASS( rviz, SetInitialPose, rviz::InitialPoseTool, rviz::Tool )
+PLUGINLIB_DECLARE_CLASS( rviz, Select, rviz::SelectionTool, rviz::Tool )
+PLUGINLIB_DECLARE_CLASS( rviz, Interact, rviz::InteractionTool, rviz::Tool )

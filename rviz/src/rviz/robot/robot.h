@@ -30,7 +30,6 @@
 #ifndef RVIZ_ROBOT_H_
 #define RVIZ_ROBOT_H_
 
-#include "rviz/properties/forwards.h"
 #include "link_updater.h"
 
 #include <string>
@@ -77,9 +76,10 @@ class TiXmlElement;
 namespace rviz
 {
 
+class Property;
 class Robot;
 class RobotLink;
-class VisualizationManager;
+class DisplayContext;
 
 /**
  * \class Robot
@@ -90,10 +90,8 @@ class VisualizationManager;
 class Robot
 {
 public:
-  Robot( VisualizationManager* manager, const std::string& name = "" );
+  Robot( DisplayContext* context, const std::string& name, Property* parent_property );
   ~Robot();
-
-  void setPropertyManager( PropertyManager* property_manager, const CategoryPropertyWPtr& parent );
 
   /**
    * \brief Loads meshes/primitives from a robot description.  Calls clear() before loading.
@@ -149,8 +147,6 @@ public:
   Ogre::SceneNode* getCollisionNode() { return root_collision_node_; }
   Ogre::SceneNode* getOtherNode() { return root_other_node_; }
 
-  CategoryPropertyWPtr getLinksCategory() { return links_category_; }
-
   virtual void setPosition( const Ogre::Vector3& position );
   virtual void setOrientation( const Ogre::Quaternion& orientation );
   virtual void setScale( const Ogre::Vector3& scale );
@@ -158,6 +154,8 @@ public:
   virtual const Ogre::Quaternion& getOrientation();
 
 protected:
+  /** @brief Call RobotLink::updateVisibility() on each link. */
+  void updateLinkVisibilities();
 
   Ogre::SceneManager* scene_manager_;
 
@@ -171,10 +169,8 @@ protected:
   bool visual_visible_;                         ///< Should we show the visual representation?
   bool collision_visible_;                      ///< Should we show the collision representation?
 
-  VisualizationManager* vis_manager_;
-  PropertyManager* property_manager_;
-  CategoryPropertyWPtr parent_property_;
-  CategoryPropertyWPtr links_category_;
+  DisplayContext* context_;
+  Property* links_category_;
 
   std::string name_;
   float alpha_;

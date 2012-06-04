@@ -27,30 +27,29 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "arrow_marker.h"
-#include "marker_selection_handler.h"
-#include "rviz/default_plugin/marker_display.h"
-
-#include "rviz/visualization_manager.h"
-#include "rviz/selection/selection_manager.h"
-
-#include <rviz/ogre_helpers/arrow.h>
-#include <rviz/ogre_helpers/shape.h>
-
-#include <tf/transform_listener.h>
-
 #include <OGRE/OgreVector3.h>
 #include <OGRE/OgreQuaternion.h>
 #include <OGRE/OgreSceneNode.h>
 #include <OGRE/OgreSceneManager.h>
 #include <OGRE/OgreEntity.h>
 
+#include <tf/transform_listener.h>
+
+#include "rviz/default_plugin/marker_display.h"
+#include "rviz/default_plugin/markers/marker_selection_handler.h"
+#include "rviz/display_context.h"
+#include "rviz/ogre_helpers/arrow.h"
+#include "rviz/ogre_helpers/shape.h"
+#include "rviz/selection/selection_manager.h"
+
+#include "rviz/default_plugin/markers/arrow_marker.h"
+
 namespace rviz
 {
 
-ArrowMarker::ArrowMarker(MarkerDisplay* owner, VisualizationManager* manager, Ogre::SceneNode* parent_node)
-: MarkerBase(owner, manager, parent_node)
-, arrow_(0)
+ArrowMarker::ArrowMarker( MarkerDisplay* owner, DisplayContext* context, Ogre::SceneNode* parent_node )
+  : MarkerBase( owner, context, parent_node )
+  , arrow_( 0 )
 {
   child_scene_node_ = scene_node_->createChildSceneNode();
 }
@@ -58,7 +57,7 @@ ArrowMarker::ArrowMarker(MarkerDisplay* owner, VisualizationManager* manager, Og
 ArrowMarker::~ArrowMarker()
 {
   delete arrow_;
-  vis_manager_->getSceneManager()->destroySceneNode( child_scene_node_ );
+  context_->getSceneManager()->destroySceneNode( child_scene_node_ );
 }
 
 void ArrowMarker::onNewMessage(const MarkerConstPtr& old_message, const MarkerConstPtr& new_message)
@@ -71,7 +70,7 @@ void ArrowMarker::onNewMessage(const MarkerConstPtr& old_message, const MarkerCo
     ss << "Arrow marker [" << getStringID() << "] only specified one point of a point to point arrow.";
     if ( owner_ )
     {
-      owner_->setMarkerStatus(getID(), status_levels::Error, ss.str());
+      owner_->setMarkerStatus(getID(), StatusProperty::Error, ss.str());
     }
     ROS_DEBUG("%s", ss.str().c_str());
 
@@ -83,9 +82,9 @@ void ArrowMarker::onNewMessage(const MarkerConstPtr& old_message, const MarkerCo
 
   if (!arrow_)
   {
-    arrow_ = new Arrow(vis_manager_->getSceneManager(), child_scene_node_);
-    vis_manager_->getSelectionManager()->removeObject(coll_);
-    coll_ = vis_manager_->getSelectionManager()->createCollisionForObject(arrow_, SelectionHandlerPtr(new MarkerSelectionHandler(this, MarkerID(new_message->ns, new_message->id))), coll_);
+    arrow_ = new Arrow(context_->getSceneManager(), child_scene_node_);
+    context_->getSelectionManager()->removeObject(coll_);
+    coll_ = context_->getSelectionManager()->createCollisionForObject(arrow_, SelectionHandlerPtr(new MarkerSelectionHandler(this, MarkerID(new_message->ns, new_message->id))), coll_);
   }
 
   Ogre::Vector3 pos, scale;
@@ -126,7 +125,7 @@ void ArrowMarker::onNewMessage(const MarkerConstPtr& old_message, const MarkerCo
   {
     if ( owner_ && (new_message->scale.x * new_message->scale.y * new_message->scale.z == 0.0f) )
     {
-      owner_->setMarkerStatus(getID(), status_levels::Warn, "Scale of 0 in one of x/y/z");
+      owner_->setMarkerStatus(getID(), StatusProperty::Warn, "Scale of 0 in one of x/y/z");
     }
     arrow_->setScale(scale);
 

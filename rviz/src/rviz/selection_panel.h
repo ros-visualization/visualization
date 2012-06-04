@@ -71,27 +71,13 @@ public:
    * @return
    */
   SelectionPanel( QWidget* parent = 0 );
-  virtual ~SelectionPanel();
 
-  void initialize(VisualizationManager* manager);
+  void initialize( VisualizationManager* manager );
 
   VisualizationManager* getManager() { return manager_; }
 
-protected Q_SLOTS:
-  /// Called from the refresh timer
-  void onUpdate();
-
-  void onSelectionSetting();
-  void onSelectionSet();
-  void onSelectionAdded( const M_Picked& added );
-  void onSelectionRemoved( const M_Picked& removed );
-
-protected:
-  PropertyManager* property_manager_;
-
+private:
   VisualizationManager* manager_;
-
-  bool setting_;
 };
 
 } // namespace rviz
