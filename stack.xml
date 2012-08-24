@@ -19,6 +19,4 @@
   <depend stack="ros" /> <!-- roslib -->
   <depend stack="ros_comm" /> <!-- rosconsole, std_srvs, roscpp, message_filters, std_msgs, rospy, rosbag -->
   <depend stack="rx" /> <!-- rxbag -->
-  <depend stack="visualization_common" /> <!-- ogre, ogre_tools -->
-
 </stack>
