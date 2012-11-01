@@ -10,5 +10,6 @@
   <license>BSD</license>  
 
   <url>http://ros.org/wiki/visualization</url>
+  <depend stack="ros" /> <!-- for rosmake -->
   <depend stack="rviz" />
 </stack>
