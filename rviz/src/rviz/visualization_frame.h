@@ -202,12 +202,15 @@ protected:
   void loadDisplayConfig( const std::string& path );
 
   /** @brief Save display and other settings to the given file.
-   * @param path The full path of the config file to save into. */
-  void saveDisplayConfig( const std::string& path );
+   * @param path The full path of the config file to save into.
+   * @return True on success, False on failure.
+   *
+   * On failure, also sets error_message_ with information about the
+   * problem.  Can be retrieved with getErrorMessage(). */
+  bool saveDisplayConfig( const std::string& path );
 
-  /** @brief Return true if the give file is writable, false if not. */
-  bool fileIsWritable( const std::string& path );
-  
+  QString getErrorMessage() const { return error_message_; }
+
   /** @brief Set the display config file path.
    *
    * This does not load the given file, it just sets the member
@@ -277,6 +280,8 @@ protected:
   WidgetGeometryChangeDetector* geom_change_detector_;
   bool loading_; ///< True just when loading a display config file, false all other times.
   QTimer* post_load_timer_; ///< Single-shot timer for calling postLoad() a short time after loadDisplayConfig() finishes.
+
+  QString error_message_; ///< Error message (if any) from most recent saveDisplayConfig() call.
 };
 
 }

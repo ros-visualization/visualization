@@ -42,11 +42,12 @@ bool Config::readFromFile( const std::string& filename )
   if( in )
   {
     read( in );
+    error_message_ = "";
     return true;
   }
   else
   {
-    std::cerr << "Config file '" << filename << "' could not be opened for reading." << std::endl;
+    error_message_ = "Config file '" + filename + "' could not be opened for reading.";
     return false;
   }
 }
@@ -57,11 +58,12 @@ bool Config::writeToFile( const std::string& filename )
   if( out )
   {
     write( out );
+    error_message_ = "";
     return true;
   }
   else
   {
-    std::cerr << "Config file '" << filename << "' could not be opened for writing." << std::endl;
+    error_message_ = "Config file '" + filename + "' could not be opened for writing.";
     return false;
   }
 }

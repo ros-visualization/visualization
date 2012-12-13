@@ -454,7 +454,7 @@ void VisualizationFrame::markRecentConfig( const std::string& path )
 
 void VisualizationFrame::loadDisplayConfig( const std::string& path )
 {
-  if( !fs::exists( path ))
+  if( !fs::exists( path ) || fs::is_directory( path ) || fs::is_empty( path ))
   {
     QString message = QString::fromStdString( path  ) + " does not exist!";
     QMessageBox::critical( this, "Config file does not exist", message );
@@ -540,7 +540,7 @@ void VisualizationFrame::setDisplayConfigFile( const std::string& path )
   setWindowTitle( QString::fromStdString( title ));
 }
 
-void VisualizationFrame::saveDisplayConfig( const std::string& path )
+bool VisualizationFrame::saveDisplayConfig( const std::string& path )
 {
   ROS_INFO( "Saving display config to [%s]", path.c_str() );
 
@@ -550,9 +550,17 @@ void VisualizationFrame::saveDisplayConfig( const std::string& path )
   saveCustomPanels( config );
   saveWindowGeometry( config );
 
-  config->writeToFile( path );
-
-  setWindowModified( false );
+  if( config->writeToFile( path ))
+  {
+    error_message_ = "";
+    setWindowModified( false );
+    return true;
+  }
+  else
+  {
+    error_message_ = QString::fromStdString( config->getErrorMessage() );
+    return false;
+  }
 }
 
 void VisualizationFrame::loadCustomPanels( const boost::shared_ptr<Config>& config )
@@ -698,43 +706,44 @@ bool VisualizationFrame::prepareToExit()
 
   if( isWindowModified() )
   {
-    if( fileIsWritable( display_config_file_ ))
+    QMessageBox box( this );
+    box.setText( "There are unsaved changes." );
+    box.setInformativeText( QString::fromStdString( "Save changes to " + display_config_file_ + "?" ));
+    box.setStandardButtons( QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel );
+    box.setDefaultButton( QMessageBox::Save );
+    int result = box.exec();
+    switch( result )
     {
-      QMessageBox box( this );
-      box.setText( "There are unsaved changes." );
-      box.setInformativeText( QString::fromStdString( "Save changes to " + display_config_file_ + "?" ));
-      box.setStandardButtons( QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel );
-      box.setDefaultButton( QMessageBox::Save );
-      int result = box.exec();
-      switch( result )
+    case QMessageBox::Save:
+      if( saveDisplayConfig( display_config_file_ ))
       {
-      case QMessageBox::Save:
-        saveDisplayConfig( display_config_file_ );
         return true;
-      case QMessageBox::Discard:
-        return true;
-      default:
-        return false;
       }
-    }
-    else
-    {
-      QMessageBox box( this );
-      box.setText( "There are unsaved changes but file is read-only." );
-      box.setInformativeText( QString::fromStdString( "Save new version of " + display_config_file_ + " to another file?" ));
-      box.setStandardButtons( QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel );
-      box.setDefaultButton( QMessageBox::Save );
-      int result = box.exec();
-      switch( result )
+      else
       {
-      case QMessageBox::Save:
-        saveAs();
-        return true;
-      case QMessageBox::Discard:
-        return true;
-      default:
-        return false;
+        QMessageBox box( this );
+        box.setWindowTitle( "Failed to save." );
+        box.setText( getErrorMessage() );
+        box.setInformativeText( QString::fromStdString( "Save copy of " + display_config_file_ + " to another file?" ));
+        box.setStandardButtons( QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel );
+        box.setDefaultButton( QMessageBox::Save );
+        int result = box.exec();
+        switch( result )
+        {
+        case QMessageBox::Save:
+          saveAs();
+          return true;
+        case QMessageBox::Discard:
+          return true;
+        default:
+          return false;
+        }
+        
       }
+    case QMessageBox::Discard:
+      return true;
+    default:
+      return false;
     }
   }
   else
@@ -756,13 +765,6 @@ void VisualizationFrame::onOpen()
   }
 }
 
-bool VisualizationFrame::fileIsWritable( const std::string& path )
-{
-  std::fstream test_stream( path.c_str(), std::fstream::app );
-  bool writable = test_stream.is_open();
-  return writable;
-}
-
 void VisualizationFrame::save()
 {
   if( !initialized_ )
@@ -772,15 +774,12 @@ void VisualizationFrame::save()
 
   saveGeneralConfig();
 
-  if( fileIsWritable( display_config_file_ ))
-  {
-    saveDisplayConfig( display_config_file_ );
-  }
-  else
+  if( !saveDisplayConfig( display_config_file_ ))
   {
     QMessageBox box( this );
-    box.setText( "Config file is read-only." );
-    box.setInformativeText( QString::fromStdString( "Save new version of " + display_config_file_ + " to another file?" ));
+    box.setWindowTitle( "Failed to save." );
+    box.setText( getErrorMessage() );
+    box.setInformativeText( QString::fromStdString( "Save copy of " + display_config_file_ + " to another file?" ));
     box.setStandardButtons( QMessageBox::Save | QMessageBox::Cancel );
     box.setDefaultButton( QMessageBox::Save );
     if( box.exec() == QMessageBox::Save )
@@ -805,7 +804,10 @@ void VisualizationFrame::saveAs()
       filename += "."CONFIG_EXTENSION;
     }
 
-    saveDisplayConfig( filename );
+    if( !saveDisplayConfig( filename ))
+    {
+      QMessageBox::critical( this, "Failed to save.", getErrorMessage() );
+    }
 
     markRecentConfig( filename );
     last_config_dir_ = fs::path( filename ).parent_path().BOOST_FILE_STRING();
