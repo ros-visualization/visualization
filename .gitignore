@@ -1,0 +1,6 @@
+interactive_markers/build/
+interactive_markers/lib/
+rviz/bin/
+rviz/build/
+rviz/lib/
+rxbag_plugins/src/rxbag_plugins/*.pyc
